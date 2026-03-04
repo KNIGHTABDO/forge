@@ -9,35 +9,86 @@ interface Props {
   onElementClick: (ref: string) => void;
 }
 
-const INSPECTOR_SCRIPT = `<script id="__forge_inspector__">(function(){var mode=false,hovered=null,overlay=null;function createOverlay(){overlay=document.createElement('div');overlay.style.cssText='position:fixed;top:0;left:0;pointer-events:none;z-index:2147483647;display:none;box-sizing:border-box';document.body.appendChild(overlay);}function highlight(el){if(!el||el===document.body||el===document.documentElement)return;var r=el.getBoundingClientRect();overlay.style.cssText='position:fixed;pointer-events:none;z-index:2147483647;box-shadow:inset 0 0 0 2px #3b82f6;border-radius:3px;display:block;top:'+r.top+'px;left:'+r.left+'px;width:'+r.width+'px;height:'+r.height+'px';}function clearHighlight(){if(overlay)overlay.style.display='none';}function describeEl(el){var tag=el.tagName.toLowerCase();var text=(el.textContent||el.value||el.placeholder||'').trim().slice(0,60);var label=el.getAttribute('aria-label')||el.getAttribute('placeholder')||'';var desc='the <'+tag+'>';if(label)desc+=' labeled "'+label+'"';else if(text)desc+=' saying "'+text+'"';if(el.id)desc+=' (#'+el.id+')';return desc;}window.addEventListener('message',function(e){if(e.data&&e.data.__forge){mode=e.data.__forge==='inspect_on';if(!mode)clearHighlight();document.body.style.cursor=mode?'crosshair':'';}});document.addEventListener('DOMContentLoaded',function(){createOverlay();document.addEventListener('mouseover',function(e){if(!mode)return;hovered=e.target;highlight(hovered);},true);document.addEventListener('mouseout',function(){if(!mode)return;clearHighlight();},true);document.addEventListener('click',function(e){if(!mode)return;e.preventDefault();e.stopPropagation();window.parent.postMessage({__forge_click:describeEl(e.target)},'*');},true);});})();<\/script>`;
+/**
+ * Inspector script injected into every generated tool.
+ * Listens for postMessage to toggle highlight-on-hover + click-to-describe.
+ */
+const INSPECTOR_SCRIPT = `<script id="__forge_inspector__">(function(){
+  var mode=false,overlay=null;
+  function mkOverlay(){
+    overlay=document.createElement('div');
+    overlay.style.cssText='position:fixed;top:0;left:0;pointer-events:none;z-index:2147483647;display:none;box-sizing:border-box;transition:all 0.1s';
+    document.body.appendChild(overlay);
+  }
+  function highlight(el){
+    if(!el||el===document.body||el===document.documentElement)return;
+    var r=el.getBoundingClientRect();
+    overlay.style.cssText='position:fixed;pointer-events:none;z-index:2147483647;box-shadow:inset 0 0 0 2px #3b82f6,0 0 0 9999px rgba(59,130,246,0.06);border-radius:3px;display:block;top:'+r.top+'px;left:'+r.left+'px;width:'+r.width+'px;height:'+r.height+'px';
+  }
+  function clear(){if(overlay)overlay.style.display='none';}
+  function describe(el){
+    var tag=el.tagName.toLowerCase();
+    var text=(el.textContent||el.value||el.placeholder||'').trim().slice(0,60);
+    var label=el.getAttribute('aria-label')||el.getAttribute('placeholder')||'';
+    var d='the <'+tag+'>';
+    if(label)d+=' labeled "'+label+'"';
+    else if(text)d+=' saying "'+text+'"';
+    if(el.id)d+=' (#'+el.id+')';
+    return d;
+  }
+  window.addEventListener('message',function(e){
+    if(e.data&&e.data.__forge){
+      mode=e.data.__forge==='inspect_on';
+      if(!mode)clear();
+      document.body.style.cursor=mode?'crosshair':'';
+    }
+  });
+  document.addEventListener('DOMContentLoaded',function(){
+    mkOverlay();
+    document.addEventListener('mouseover',function(e){if(mode)highlight(e.target);},true);
+    document.addEventListener('mouseout',function(){if(mode)clear();},true);
+    document.addEventListener('click',function(e){
+      if(!mode)return;
+      e.preventDefault();e.stopPropagation();
+      window.parent.postMessage({__forge_click:describe(e.target)},'*');
+    },true);
+  });
+})();<\/script>`;
+
+function injectInspector(html: string): string {
+  if (html.includes('</head>')) return html.replace('</head>', INSPECTOR_SCRIPT + '</head>');
+  if (html.includes('<body')) return html.replace('<body', INSPECTOR_SCRIPT + '<body');
+  return INSPECTOR_SCRIPT + html;
+}
 
 export default function PreviewFrame({ html, isStreaming, inspectMode, onElementClick }: Props) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const blobUrlRef = useRef<string | null>(null);
 
-  const buildBlobUrl = useCallback((rawHtml: string): string => {
-    const patched = rawHtml.includes('</head>')
-      ? rawHtml.replace('</head>', INSPECTOR_SCRIPT + '</head>')
-      : INSPECTOR_SCRIPT + rawHtml;
-    const blob = new Blob([patched], { type: 'text/html' });
-    return URL.createObjectURL(blob);
-  }, []);
-
-  // Only update iframe when streaming is done
+  // Write HTML directly via srcdoc — avoids blob URL entirely.
+  // srcdoc + allow-same-origin is safe: the iframe gets a null origin
+  // (not the parent origin), so there's no XSS risk, but iOS Safari
+  // correctly dispatches touch events into the frame.
   useEffect(() => {
     if (!html || isStreaming) return;
-    const newUrl = buildBlobUrl(html);
-    if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
-    blobUrlRef.current = newUrl;
-    if (iframeRef.current) iframeRef.current.src = newUrl;
-  }, [html, isStreaming, buildBlobUrl]);
+    const patched = injectInspector(html);
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+    // Reset then set so srcdoc change always triggers a reload
+    iframe.removeAttribute('srcdoc');
+    // Use requestAnimationFrame to ensure DOM flush before setting
+    requestAnimationFrame(() => {
+      iframe.srcdoc = patched;
+    });
+  }, [html, isStreaming]);
 
+  // Toggle inspect mode inside the iframe
   useEffect(() => {
     iframeRef.current?.contentWindow?.postMessage(
       { __forge: inspectMode ? 'inspect_on' : 'inspect_off' }, '*'
     );
   }, [inspectMode]);
 
+  // Handle click-to-edit messages from inspector
   useEffect(() => {
     const handler = (e: MessageEvent) => {
       if (e.data?.__forge_click) onElementClick(e.data.__forge_click);
@@ -45,10 +96,6 @@ export default function PreviewFrame({ html, isStreaming, inspectMode, onElement
     window.addEventListener('message', handler);
     return () => window.removeEventListener('message', handler);
   }, [onElementClick]);
-
-  useEffect(() => {
-    return () => { if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current); };
-  }, []);
 
   if (!html && !isStreaming) {
     return (
@@ -73,22 +120,19 @@ export default function PreviewFrame({ html, isStreaming, inspectMode, onElement
       <iframe
         ref={iframeRef}
         title="FORGE Preview"
-        // Note: allow-same-origin intentionally OMITTED — blob URLs + same-origin
-        // creates a shared origin context that breaks localStorage isolation.
-        // Scripts run fine without it; localStorage works correctly inside the tool.
-        sandbox="allow-scripts allow-forms allow-modals allow-downloads allow-pointer-lock"
+        // allow-same-origin is REQUIRED for iOS Safari touch events to work
+        // inside iframes. srcdoc frames get a null origin (not parent origin),
+        // so this is safe — parent JS cannot reach iframe DOM via same-origin.
+        sandbox="allow-scripts allow-forms allow-modals allow-downloads allow-pointer-lock allow-same-origin"
         style={{
           width: '100%',
           height: '100%',
           border: 'none',
-          borderRadius: '0',
+          display: 'block',
           background: '#0a0a0a',
-          cursor: inspectMode ? 'crosshair' : 'default',
-          opacity: isStreaming ? 0.3 : 1,
+          opacity: isStreaming ? 0.25 : 1,
           transition: 'opacity 0.3s',
-          // Enable touch scrolling inside iframe on iOS
-          touchAction: 'pan-y',
-          WebkitOverflowScrolling: 'touch',
+          touchAction: 'manipulation',
         } as React.CSSProperties}
       />
     </div>
