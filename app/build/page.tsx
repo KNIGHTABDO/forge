@@ -68,7 +68,9 @@ function BuildPage() {
 
   const generate = useCallback(async (userMsg: string) => {
     if (!userMsg.trim() || isGenerating) return;
-    const isEdit = Boolean(elementRef && currentHTML);
+
+    // EDIT mode: any message when a tool already exists (with or without a specific element ref)
+    const isEdit = Boolean(currentHTML);
     const now = new Date().toISOString();
 
     setMessages(prev => [...prev, { role: 'user', content: userMsg, at: now }]);
@@ -94,8 +96,9 @@ function BuildPage() {
         body: JSON.stringify({
           mode: isEdit ? 'edit' : 'create',
           prompt: userMsg,
+          // Always pass currentHTML when editing; pass elementRef only if user clicked one
           currentHTML: isEdit ? currentHTML : undefined,
-          elementRef: isEdit ? elementRef : undefined,
+          elementRef: isEdit ? (elementRef || null) : undefined,
         }),
       });
 
@@ -135,7 +138,7 @@ function BuildPage() {
       setCurrentHTML(finalHTML);
       setMessages(prev => prev.map((m, i) =>
         i === prev.length - 1 && m.isGenerating
-          ? { ...m, isGenerating: false, content: isEdit ? `Updated ✓` : 'Tool built ✓', charCount: undefined }
+          ? { ...m, isGenerating: false, content: isEdit ? 'Updated ✓' : 'Tool built ✓', charCount: undefined }
           : m
       ));
 
