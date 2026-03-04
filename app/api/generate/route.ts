@@ -12,8 +12,13 @@ export async function POST(req: NextRequest) {
   if (!prompt) return new Response(JSON.stringify({ error: 'prompt required' }), { status: 400 });
 
   let userContent: string;
-  if (mode === 'edit' && currentHTML && elementRef) {
-    userContent = `CURRENT_HTML:\n${currentHTML}\n\nELEMENT_REF: ${elementRef}\n\nCHANGE_REQUEST: ${prompt}`;
+
+  if (mode === 'edit' && currentHTML) {
+    // Always pass CURRENT_HTML when editing.
+    // ELEMENT_REF is optional — only included when user clicked a specific element.
+    userContent = `CURRENT_HTML:\n${currentHTML}\n\n`
+      + (elementRef ? `ELEMENT_REF: ${elementRef}\n\n` : '')
+      + `CHANGE_REQUEST: ${prompt}`;
   } else {
     userContent = prompt;
   }
