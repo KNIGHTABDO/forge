@@ -2,7 +2,6 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { FORGE_SYSTEM_PROMPT } from '@/lib/system-prompt';
 import { NextRequest } from 'next/server';
 
-// Node runtime — Edge doesn't reliably support streaming on Vercel hobby
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
@@ -20,7 +19,7 @@ export async function POST(req: NextRequest) {
   }
 
   const model = genAI.getGenerativeModel({
-    model: 'gemini-2.0-flash-lite',
+    model: 'gemini-3.1-flash-lite-preview',
     systemInstruction: FORGE_SYSTEM_PROMPT,
     generationConfig: { temperature: 1.0, maxOutputTokens: 32768 },
   });
