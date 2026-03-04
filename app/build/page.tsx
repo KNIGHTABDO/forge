@@ -55,7 +55,7 @@ function BuildPage() {
 
   const handleElementClick = useCallback((ref: string) => {
     setElementRef(ref);
-    setInput(ref + ' → ');
+    setInput(ref + ' \u2192 ');
     setInspectMode(false);
     inputRef.current?.focus();
   }, []);
@@ -138,7 +138,7 @@ function BuildPage() {
       setCurrentHTML(finalHTML);
       setMessages(prev => prev.map((m, i) =>
         i === prev.length - 1 && m.isGenerating
-          ? { ...m, isGenerating: false, content: isEdit ? 'Updated ✓' : 'Tool built ✓', charCount: undefined }
+          ? { ...m, isGenerating: false, content: isEdit ? 'Updated \u2713' : 'Tool built \u2713', charCount: undefined }
           : m
       ));
 
@@ -147,7 +147,7 @@ function BuildPage() {
       console.error('[generate]', msg);
       setMessages(prev => prev.map((m, i) =>
         i === prev.length - 1 && m.isGenerating
-          ? { ...m, isGenerating: false, content: `❌ ${msg}`, error: true, charCount: undefined }
+          ? { ...m, isGenerating: false, content: `\u274C ${msg}`, error: true, charCount: undefined }
           : m
       ));
     } finally {
@@ -255,8 +255,8 @@ function BuildPage() {
 
           {elementRef && (
             <div className="element-ref-indicator">
-              <span>✎ Editing: {elementRef}</span>
-              <button onClick={() => { setElementRef(null); setInput(''); }}>✕</button>
+              <span>&#x25CE; Editing: {elementRef}</span>
+              <button onClick={() => { setElementRef(null); setInput(''); }}>&#x2715;</button>
             </div>
           )}
 
@@ -266,8 +266,8 @@ function BuildPage() {
               className="chat-input"
               placeholder={
                 elementRef ? 'Describe the change...'
-                : currentHTML ? 'Describe a change...'
-                : 'Describe the tool you want...'
+                  : currentHTML ? 'Describe a change...'
+                  : 'Describe the tool you want...'
               }
               value={input}
               onChange={e => setInput(e.target.value)}
@@ -280,16 +280,17 @@ function BuildPage() {
               onClick={() => generate(input)}
               disabled={!input.trim() || isGenerating}
             >
-              {isGenerating ? '…' : '↑'}
+              {isGenerating ? '\u2026' : '\u2191'}
             </button>
           </div>
         </aside>
 
         <main className={`preview-panel ${inspectMode ? 'inspect-active' : ''}`}>
           {inspectMode && (
-            <div className="inspect-banner">
-              Click any element to edit it &nbsp;·&nbsp;
-              <button onClick={() => setInspectMode(false)}>Exit</button>
+            <div className="inspect-hud">
+              <span className="inspect-hud-icon">&#x1F3AF;</span>
+              <span className="inspect-hud-text"><strong>Inspect</strong> &mdash; click any element to edit it</span>
+              <button className="inspect-hud-exit" onClick={() => setInspectMode(false)}>Exit</button>
             </div>
           )}
           <PreviewFrame
@@ -305,7 +306,7 @@ function BuildPage() {
         <div className="history-drawer">
           <div className="history-header">
             <h3>Prompt History</h3>
-            <button onClick={() => setShowHistory(false)}>✕</button>
+            <button onClick={() => setShowHistory(false)}>&#x2715;</button>
           </div>
           <div className="history-list">
             {messages.filter(m => m.role === 'user').map((m, i) => (
