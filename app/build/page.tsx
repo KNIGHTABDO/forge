@@ -13,6 +13,7 @@ interface Message {
   at: string;
   isGenerating?: boolean;
   charCount?: number;
+  error?: boolean;
 }
 
 function BuildPage() {
@@ -59,20 +60,23 @@ function BuildPage() {
     inputRef.current?.focus();
   }, []);
 
+  const updateLastAssistantMsg = useCallback((patch: Partial<Message>) => {
+    setMessages(prev => prev.map((m, i) =>
+      i === prev.length - 1 && m.isGenerating ? { ...m, ...patch } : m
+    ));
+  }, []);
+
   const generate = useCallback(async (userMsg: string) => {
     if (!userMsg.trim() || isGenerating) return;
     const isEdit = Boolean(elementRef && currentHTML);
     const now = new Date().toISOString();
 
-    // Add user message
     setMessages(prev => [...prev, { role: 'user', content: userMsg, at: now }]);
     setInput('');
     setElementRef(null);
     setIsGenerating(true);
     if (!toolName && !isEdit) setToolName(userMsg.charAt(0).toUpperCase() + userMsg.slice(1, 40));
 
-    // Add live assistant message immediately
-    const assistantMsgId = Date.now();
     setMessages(prev => [...prev, {
       role: 'assistant',
       content: '',
@@ -95,49 +99,58 @@ function BuildPage() {
         }),
       });
 
-      if (!res.body) throw new Error('No stream');
+      // Surface API errors immediately
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`API error ${res.status}: ${errText}`);
+      }
+
+      if (!res.body) throw new Error('No stream body');
+
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let charCount = 0;
-
-      // Update char count every ~50 chars for live feedback
       let lastUpdate = 0;
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         const chunk = decoder.decode(value, { stream: true });
         streamBufferRef.current += chunk;
         charCount += chunk.length;
-        // Throttle state updates — every 200 chars
-        if (charCount - lastUpdate > 200) {
+        if (charCount - lastUpdate > 150) {
           lastUpdate = charCount;
           setMessages(prev => prev.map((m, i) =>
-            i === prev.length - 1 && m.isGenerating
-              ? { ...m, charCount }
-              : m
+            i === prev.length - 1 && m.isGenerating ? { ...m, charCount } : m
           ));
         }
       }
 
-      // Stream complete
-      const finalHTML = streamBufferRef.current;
+      const finalHTML = streamBufferRef.current.trim();
+
+      if (!finalHTML) {
+        throw new Error('Empty response from AI — the model returned nothing. Check GEMINI_API_KEY.');
+      }
+
       setCurrentHTML(finalHTML);
       setMessages(prev => prev.map((m, i) =>
         i === prev.length - 1 && m.isGenerating
-          ? { ...m, isGenerating: false, content: isEdit ? `Updated: ${elementRef}` : 'Tool built ✓', charCount: undefined }
+          ? { ...m, isGenerating: false, content: isEdit ? `Updated ✓` : 'Tool built ✓', charCount: undefined }
           : m
       ));
+
     } catch (err) {
-      console.error('[generate]', err);
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      console.error('[generate]', msg);
       setMessages(prev => prev.map((m, i) =>
         i === prev.length - 1 && m.isGenerating
-          ? { ...m, isGenerating: false, content: 'Generation failed — please try again.' }
+          ? { ...m, isGenerating: false, content: `❌ ${msg}`, error: true, charCount: undefined }
           : m
       ));
     } finally {
       setIsGenerating(false);
     }
-  }, [isGenerating, elementRef, currentHTML, toolName]);
+  }, [isGenerating, elementRef, currentHTML, toolName, updateLastAssistantMsg]);
 
   const deploy = useCallback(async () => {
     if (!currentHTML || isDeploying) return;
@@ -151,7 +164,7 @@ function BuildPage() {
           description: '',
           html: currentHTML,
           tags: [],
-          promptHistory: messages,
+          promptHistory: messages.filter(m => !m.isGenerating),
           existingSlug: slug,
         }),
       });
@@ -159,6 +172,8 @@ function BuildPage() {
       if (data.slug) {
         setSlug(data.slug);
         setDeployedUrl(data.url);
+      } else if (data.error) {
+        alert('Deploy failed: ' + data.error);
       }
     } catch (err) {
       console.error('[deploy]', err);
@@ -216,7 +231,7 @@ function BuildPage() {
                 {m.role === 'user' ? (
                   <div className="chat-bubble user">{m.content}</div>
                 ) : (
-                  <div className={`chat-bubble assistant${m.isGenerating ? ' generating' : ''}`}>
+                  <div className={`chat-bubble assistant${m.isGenerating ? ' generating' : ''}${m.error ? ' error' : ''}`}>
                     {m.isGenerating ? (
                       <div className="generation-progress">
                         <div className="generation-progress-label">
@@ -224,7 +239,7 @@ function BuildPage() {
                           {' '}Building...
                         </div>
                         {(m.charCount ?? 0) > 0 && (
-                          <div className="generation-progress-chars">{m.charCount?.toLocaleString()} chars</div>
+                          <div className="generation-progress-chars">{m.charCount?.toLocaleString()} chars written</div>
                         )}
                       </div>
                     ) : m.content}
