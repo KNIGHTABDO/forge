@@ -16,12 +16,14 @@ export default function PreviewFrame({ html, isStreaming, inspectMode, onElement
   const blobUrlRef = useRef<string | null>(null);
 
   const buildBlobUrl = useCallback((rawHtml: string): string => {
-    const patched = rawHtml.includes('</head>') ? rawHtml.replace('</head>', INSPECTOR_SCRIPT + '</head>') : INSPECTOR_SCRIPT + rawHtml;
+    const patched = rawHtml.includes('</head>')
+      ? rawHtml.replace('</head>', INSPECTOR_SCRIPT + '</head>')
+      : INSPECTOR_SCRIPT + rawHtml;
     const blob = new Blob([patched], { type: 'text/html' });
     return URL.createObjectURL(blob);
   }, []);
 
-  // Only update the iframe when streaming is done (or when html changes while not streaming)
+  // Only update iframe when streaming is done
   useEffect(() => {
     if (!html || isStreaming) return;
     const newUrl = buildBlobUrl(html);
@@ -31,16 +33,22 @@ export default function PreviewFrame({ html, isStreaming, inspectMode, onElement
   }, [html, isStreaming, buildBlobUrl]);
 
   useEffect(() => {
-    iframeRef.current?.contentWindow?.postMessage({ __forge: inspectMode ? 'inspect_on' : 'inspect_off' }, '*');
+    iframeRef.current?.contentWindow?.postMessage(
+      { __forge: inspectMode ? 'inspect_on' : 'inspect_off' }, '*'
+    );
   }, [inspectMode]);
 
   useEffect(() => {
-    const handler = (e: MessageEvent) => { if (e.data?.__forge_click) onElementClick(e.data.__forge_click); };
+    const handler = (e: MessageEvent) => {
+      if (e.data?.__forge_click) onElementClick(e.data.__forge_click);
+    };
     window.addEventListener('message', handler);
     return () => window.removeEventListener('message', handler);
   }, [onElementClick]);
 
-  useEffect(() => { return () => { if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current); }; }, []);
+  useEffect(() => {
+    return () => { if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current); };
+  }, []);
 
   if (!html && !isStreaming) {
     return (
@@ -65,8 +73,23 @@ export default function PreviewFrame({ html, isStreaming, inspectMode, onElement
       <iframe
         ref={iframeRef}
         title="FORGE Preview"
-        sandbox="allow-scripts allow-forms allow-same-origin allow-modals allow-downloads allow-pointer-lock"
-        style={{ width: '100%', height: '100%', border: 'none', borderRadius: '8px', background: '#0a0a0a', cursor: inspectMode ? 'crosshair' : 'default', opacity: isStreaming ? 0.3 : 1, transition: 'opacity 0.3s' }}
+        // Note: allow-same-origin intentionally OMITTED — blob URLs + same-origin
+        // creates a shared origin context that breaks localStorage isolation.
+        // Scripts run fine without it; localStorage works correctly inside the tool.
+        sandbox="allow-scripts allow-forms allow-modals allow-downloads allow-pointer-lock"
+        style={{
+          width: '100%',
+          height: '100%',
+          border: 'none',
+          borderRadius: '0',
+          background: '#0a0a0a',
+          cursor: inspectMode ? 'crosshair' : 'default',
+          opacity: isStreaming ? 0.3 : 1,
+          transition: 'opacity 0.3s',
+          // Enable touch scrolling inside iframe on iOS
+          touchAction: 'pan-y',
+          WebkitOverflowScrolling: 'touch',
+        } as React.CSSProperties}
       />
     </div>
   );
