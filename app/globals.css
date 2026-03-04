@@ -23,7 +23,7 @@ html, body {
   overflow: hidden;
 }
 
-/* ─── Root layout ─────────────────────────────── */
+/* ─── Root layout ─────────────────────────────────── */
 .build-root {
   display: flex;
   flex-direction: column;
@@ -39,7 +39,7 @@ html, body {
   overflow: hidden;
 }
 
-/* ─── ForgeBar ────────────────────────────────── */
+/* ─── ForgeBar ──────────────────────────────────────── */
 .forge-bar {
   display: flex;
   align-items: center;
@@ -152,7 +152,7 @@ html, body {
 .forge-bar-deploy:hover:not(:disabled) { background: var(--accent-hover); }
 .forge-bar-deploy:disabled { opacity: 0.4; cursor: default; }
 
-/* ─── Chat Panel ──────────────────────────────── */
+/* ─── Chat Panel ──────────────────────────────────── */
 .chat-panel {
   width: 300px;
   min-width: 260px;
@@ -303,7 +303,7 @@ html, body {
 .chat-send:active:not(:disabled) { background: var(--accent-hover); transform: scale(0.95); }
 .chat-send:disabled { opacity: 0.4; cursor: default; }
 
-/* ─── Preview Panel ───────────────────────────── */
+/* ─── Preview Panel ───────────────────────────────── */
 .preview-panel {
   flex: 1;
   position: relative;
@@ -313,28 +313,71 @@ html, body {
   min-height: 0;
 }
 .preview-panel.inspect-active { cursor: crosshair; }
-.inspect-banner {
+
+/* ─── Inspect HUD (floating pill) ─────────────────── */
+.inspect-hud {
   position: absolute;
-  top: 0; left: 0; right: 0;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 10;
-  background: color-mix(in srgb, var(--accent) 15%, #0a0a0a);
-  border-bottom: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
-  padding: 6px 16px;
-  font-size: 12px;
-  color: var(--accent);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  padding: 7px 14px 7px 11px;
+  background: rgba(15, 15, 20, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  border-radius: 999px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+  white-space: nowrap;
+  pointer-events: auto;
+  /* Animate in */
+  animation: hud-in 0.18s ease;
 }
-.inspect-banner button {
-  background: none;
-  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+@keyframes hud-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(-6px) scale(0.96); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0)   scale(1); }
+}
+.inspect-hud-icon {
+  font-size: 14px;
+  animation: pulse-ring 1.8s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes pulse-ring {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.6; transform: scale(0.88); }
+}
+.inspect-hud-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  letter-spacing: 0.01em;
+}
+.inspect-hud-text strong {
   color: var(--accent);
-  border-radius: 4px;
-  padding: 1px 8px;
-  font-size: 11px;
-  cursor: pointer;
+  font-weight: 600;
 }
+.inspect-hud-exit {
+  background: none;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  color: var(--text-muted);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-left: 2px;
+  flex-shrink: 0;
+}
+.inspect-hud-exit:hover {
+  background: color-mix(in srgb, var(--error) 12%, transparent);
+  border-color: color-mix(in srgb, var(--error) 40%, transparent);
+  color: #fca5a5;
+}
+
 .preview-empty {
   display: flex;
   flex-direction: column;
@@ -371,7 +414,7 @@ html, body {
   backdrop-filter: blur(8px);
 }
 
-/* ─── History Drawer ──────────────────────────── */
+/* ─── History Drawer ──────────────────────────────── */
 .history-drawer {
   position: fixed;
   top: 48px; right: 0; bottom: 0;
@@ -400,7 +443,7 @@ html, body {
 .history-time { font-size: 10px; color: #555; }
 .history-empty { font-size: 12px; color: #555; padding: 16px; text-align: center; }
 
-/* ─── Tablet / iPad (portrait + landscape) ────── */
+/* ─── Tablet / iPad (portrait + landscape) ─────── */
 @media (max-width: 1024px) {
   .build-body {
     flex-direction: column;
