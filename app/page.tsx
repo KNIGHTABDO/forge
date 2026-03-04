@@ -1,14 +1,129 @@
+'use client';
+
+import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
+import type { GalleryEntry } from '@/lib/github';
+
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  return `${d}d ago`;
+}
+
+function ToolCard({ tool }: { tool: GalleryEntry }) {
+  const toolUrl = `${process.env.NEXT_PUBLIC_BASE_URL ?? ''}/t/${tool.slug}`;
+  return (
+    <div className="tool-card">
+      {/* Live iframe preview */}
+      <div className="tool-card-preview">
+        <iframe
+          src={toolUrl}
+          title={tool.title}
+          scrolling="no"
+          tabIndex={-1}
+          sandbox="allow-scripts allow-same-origin"
+          className="tool-card-iframe"
+        />
+        <div className="tool-card-preview-overlay" />
+      </div>
+      {/* Info */}
+      <div className="tool-card-body">
+        <div className="tool-card-meta">
+          <span className="tool-card-slug">/t/{tool.slug}</span>
+          <span className="tool-card-time">{timeAgo(tool.updated ?? tool.created)}</span>
+        </div>
+        <h3 className="tool-card-title">{tool.title || tool.slug}</h3>
+        {tool.description && <p className="tool-card-desc">{tool.description}</p>}
+        <div className="tool-card-actions">
+          <a href={toolUrl} target="_blank" rel="noopener" className="tool-card-btn open">
+            Open ↗
+          </a>
+          <Link href={`/build?tool=${tool.slug}`} className="tool-card-btn edit">
+            Edit
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Home() {
+  const [tools, setTools] = useState<GalleryEntry[]>([]);
+  const [query, setQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/gallery')
+      .then(r => r.json())
+      .then(data => { setTools(data); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const filtered = useMemo(() => {
+    if (!query.trim()) return tools;
+    const q = query.toLowerCase();
+    return tools.filter(t =>
+      t.title?.toLowerCase().includes(q) ||
+      t.slug.toLowerCase().includes(q) ||
+      t.description?.toLowerCase().includes(q) ||
+      t.tags?.some(tag => tag.toLowerCase().includes(q))
+    );
+  }, [tools, query]);
+
   return (
-    <main style={{ background: '#0a0a0a', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', fontFamily: 'system-ui, sans-serif' }}>
-      <div style={{ textAlign: 'center', maxWidth: 560 }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>⚒</div>
-        <h1 style={{ fontSize: '3rem', fontWeight: 800, color: '#f1f5f9', letterSpacing: '-1px', marginBottom: 12 }}>FORGE</h1>
-        <p style={{ fontSize: '1.2rem', color: '#64748b', marginBottom: 32, lineHeight: 1.6 }}>Describe a tool in one sentence.<br/>Get a working app. Share it instantly.</p>
-        <Link href="/build" style={{ background: '#3b82f6', color: '#fff', padding: '14px 32px', borderRadius: 8, textDecoration: 'none', fontWeight: 600, fontSize: '1rem', display: 'inline-block', transition: 'background 150ms' }}>Start Building →</Link>
-      </div>
+    <main className="home">
+      {/* Nav */}
+      <nav className="home-nav">
+        <span className="home-nav-logo">⚒ FORGE</span>
+        <Link href="/build" className="home-nav-cta">Build a tool →</Link>
+      </nav>
+
+      {/* Hero */}
+      <section className="home-hero">
+        <h1 className="home-hero-title">Describe a tool.<br/>Get a working app.</h1>
+        <p className="home-hero-sub">Type one sentence. FORGE generates a fully interactive web app, instantly.</p>
+        <Link href="/build" className="home-hero-btn">Start Building →</Link>
+      </section>
+
+      {/* Gallery */}
+      <section className="home-gallery">
+        <div className="gallery-header">
+          <h2 className="gallery-heading">Previously built</h2>
+          <div className="gallery-search-wrap">
+            <span className="gallery-search-icon">⌕</span>
+            <input
+              className="gallery-search"
+              type="search"
+              placeholder="Search tools..."
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              spellCheck={false}
+            />
+            {query && (
+              <button className="gallery-search-clear" onClick={() => setQuery('')} aria-label="Clear">✕</button>
+            )}
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="gallery-loading">
+            <span className="gen-dot"/><span className="gen-dot"/><span className="gen-dot"/>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="gallery-empty">
+            {query ? `No tools matching "${query}"` : 'No tools built yet — be the first!'}
+          </div>
+        ) : (
+          <div className="gallery-grid">
+            {filtered.map(t => <ToolCard key={t.slug} tool={t} />)}
+          </div>
+        )}
+      </section>
     </main>
   );
 }
