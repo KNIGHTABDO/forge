@@ -31,6 +31,8 @@ function BuildPage() {
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
+  // Buffer for accumulating streamed HTML — only flush to state when done
+  const streamBufferRef = useRef('');
 
   useEffect(() => {
     if (!loadSlug) return;
@@ -63,6 +65,7 @@ function BuildPage() {
     setElementRef(null);
     setIsGenerating(true);
     if (!toolName && !isEdit) setToolName(userMsg.charAt(0).toUpperCase() + userMsg.slice(1, 36));
+    streamBufferRef.current = '';
     try {
       const res = await fetch('/api/generate', {
         method: 'POST',
@@ -72,14 +75,14 @@ function BuildPage() {
       if (!res.body) throw new Error('No stream');
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
-      let partial = '';
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        partial += decoder.decode(value, { stream: true });
-        setCurrentHTML(partial);
+        streamBufferRef.current += decoder.decode(value, { stream: true });
       }
-      setMessages(prev => [...prev, { role: 'assistant', content: isEdit ? `Updated ${elementRef}` : 'Tool built', at: new Date().toISOString() }]);
+      // Stream complete — set HTML once
+      setCurrentHTML(streamBufferRef.current);
+      setMessages(prev => [...prev, { role: 'assistant', content: isEdit ? `Updated ${elementRef}` : 'Tool built.', at: new Date().toISOString() }]);
     } catch (err) {
       console.error('[generate]', err);
       setMessages(prev => [...prev, { role: 'assistant', content: 'Generation failed — please try again.', at: new Date().toISOString() }]);
@@ -160,7 +163,7 @@ function BuildPage() {
           {inspectMode && (
             <div className="inspect-banner">Click any element to edit it &nbsp;·&nbsp;<button onClick={() => setInspectMode(false)}>Exit</button></div>
           )}
-          <PreviewFrame html={currentHTML} inspectMode={inspectMode} onElementClick={handleElementClick} />
+          <PreviewFrame html={currentHTML} isStreaming={isGenerating} inspectMode={inspectMode} onElementClick={handleElementClick} />
         </main>
       </div>
       {showHistory && (
