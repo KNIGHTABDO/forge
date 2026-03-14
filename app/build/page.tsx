@@ -110,6 +110,7 @@ function BuildPage() {
   const [planContent, setPlanContent] = useState('');
   const [planApproved, setPlanApproved] = useState(false);
   const [sessionId, setSessionId] = useState<string>('');
+  const [mobileTab, setMobileTab] = useState<'chat' | 'preview'>('chat');
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -271,7 +272,7 @@ function BuildPage() {
     const activeMode = overrideMode || generationMode;
 
     // Build mode guard: must have an approved plan, BUT skip if tool is already built
-    if (activeMode === 'build' && !currentHTML && (!planContent || !planApproved)) {
+    if (activeMode === 'build' && !currentHTML && (!planContent || (!planApproved && overrideMode !== 'build'))) {
       setMessages(prev => [...prev, 
         { role: 'user', content: userMsg, at: new Date().toISOString() },
         { role: 'assistant', content: planContent ? '❌ Plan not approved yet. Please approve your plan first, then switch to Build mode.' : '❌ No plan exists. Please switch to Plan mode first and create a blueprint.', at: new Date().toISOString(), error: true }
@@ -287,6 +288,9 @@ function BuildPage() {
     const now = new Date().toISOString();
 
     const snapshotImages = [...pendingImages];
+    if (typeof window !== 'undefined' && window.innerWidth <= 1024 && activeMode !== 'chat' && activeMode !== 'plan') {
+      setMobileTab('preview');
+    }
     // Create a visual indicator in the chat messages for attached images
     const attachLabel = snapshotImages.length > 0 ? ` [Attached ${snapshotImages.length} image(s)]` : '';
     setMessages(prev => [...prev, { role: 'user', content: userMsg + attachLabel, at: now }]);
@@ -440,7 +444,24 @@ function BuildPage() {
         onDeploy={deploy}
         onHistoryToggle={() => setShowHistory(h => !h)}
       />
-      <div className="build-body">
+
+      {/* ─── Mobile Tab Toggle (visible only on mobile) ─── */}
+      <div className="mobile-tab-toggle">
+        <button 
+          className={`mobile-tab-btn ${mobileTab === 'chat' ? 'active' : ''}`}
+          onClick={() => setMobileTab('chat')}
+        >
+          {generationMode === 'plan' ? 'Plan' : 'Chat'}
+        </button>
+        <button 
+          className={`mobile-tab-btn ${mobileTab === 'preview' ? 'active' : ''}`}
+          onClick={() => setMobileTab('preview')}
+        >
+          Preview
+        </button>
+      </div>
+
+      <div className={`build-body mobile-show-${mobileTab}`}>
         {/* ─── Chat Panel ─── */}
         <aside className="chat-panel">
           <div className="chat-messages">
@@ -617,7 +638,7 @@ function BuildPage() {
                     <button className="plan-approve-btn" onClick={() => {
                       setPlanApproved(true);
                       setGenerationMode('build');
-                      setMessages(prev => [...prev, { role: 'assistant', content: '✅ Plan approved! Switched to Build mode. Send a message to start building.', at: new Date().toISOString() }]);
+                      generate("The plan is excellent. Please start the build now.", 'build');
                     }}>✓ Approve &amp; Build</button>
                     <button className="plan-edit-btn" onClick={() => {
                       setPlanApproved(false);

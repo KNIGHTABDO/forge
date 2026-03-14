@@ -115,3 +115,59 @@ export async function uploadAsset(sessionId: string, filename: string, base64Dat
   await writeFile(path, base64Data, `Upload asset ${filename} to session ${sessionId}`, true);
   return `https://raw.githubusercontent.com/${OWNER}/${REPO}/refs/heads/${BRANCH}/${path}`;
 }
+
+export async function deleteFile(path: string, message: string): Promise<void> {
+  try {
+    const existing = await octokit.repos.getContent({ owner: OWNER, repo: REPO, path, ref: BRANCH });
+    const data = existing.data as { sha?: string };
+    if (data.sha) {
+      await octokit.repos.deleteFile({
+        owner: OWNER, repo: REPO, path, message, sha: data.sha, branch: BRANCH
+      });
+    }
+  } catch (err) {
+    console.error(`Failed to delete ${path}:`, err);
+  }
+}
+
+export async function deleteDirectory(path: string, message: string): Promise<void> {
+  try {
+    const existing = await octokit.repos.getContent({ owner: OWNER, repo: REPO, path, ref: BRANCH });
+    if (Array.isArray(existing.data)) {
+      for (const item of existing.data) {
+        if (item.type === 'file') {
+          await deleteFile(item.path, message);
+        } else if (item.type === 'dir') {
+          await deleteDirectory(item.path, message);
+        }
+      }
+    } else {
+      await deleteFile(path, message);
+    }
+  } catch (err) {
+    console.error(`Failed to delete directory ${path}:`, err);
+  }
+}
+
+export async function listDirectory(path: string): Promise<any[]> {
+  try {
+    const res = await octokit.repos.getContent({ owner: OWNER, repo: REPO, path, ref: BRANCH });
+    if (Array.isArray(res.data)) {
+      return res.data;
+    }
+    return [];
+  } catch {
+    return [];
+  }
+}
+
+export async function deleteToolFromGallery(slug: string): Promise<void> {
+  const index = await getGalleryIndex();
+  const newIndex = index.filter(e => e.slug !== slug);
+  await writeFile('index.json', JSON.stringify(newIndex, null, 2), `index: remove ${slug}`);
+  await deleteDirectory(`tools/${slug}`, `Delete tool ${slug}`);
+}
+
+export async function deleteSession(sessionId: string): Promise<void> {
+  await deleteDirectory(`sessions/${sessionId}`, `Delete session ${sessionId}`);
+}
