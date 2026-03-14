@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import type { GalleryEntry } from '@/lib/github';
 
@@ -50,10 +50,11 @@ function LazyIframe({ src, title }: { src: string; title: string }) {
   );
 }
 
-function ToolCard({ tool }: { tool: GalleryEntry }) {
+function ToolCard({ tool, index }: { tool: GalleryEntry; index: number }) {
   const toolUrl = `${process.env.NEXT_PUBLIC_BASE_URL ?? ''}/t/${tool.slug}`;
+  const delay = String(Math.min((index % 4) + 1, 4));
   return (
-    <div className="tool-card">
+    <div className="tool-card" data-animate data-delay={delay}>
       <LazyIframe src={toolUrl} title={tool.title || tool.slug} />
       <div className="tool-card-body">
         <div className="tool-card-meta">
@@ -75,12 +76,40 @@ export default function Home() {
   const [tools, setTools] = useState<GalleryEntry[]>([]);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const homeRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     fetch('/api/gallery')
       .then(r => r.json())
       .then(data => { setTools(data); setLoading(false); })
       .catch(() => setLoading(false));
+  }, []);
+
+  // Cursor glow effect
+  useEffect(() => {
+    const glow = document.createElement('div');
+    glow.id = 'cursor-glow';
+    document.body.appendChild(glow);
+    const handleMove = (e: MouseEvent) => {
+      glow.style.left = e.clientX - 200 + 'px';
+      glow.style.top  = e.clientY - 200 + 'px';
+    };
+    window.addEventListener('mousemove', handleMove, { passive: true });
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      glow.parentNode?.removeChild(glow);
+    };
+  }, []);
+
+  // Navbar scroll-shadow behavior
+  useEffect(() => {
+    const home = homeRef.current;
+    if (!home) return;
+    const nav = home.querySelector('.home-nav') as HTMLElement | null;
+    if (!nav) return;
+    const handleScroll = () => nav.classList.toggle('scrolled', home.scrollTop > 20);
+    home.addEventListener('scroll', handleScroll, { passive: true });
+    return () => home.removeEventListener('scroll', handleScroll);
   }, []);
 
   const filtered = useMemo(() => {
@@ -94,21 +123,51 @@ export default function Home() {
     );
   }, [tools, query]);
 
+  // Scroll-triggered reveal for cards and sections
+  useEffect(() => {
+    const home = homeRef.current;
+    if (!home) return;
+    const observer = new IntersectionObserver(
+      entries => entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('animate-in');
+          observer.unobserve(entry.target);
+        }
+      }),
+      { threshold: 0.1, rootMargin: '0px 0px -40px 0px', root: home }
+    );
+    home.querySelectorAll('[data-animate]').forEach(el => observer.observe(el));
+    return () => observer.disconnect();
+  }, [filtered]);
+
   return (
-    <main className="home">
+    <main className="home" ref={homeRef}>
       <nav className="home-nav">
         <span className="home-nav-logo">⚒ FORGE</span>
         <Link href="/build" className="home-nav-cta">Build a tool →</Link>
       </nav>
 
       <section className="home-hero">
-        <h1 className="home-hero-title">Describe a tool.<br/>Get a working app.</h1>
-        <p className="home-hero-sub">Type one sentence. FORGE generates a fully interactive web app, instantly.</p>
-        <Link href="/build" className="home-hero-btn">Start Building →</Link>
+        {/* Ambient orbs */}
+        <div className="orb-container" aria-hidden="true">
+          <div className="orb orb-1" />
+          <div className="orb orb-2" />
+          <div className="orb orb-3" />
+        </div>
+
+        <h1 className="home-hero-title" data-animate>
+          Describe a tool.<br />Get a <span className="gradient-word">working app.</span>
+        </h1>
+        <p className="home-hero-sub" data-animate data-delay="1">
+          Type one sentence. FORGE generates a fully interactive web app, instantly.
+        </p>
+        <Link href="/build" className="home-hero-btn" data-animate data-delay="2">
+          Start Building →
+        </Link>
       </section>
 
       <section className="home-gallery">
-        <div className="gallery-header">
+        <div className="gallery-header" data-animate>
           <div className="gallery-heading-group">
             <h2 className="gallery-heading">Previously built</h2>
             {!loading && tools.length > 0 && (
@@ -141,7 +200,7 @@ export default function Home() {
           </div>
         ) : (
           <div className="gallery-grid">
-            {filtered.map(t => <ToolCard key={t.slug} tool={t} />)}
+            {filtered.map((t, i) => <ToolCard key={t.slug} tool={t} index={i} />)}
           </div>
         )}
       </section>
