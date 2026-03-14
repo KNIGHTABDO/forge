@@ -16,8 +16,33 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
+    if (action === 'checkpoint') {
+      if (!state) return NextResponse.json({ error: 'Missing state' }, { status: 400 });
+      console.log(`[API] Checkpoint save: ${sessionId} | Messages: ${state.messages?.length} | HTML: ${state.currentHTML?.length}`);
+      const { saveCheckpoint } = await import('@/lib/github');
+      const cpId = await saveCheckpoint(sessionId, state as SessionState);
+      return NextResponse.json({ success: true, checkpointId: cpId });
+    }
+
+    if (action === 'listCheckpoints') {
+      const { listCheckpoints } = await import('@/lib/github');
+      const list = await listCheckpoints(sessionId);
+      return NextResponse.json({ checkpoints: list });
+    }
+
     if (action === 'load') {
-      const loadedState = await loadSession(sessionId);
+      const { checkpointId } = body;
+      console.log(`[API] Load state: ${sessionId} | Checkpoint: ${checkpointId || 'latest'}`);
+      const { loadCheckpoint } = await import('@/lib/github');
+      const loadedState = checkpointId 
+        ? await loadCheckpoint(sessionId, checkpointId)
+        : await loadSession(sessionId);
+      
+      if (loadedState) {
+        console.log(`[API] Load success: ${loadedState.messages?.length} messages | HTML length: ${loadedState.currentHTML?.length}`);
+      } else {
+        console.warn(`[API] Load failed: No state found for ${sessionId}/${checkpointId}`);
+      }
       return NextResponse.json({ state: loadedState });
     }
 

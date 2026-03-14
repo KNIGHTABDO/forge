@@ -1322,6 +1322,55 @@ img, video { max-width: 100%; display: block; }
 }
 
 /* =====================================================================
+   CHAT MESSAGE ACTIONS & CHECKPOINTS
+   ===================================================================== */
+.chat-msg-actions {
+  position: absolute;
+  top: -14px;
+  right: 0;
+  z-index: 50;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(4px);
+}
+
+.chat-msg.group:hover .chat-msg-actions {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.restore-btn {
+  background: #1e293b;
+  border: 1px solid #334155;
+  padding: 4px 10px;
+  border-radius: var(--r-sm);
+  font-size: 11px;
+  color: #94a3b8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  backdrop-filter: blur(8px);
+  transition: all 0.15s ease;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.restore-btn:hover {
+  background: #334155;
+  border-color: #475569;
+  color: #f1f5f9;
+  transform: scale(1.05);
+}
+
+.restore-btn:active {
+  transform: scale(0.95);
+}
+
+/* =====================================================================
    RESPONSIVE
    ===================================================================== */
 .mobile-tab-toggle { display: none; }

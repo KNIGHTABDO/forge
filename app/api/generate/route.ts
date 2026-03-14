@@ -12,48 +12,51 @@ export async function POST(req: NextRequest) {
   if (!prompt) return new Response(JSON.stringify({ error: 'prompt required' }), { status: 400 });
 
   // Select system prompt based on generationMode
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+  const logoUrl = `${baseUrl}/logo.png`;
+
   let systemInstruction: string;
   if (generationMode === 'plan') {
     systemInstruction = PLANNER_SYSTEM_PROMPT;
   } else if (generationMode === 'build') {
-    systemInstruction = BUILD_SYSTEM_PROMPT;
+    systemInstruction = BUILD_SYSTEM_PROMPT.replace(/{{LOGO_URL}}/g, logoUrl).replace(/{{BASE_URL}}/g, baseUrl);
   } else if (generationMode === 'chat') {
     systemInstruction = CHAT_SYSTEM_PROMPT;
   } else {
-    systemInstruction = FORGE_SYSTEM_PROMPT;
+    systemInstruction = FORGE_SYSTEM_PROMPT.replace(/{{LOGO_URL}}/g, logoUrl).replace(/{{BASE_URL}}/g, baseUrl);
   }
 
   // Build user content
   let userContent: any;
 
-  if (generationMode === 'build' && planContext) {
-    // Build mode: inject the approved plan into the prompt
-    userContent = `APPROVED_PLAN:\n${planContext}\n\nUSER_REQUEST:\n${prompt}`;
-  } else if (generationMode === 'plan') {
-    // Plan mode: if there's an existing plan, include it for revision
-    if (planContext) {
-      userContent = `PREVIOUS_PLAN (revise based on user feedback below):\n${planContext}\n\nUSER_FEEDBACK:\n${prompt}\n\nGenerate a complete revised blueprint incorporating this feedback. Output the FULL updated plan, not just the changes.`;
-    } else {
-      userContent = prompt;
-    }
-  } else if (generationMode === 'chat') {
-    let chatContext = '';
-    if (planContext) chatContext += `\nCURRENT_PLAN:\n${planContext}\n`;
-    if (currentHTML) chatContext += `\nCURRENT_CODE:\n${currentHTML}\n`;
+  // Common chat context helper
+  const getContext = () => {
+    let context = '';
     if (chatHistory && chatHistory.length > 0) {
-      chatContext += `\nPREVIOUS_CHAT_MESSAGES:\n${chatHistory.map((m: any) => `${m.role.toUpperCase()}: ${m.content}`).join('\n')}\n`;
+      context += `\nCHAT_HISTORY:\n${chatHistory.map((m: any) => `${m.role.toUpperCase()}: ${m.content}`).join('\n')}\n`;
     }
-    
-    userContent = chatContext ? `CONTEXT:${chatContext}\n\nUSER_MESSAGE:\n${prompt}` : prompt;
+    if (planContext) context += `\nAPPROVED_PLAN:\n${planContext}\n`;
+    if (currentHTML) context += `\nCURRENT_CODE:\n${currentHTML}\n`;
+    return context;
+  };
+
+  if (generationMode === 'build' && planContext) {
+    // Build mode: inject history + approved plan
+    userContent = `${getContext()}\n\nUSER_REQUEST: ${prompt}`;
+  } else if (generationMode === 'plan') {
+    // Plan mode: inject history + previous plan for revision
+    userContent = `${getContext()}\n\nUSER_REQUEST: ${prompt}\n\nGenerate a complete blueprint incorporates our brainstorming and any feedback.`;
+  } else if (generationMode === 'chat') {
+    // Chat mode: already uses context
+    userContent = `CONTEXT:${getContext()}\n\nUSER_MESSAGE:\n${prompt}`;
   } else if (mode === 'edit' && currentHTML) {
-    // Fast mode edit
-    let textPrompt = `CURRENT_HTML:\n${currentHTML}\n\n`
+    // Fast mode edit: inject history
+    userContent = `${getContext()}\n\n`
       + (elementRef ? `ELEMENT_REF: ${elementRef}\n\n` : '')
       + `CHANGE_REQUEST: ${prompt}`;
-    userContent = textPrompt;
   } else {
-    // Fast mode create
-    userContent = prompt;
+    // Fast mode create: inject history
+    userContent = `${getContext()}\n\nUSER_REQUEST: ${prompt}`;
   }
 
   // If there are images, format as multipart array

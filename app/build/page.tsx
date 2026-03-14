@@ -28,6 +28,7 @@ interface Message {
   isGenerating?: boolean;
   charCount?: number;
   error?: boolean;
+  checkpointId?: string;
 }
 
 // Generation steps shown in the thinking card
@@ -291,24 +292,35 @@ function BuildPage() {
     if (typeof window !== 'undefined' && window.innerWidth <= 1024 && activeMode !== 'chat' && activeMode !== 'plan') {
       setMobileTab('preview');
     }
-    // Create a visual indicator in the chat messages for attached images
     const attachLabel = snapshotImages.length > 0 ? ` [Attached ${snapshotImages.length} image(s)]` : '';
-    setMessages(prev => [...prev, { role: 'user', content: userMsg + attachLabel, at: now }]);
+    
+    // Use a local array to keep track of messages synchronously within this turn
+    // This avoids stale closure issues with the 'messages' state variable
+    let turnMessages = [...messages];
+    const userMsgObj: Message = { role: 'user', content: userMsg + attachLabel, at: now };
+    turnMessages.push(userMsgObj);
+    
+    setMessages(turnMessages);
     setInput('');
     setPendingImages([]);
     setElementRef(null);
     setIsGenerating(true);
     if (!toolName && !isEdit) setToolName(userMsg.charAt(0).toUpperCase() + userMsg.slice(1, 40));
 
-    setMessages(prev => [...prev, {
+    const assistantTimestamp = new Date().toISOString();
+    const assistantPlaceholder: Message = {
       role: 'assistant',
       content: '',
-      at: new Date().toISOString(),
+      at: assistantTimestamp,
       isGenerating: true,
       charCount: 0,
-    }]);
+    };
+    turnMessages = [...turnMessages, assistantPlaceholder];
+    setMessages(turnMessages);
 
     streamBufferRef.current = '';
+    let streamError = false;
+    let lastUpdate = 0;
 
     try {
       const res = await fetch('/api/generate', {
@@ -322,7 +334,7 @@ function BuildPage() {
           images: snapshotImages.map(img => ({ data: img.data, mimeType: img.mimeType })),
           generationMode: shouldSendPlan ? 'build' : (isEdit ? 'fast' : activeMode),
           planContext: (shouldSendPlan || activeMode === 'plan' || activeMode === 'chat') ? planContent : undefined,
-          chatHistory: activeMode === 'chat' ? messages.map(m => ({ role: m.role, content: m.content })) : undefined,
+          chatHistory: messages.map(m => ({ role: m.role, content: m.content })),
         }),
       });
 
@@ -335,9 +347,6 @@ function BuildPage() {
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let charCount = 0;
-      let lastUpdate = 0;
-      let streamError = false;
-
       try {
         while (true) {
           const { done, value } = await reader.read();
@@ -362,19 +371,28 @@ function BuildPage() {
       const finalContent = streamBufferRef.current.trim();
       if (!finalContent) throw new Error('Empty response from AI — check GEMINI_API_KEY.');
 
-      if (activeMode === 'plan') {
-        setPlanContent(finalContent);
-        setPlanApproved(false);
-      } else if (activeMode !== 'chat') {
-        setCurrentHTML(finalContent);
+      const isRefusal = finalContent.includes('[STRICT_REFUSAL]');
+
+      if (!isRefusal) {
+        if (activeMode === 'plan') {
+          setPlanContent(finalContent);
+          setPlanApproved(false);
+        } else if (activeMode !== 'chat') {
+          setCurrentHTML(finalContent);
+        }
       }
+
       const suffix = streamError ? ' (partial — network interrupted)' : '';
       setMessages(prev => prev.map((m, i) => {
         if (i !== prev.length - 1 || !m.isGenerating) return m;
         let finalMessage = '';
-        if (activeMode === 'chat') finalMessage = finalContent + suffix;
-        else if (activeMode === 'plan') finalMessage = `✓ Plan created! Review it on the right and approve to continue.${suffix}`;
-        else finalMessage = isEdit ? `✓ Updated${suffix}` : `✓ Tool built${suffix}`;
+        if (activeMode === 'chat' || isRefusal) {
+          finalMessage = (finalContent.replace('[STRICT_REFUSAL]', '').trim()) + suffix;
+        } else if (activeMode === 'plan') {
+          finalMessage = `✓ Plan created! Review it on the right and approve to continue.${suffix}`;
+        } else {
+          finalMessage = isEdit ? `✓ Updated${suffix}` : `✓ Tool built${suffix}`;
+        }
         return { ...m, isGenerating: false, content: finalMessage, charCount: undefined };
       }));
     } catch (err) {
@@ -386,8 +404,80 @@ function BuildPage() {
       ));
     } finally {
       setIsGenerating(false);
+      // Create a checkpoint after generation using the synchronously reconstructed state
+      if (sessionId && !streamError) {
+        const finalContent = streamBufferRef.current.trim();
+        const isRefusal = finalContent.includes('[STRICT_REFUSAL]');
+        const suffix = streamError ? ' (partial — network interrupted)' : '';
+        let finalAssistantContent = '';
+        
+        if (activeMode === 'chat' || isRefusal) {
+          finalAssistantContent = (finalContent.replace('[STRICT_REFUSAL]', '').trim()) + suffix;
+        } else if (activeMode === 'plan') {
+          finalAssistantContent = `✓ Plan created! Review it on the right and approve to continue.${suffix}`;
+        } else {
+          finalAssistantContent = isEdit ? `✓ Updated${suffix}` : `✓ Tool built${suffix}`;
+        }
+
+        // Construct the definite final messages list for the checkpoint
+        const finalTurnMessages = turnMessages.map(m => 
+          m.at === assistantTimestamp ? { ...m, isGenerating: false, content: finalAssistantContent, charCount: undefined } : m
+        );
+
+        const finalState = {
+          messages: finalTurnMessages,
+          planContent: (activeMode === 'plan' && !isRefusal) ? finalContent : planContent,
+          currentHTML: (activeMode !== 'chat' && activeMode !== 'plan' && !isRefusal) ? finalContent : currentHTML,
+          mode: generationMode,
+          toolName: toolName || (userMsg.charAt(0).toUpperCase() + userMsg.slice(1, 40)),
+          planApproved,
+          sessionId
+        };
+
+        console.log(`[checkpoint] Saving state with ${finalTurnMessages.length} messages`);
+        fetch('/api/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'checkpoint', sessionId, state: finalState })
+        }).then(r => r.json()).then(data => {
+          if (data.checkpointId) {
+            setMessages(prev => prev.map(m => m.at === assistantTimestamp ? { ...m, checkpointId: data.checkpointId } : m));
+          }
+        }).catch(e => console.error('Failed to save checkpoint', e));
+      }
     }
-  }, [isGenerating, elementRef, currentHTML, toolName, pendingImages, generationMode, planContent, planApproved]);
+  }, [isGenerating, elementRef, currentHTML, toolName, pendingImages, generationMode, planContent, planApproved, sessionId, messages]);
+
+  const restoreToCheckpoint = useCallback(async (cpId: string) => {
+    if (!sessionId) return;
+    try {
+      const res = await fetch('/api/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'load', sessionId, checkpointId: cpId })
+      });
+      const data = await res.json();
+      if (data.state) {
+        setMessages(data.state.messages);
+        setPlanContent(data.state.planContent);
+        setCurrentHTML(data.state.currentHTML);
+        setGenerationMode(data.state.mode);
+        setToolName(data.state.toolName);
+        setPlanApproved(data.state.planApproved);
+        setInput('');
+        
+        // Explicitly save the session after restoration to ensure persistence on refresh
+        fetch('/api/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'save', sessionId, state: data.state })
+        }).catch(e => console.error('Immediate save after restore failed', e));
+      }
+    } catch (e) {
+      console.error('Failed to restore checkpoint', e);
+      alert('Failed to restore checkpoint');
+    }
+  }, [sessionId]);
 
   const deploy = useCallback(async () => {
     if (!currentHTML || isDeploying) return;
@@ -462,8 +552,7 @@ function BuildPage() {
       </div>
 
       <div className={`build-body mobile-show-${mobileTab}`}>
-        {/* ─── Chat Panel ─── */}
-        <aside className="chat-panel">
+         <aside className="chat-panel">
           <div className="chat-messages">
             {messages.length === 0 && (
               <div className="chat-welcome">
@@ -478,8 +567,9 @@ function BuildPage() {
                 </ul>
               </div>
             )}
+            
             {messages.map((m, i) => (
-              <div key={i} className={`chat-msg chat-msg-${m.role}`}>
+              <div key={i} className={`chat-msg chat-msg-${m.role} group`} style={{ position: 'relative' }}>
                 {m.role === 'user' ? (
                   <div className="chat-bubble user">{m.content}</div>
                 ) : (
@@ -489,31 +579,43 @@ function BuildPage() {
                     ) : (
                       <div className="chat-bubble-content-wrap">
                         <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{m.content}</div>
+                        
                         {!m.isGenerating && !m.error && generationMode === 'chat' && i === messages.length - 1 && (
                           <div className="chat-quick-actions" style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                             <button 
                               onClick={() => {
                                 setGenerationMode('plan');
                                 setPlanApproved(false);
-                                generate("Update the plan based on your last suggestion.", 'plan');
+                                generate("Let's create a detailed plan based on our discussion.", 'plan');
                               }}
                               style={{ padding: '6px 12px', fontSize: 12, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: 'var(--text)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.2s' }}
                               onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
                               onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
                             >
-                              <span>📝</span> Update Plan
+                              <span>📝</span> Start Planning
                             </button>
                             <button 
                               onClick={() => {
-                                const mode = currentHTML ? 'fast' : 'build';
-                                setGenerationMode(mode);
-                                generate("Build and implement your last suggestion.", mode);
+                                setGenerationMode('fast');
+                                generate("Build a tool based on our brainstorming.", 'fast');
                               }}
                               style={{ padding: '6px 12px', fontSize: 12, background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.2)', borderRadius: 6, color: '#38bdf8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.2s' }}
                               onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(56, 189, 248, 0.2)'}
                               onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(56, 189, 248, 0.1)'}
                             >
-                              <span>⚡</span> Build It
+                              <span>⚡</span> Build Instantly
+                            </button>
+                          </div>
+                        )}
+
+                        {m.checkpointId && !m.isGenerating && (
+                          <div className="chat-msg-actions">
+                            <button 
+                              onClick={() => restoreToCheckpoint(m.checkpointId!)}
+                              className="restore-btn"
+                              title="Restore state to this point"
+                            >
+                              ↺ Restore
                             </button>
                           </div>
                         )}
@@ -533,7 +635,6 @@ function BuildPage() {
             </div>
           )}
 
-          {/* Frosted glass input */}
           <div className="chat-input-area">
             <div className="chat-input-box-wrap">
               <div className="chat-input-box">
@@ -591,22 +692,27 @@ function BuildPage() {
                       
                       {isModeMenuOpen && (
                         <div className="mode-dropdown-menu">
-                          <button type="button" className={`mode-dropdown-item ${generationMode === 'plan' ? 'active' : ''}`} onClick={() => { setGenerationMode('plan'); setIsModeMenuOpen(false); }}>
-                            <div className="mode-dropdown-item-title">📋 Planning</div>
-                            <div className="mode-dropdown-item-desc">Agent can plan before executing tasks. Use for deep research, complex tasks, or collaborative work.</div>
-                          </button>
-                          <button type="button" className={`mode-dropdown-item ${generationMode === 'fast' ? 'active' : ''}`} onClick={() => { setGenerationMode('fast'); setIsModeMenuOpen(false); }}>
-                            <div className="mode-dropdown-item-title">⚡ Fast</div>
-                            <div className="mode-dropdown-item-desc">Agent will execute tasks directly. Use for simple tasks that can be completed faster.</div>
-                          </button>
-                          <button type="button" className={`mode-dropdown-item ${generationMode === 'build' ? 'active' : ''}`} onClick={() => { setGenerationMode('build'); setIsModeMenuOpen(false); }}>
-                            <div className="mode-dropdown-item-title">🏗️ Build</div>
-                            <div className="mode-dropdown-item-desc">Agent will build from the approved plan. Ensures strict adherence to the architecture.</div>
-                          </button>
                           <button type="button" className={`mode-dropdown-item ${generationMode === 'chat' ? 'active' : ''}`} onClick={() => { setGenerationMode('chat'); setIsModeMenuOpen(false); }}>
                             <div className="mode-dropdown-item-title">💬 Chat</div>
-                            <div className="mode-dropdown-item-desc">A conversational mode to brainstorm, review ideas, and ask technical questions.</div>
+                            <div className="mode-dropdown-item-desc">Brainstorm and ask questions without building.</div>
                           </button>
+                          
+                          <button type="button" className={`mode-dropdown-item ${generationMode === 'fast' ? 'active' : ''}`} onClick={() => { setGenerationMode('fast'); setIsModeMenuOpen(false); }}>
+                            <div className="mode-dropdown-item-title">⚡ Fast</div>
+                            <div className="mode-dropdown-item-desc">{currentHTML ? 'Update the tool directly.' : 'Generate a tool instantly from your prompt.'}</div>
+                          </button>
+                          {!currentHTML && (
+                            <button type="button" className={`mode-dropdown-item ${generationMode === 'plan' ? 'active' : ''}`} onClick={() => { setGenerationMode('plan'); setIsModeMenuOpen(false); }}>
+                              <div className="mode-dropdown-item-title">📋 Planning</div>
+                              <div className="mode-dropdown-item-desc">Create a detailed blueprint before building complex tools.</div>
+                            </button>
+                          )}
+                          {planContent && !currentHTML && (
+                            <button type="button" className={`mode-dropdown-item ${generationMode === 'build' ? 'active' : ''}`} onClick={() => { setGenerationMode('build'); setIsModeMenuOpen(false); }}>
+                              <div className="mode-dropdown-item-title">🏗️ Build</div>
+                              <div className="mode-dropdown-item-desc">Execute the approved plan.</div>
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>

@@ -168,6 +168,23 @@ export async function deleteToolFromGallery(slug: string): Promise<void> {
   await deleteDirectory(`tools/${slug}`, `Delete tool ${slug}`);
 }
 
+export async function saveCheckpoint(sessionId: string, state: SessionState): Promise<string> {
+  const checkpointId = `cp_${Date.now()}`;
+  await writeFile(`sessions/${sessionId}/checkpoints/${checkpointId}.json`, JSON.stringify(state, null, 2), `Checkpoint ${checkpointId}`);
+  return checkpointId;
+}
+
+export async function listCheckpoints(sessionId: string): Promise<string[]> {
+  const items = await listDirectory(`sessions/${sessionId}/checkpoints`);
+  return items.filter(i => i.name.endsWith('.json')).map(i => i.name.replace('.json', '')).sort().reverse();
+}
+
+export async function loadCheckpoint(sessionId: string, checkpointId: string): Promise<SessionState | null> {
+  const raw = await readFile(`sessions/${sessionId}/checkpoints/${checkpointId}.json`);
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch { return null; }
+}
+
 export async function deleteSession(sessionId: string): Promise<void> {
   await deleteDirectory(`sessions/${sessionId}`, `Delete session ${sessionId}`);
 }

@@ -28,7 +28,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
   <title>${title} \u2014 FORGE</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; background: #0D0D10; font-family: 'Inter', system-ui, sans-serif; }
+    html, body { height: 100%; background: #010101; font-family: 'Inter', system-ui, sans-serif; overflow: hidden; }
 
     #forge-banner {
       position: fixed;
@@ -80,6 +80,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
       width: 100%;
       height: calc(100% - 48px);
       border: none;
+      background: #000;
     }
   </style>
 </head>
@@ -104,13 +105,18 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
       </a>
     </div>
   </div>
+
   <iframe
     id="tool-frame"
-    src="data:text/html;base64,${encoded}"
-    sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups"
+    sandbox="allow-scripts allow-forms allow-modals allow-downloads allow-pointer-lock allow-same-origin"
     allow="clipboard-write"
+    src="about:blank"
   ></iframe>
-      <script>
+
+  <script id="tool-source" type="application/base64">${encoded}</script>
+
+  <script>
+    // 1. Copy URL functionality
     function copyUrl() {
       const btn = document.getElementById('copy-btn');
       navigator.clipboard.writeText(window.location.href).then(() => {
@@ -120,15 +126,21 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
           btn.classList.remove('copied');
           btn.innerHTML = '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg><span class="forge-btn-label">Copy link</span>';
         }, 2000);
-      }).catch(() => {
-        const el = document.createElement('textarea');
-        el.value = window.location.href;
-        document.body.appendChild(el);
-        el.select();
-        document.execCommand('copy');
-        document.body.removeChild(el);
-      });
+      }).catch(console.error);
     }
+
+    // 2. Decode and Mount Tool
+    (function() {
+      const b64 = document.getElementById('tool-source').textContent;
+      const binary = atob(b64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      const html = new TextDecoder().decode(bytes);
+      
+      const frame = document.getElementById('tool-frame');
+      // Using srcdoc fixes origin issues and enables localStorage
+      frame.srcdoc = html;
+    })();
   </script>
 </body>
 </html>`;
