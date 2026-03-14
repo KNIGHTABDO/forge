@@ -9,7 +9,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? '';
 
   if (!html) {
-    const notFound = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Tool not found \u2014 FORGE</title><style>*{margin:0;padding:0;box-sizing:border-box}body{background:#0D0D10;color:#F0EFFF;font-family:'Inter',system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:20px;text-align:center;padding:24px}h1{font-size:2rem;font-weight:700;letter-spacing:-0.03em}p{color:#9896B8;font-size:1rem;max-width:360px;line-height:1.6}.btn{display:inline-block;margin-top:8px;background:#6C5CE7;color:#fff;text-decoration:none;padding:10px 24px;border-radius:10px;font-weight:600;font-size:0.9rem;box-shadow:0 0 20px rgba(108,92,231,0.2)}.btn:hover{background:#7D6FF0}.hint{font-size:0.78rem;color:#5C5A7A;margin-top:4px}</style></head><body><div style="font-size:2.5rem;opacity:0.15">\u2692</div><h1>Tool not found</h1><p>No tool exists at <code style="color:#A89FF5;font-size:0.85rem;background:rgba(108,92,231,0.1);padding:2px 6px;border-radius:4px">/t/${slug}</code>. It may have been deleted or never built.</p><a href="${baseUrl}/build" class="btn">\u2192 Build your own</a><p class="hint">or <a href="${baseUrl}" style="color:#A89FF5;text-decoration:none">browse existing tools</a></p></body></html>`;
+    const notFound = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Tool not found \u2014 FORGE</title><style>*{margin:0;padding:0;box-sizing:border-box}body{background:#000;color:#EDEDED;font-family:'Inter',system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:20px;text-align:center;padding:24px}h1{font-size:2rem;font-weight:700;letter-spacing:-0.03em}p{color:#A1A1AA;font-size:1rem;max-width:360px;line-height:1.6}.btn{display:inline-block;margin-top:8px;background:#fff;color:#000;text-decoration:none;padding:10px 24px;border-radius:10px;font-weight:600;font-size:0.9rem;box-shadow:0 0 20px rgba(255,255,255,0.1)}.btn:hover{background:#EAEAEA;transform:translateY(-1px)}.hint{font-size:0.78rem;color:#71717A;margin-top:4px}</style></head><body><img src="${baseUrl}/logo.png" style="width:48px;height:48px;opacity:0.25;border-radius:10px;object-fit:cover;" alt="Forge Logo"><h1>Tool not found</h1><p>No tool exists at <code style="color:#FFF;font-size:0.85rem;background:#1A1A1A;padding:2px 6px;border-radius:4px">/t/${slug}</code>. It may have been deleted or never built.</p><a href="${baseUrl}/build" class="btn">\u2192 Build your own</a><p class="hint">or <a href="${baseUrl}" style="color:#FFF;text-decoration:none">browse existing tools</a></p></body></html>`;
     return new Response(notFound, { status: 404, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
   }
 
@@ -69,9 +69,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
       gap: 5px;
     }
     .forge-btn:hover { background: rgba(33,33,45,0.9); color: #F0EFFF; border-color: rgba(255,255,255,0.15); transform: translateY(-1px); }
-    .forge-btn.remix { color: #A89FF5; border-color: rgba(108,92,231,0.3); background: rgba(108,92,231,0.1); }
-    .forge-btn.remix:hover { background: rgba(108,92,231,0.2); color: #C4BDFF; border-color: rgba(108,92,231,0.5); }
-    .forge-btn.copied { color: #00CDA8; border-color: rgba(0,205,168,0.3); background: rgba(0,205,168,0.08); }
+    .forge-btn.remix { color: #EDEDED; border-color: #333; background: #1A1A1A; }
+    .forge-btn.remix:hover { background: #EAEAEA; color: #000; border-color: #EAEAEA; }
+    .forge-btn.copied { color: #10B981; border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.08); }
     @media (max-width: 400px) { .forge-btn-label { display: none; } }
 
     #tool-frame {
@@ -86,16 +86,21 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
 <body>
   <div id="forge-banner">
     <div class="forge-brand">
-      <span class="forge-brand-logo">&#9874; FORGE</span>
+      <a href="${baseUrl}/" style="display:flex;align-items:center;text-decoration:none;color:inherit;gap:8px;">
+        <img src="${baseUrl}/logo.png" style="width:18px;height:18px;border-radius:4px;object-fit:cover;" alt="Forge">
+        <span class="forge-brand-logo">FORGE</span>
+      </a>
       <span class="forge-brand-sep">/</span>
       <span class="forge-title">${title}</span>
     </div>
     <div class="forge-actions">
       <button class="forge-btn" id="copy-btn" onclick="copyUrl()" title="Copy link">
-        &#128279;<span class="forge-btn-label">Copy link</span>
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+        <span class="forge-btn-label">Copy link</span>
       </button>
       <a href="${editUrl}" class="forge-btn remix" title="Remix in FORGE">
-        &#9874;<span class="forge-btn-label">Remix</span>
+        <img src="${baseUrl}/logo.png" style="width:14px;height:14px;border-radius:3px;object-fit:cover;" alt="Remix">
+        <span class="forge-btn-label">Remix</span>
       </a>
     </div>
   </div>
@@ -105,15 +110,15 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
     sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups"
     allow="clipboard-write"
   ></iframe>
-  <script>
+      <script>
     function copyUrl() {
       const btn = document.getElementById('copy-btn');
       navigator.clipboard.writeText(window.location.href).then(() => {
         btn.classList.add('copied');
-        btn.innerHTML = '\u2713<span class="forge-btn-label">Copied!</span>';
+        btn.innerHTML = '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span class="forge-btn-label">Copied!</span>';
         setTimeout(() => {
           btn.classList.remove('copied');
-          btn.innerHTML = '&#128279;<span class="forge-btn-label">Copy link</span>';
+          btn.innerHTML = '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg><span class="forge-btn-label">Copy link</span>';
         }, 2000);
       }).catch(() => {
         const el = document.createElement('textarea');

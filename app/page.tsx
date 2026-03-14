@@ -2,7 +2,9 @@
 
 import { useEffect, useState, useMemo, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import type { GalleryEntry } from '@/lib/github';
+import './home.css';
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -15,7 +17,6 @@ function timeAgo(iso: string): string {
   return `${d}d ago`;
 }
 
-// Lazy iframe — only loads when the card scrolls into viewport
 function LazyIframe({ src, title }: { src: string; title: string }) {
   const [loaded, setLoaded] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -77,6 +78,12 @@ export default function Home() {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const homeRef = useRef<HTMLElement>(null);
+  const router = useRouter();
+
+  const startNewSession = () => {
+    localStorage.removeItem('forge-session-id');
+    router.push('/build');
+  };
 
   useEffect(() => {
     fetch('/api/gallery')
@@ -85,23 +92,20 @@ export default function Home() {
       .catch(() => setLoading(false));
   }, []);
 
-  // Cursor glow effect
+  // Cursor glow
   useEffect(() => {
     const glow = document.createElement('div');
     glow.id = 'cursor-glow';
     document.body.appendChild(glow);
     const handleMove = (e: MouseEvent) => {
-      glow.style.left = e.clientX - 200 + 'px';
-      glow.style.top  = e.clientY - 200 + 'px';
+      glow.style.left = e.clientX - 250 + 'px';
+      glow.style.top  = e.clientY - 250 + 'px';
     };
     window.addEventListener('mousemove', handleMove, { passive: true });
-    return () => {
-      window.removeEventListener('mousemove', handleMove);
-      glow.parentNode?.removeChild(glow);
-    };
+    return () => { window.removeEventListener('mousemove', handleMove); glow.parentNode?.removeChild(glow); };
   }, []);
 
-  // Navbar scroll-shadow behavior
+  // Navbar scroll shadow
   useEffect(() => {
     const home = homeRef.current;
     if (!home) return;
@@ -123,16 +127,13 @@ export default function Home() {
     );
   }, [tools, query]);
 
-  // Scroll-triggered reveal for cards and sections
+  // Scroll-reveal
   useEffect(() => {
     const home = homeRef.current;
     if (!home) return;
     const observer = new IntersectionObserver(
       entries => entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('animate-in');
-          observer.unobserve(entry.target);
-        }
+        if (entry.isIntersecting) { entry.target.classList.add('animate-in'); observer.unobserve(entry.target); }
       }),
       { threshold: 0.1, rootMargin: '0px 0px -40px 0px', root: home }
     );
@@ -142,36 +143,76 @@ export default function Home() {
 
   return (
     <main className="home" ref={homeRef}>
+      {/* Animated mesh background */}
+      <div className="home-bg" aria-hidden="true">
+        <div className="home-bg-mesh" />
+        <div className="home-bg-grid" />
+      </div>
+
       <nav className="home-nav">
-        <span className="home-nav-logo">⚒ FORGE</span>
-        <Link href="/build" className="home-nav-cta">Build a tool →</Link>
+        <Link href="/" className="home-nav-logo">
+          <img src="/logo.png" alt="Forge Logo" className="home-nav-logo-img" style={{ width: 28, height: 28, borderRadius: 6, objectFit: 'cover' }} />
+          <span className="home-nav-logo-text">FORGE</span>
+        </Link>
+        <button onClick={startNewSession} className="home-nav-cta">Start Building →</button>
       </nav>
 
       <section className="home-hero">
-        {/* Ambient orbs */}
+        {/* Ambient orbs for hero */}
         <div className="orb-container" aria-hidden="true">
           <div className="orb orb-1" />
           <div className="orb orb-2" />
           <div className="orb orb-3" />
+          <div className="orb orb-4" />
         </div>
 
-        <h1 className="home-hero-title" data-animate>
+        <div className="home-hero-badge hero-anim hero-anim-1">
+          <span className="home-hero-badge-dot" />
+          AI-Powered Builder
+        </div>
+
+        <h1 className="home-hero-title hero-anim hero-anim-2">
           Describe a tool.<br />Get a <span className="gradient-word">working app.</span>
         </h1>
-        <p className="home-hero-sub" data-animate data-delay="1">
-          Type one sentence. FORGE generates a fully interactive web app, instantly.
+
+        <p className="home-hero-sub hero-anim hero-anim-3">
+          Type one sentence. FORGE generates a fully interactive web app — instantly.
+          No code, no config, no limits.
         </p>
-        <Link href="/build" className="home-hero-btn" data-animate data-delay="2">
-          Start Building →
-        </Link>
+
+        <div className="home-hero-actions hero-anim hero-anim-4">
+          <button onClick={startNewSession} className="home-hero-btn">
+            Start Building
+          </button>
+          <a href="#gallery" className="home-hero-btn-secondary">
+            View Gallery ↓
+          </a>
+        </div>
+
+        <div className="home-hero-stats hero-anim hero-anim-5">
+          <div className="home-hero-stat">
+            <span className="home-hero-stat-num">∞</span>
+            <span className="home-hero-stat-lbl">Apps Built</span>
+          </div>
+          <div className="home-hero-stat-sep" />
+          <div className="home-hero-stat">
+            <span className="home-hero-stat-num">&lt;10s</span>
+            <span className="home-hero-stat-lbl">To First App</span>
+          </div>
+          <div className="home-hero-stat-sep" />
+          <div className="home-hero-stat">
+            <span className="home-hero-stat-num">0</span>
+            <span className="home-hero-stat-lbl">Lines of Code</span>
+          </div>
+        </div>
       </section>
 
-      <section className="home-gallery">
+      <section className="home-gallery" id="gallery">
         <div className="gallery-header" data-animate>
           <div className="gallery-heading-group">
             <h2 className="gallery-heading">Previously built</h2>
             {!loading && tools.length > 0 && (
-              <span className="gallery-count">{tools.length} tool{tools.length !== 1 ? 's' : ''}</span>
+              <span className="gallery-count">{tools.length}</span>
             )}
           </div>
           <div className="gallery-search-wrap">
@@ -204,6 +245,12 @@ export default function Home() {
           </div>
         )}
       </section>
+
+      <footer className="home-footer" style={{ padding: '60px 20px 40px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', opacity: 0.5, fontSize: '0.85rem' }}>
+        <span>Powered by</span>
+        <img src="/logo.png" alt="Forge" style={{ width: 16, height: 16, borderRadius: 4 }} />
+        <span style={{ fontWeight: 600, letterSpacing: '0.05em' }}>FORGE</span>
+      </footer>
     </main>
   );
 }

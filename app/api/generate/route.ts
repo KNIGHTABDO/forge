@@ -1,32 +1,76 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { FORGE_SYSTEM_PROMPT } from '@/lib/system-prompt';
+import { FORGE_SYSTEM_PROMPT, PLANNER_SYSTEM_PROMPT, BUILD_SYSTEM_PROMPT, CHAT_SYSTEM_PROMPT } from '@/lib/system-prompt';
 import { NextRequest } from 'next/server';
 
 export const runtime = 'nodejs';
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export async function POST(req: NextRequest) {
-  const { mode, prompt, currentHTML, elementRef } = await req.json();
+  const { mode, prompt, currentHTML, elementRef, images, generationMode, planContext, chatHistory } = await req.json();
   if (!prompt) return new Response(JSON.stringify({ error: 'prompt required' }), { status: 400 });
 
-  let userContent: string;
+  // Select system prompt based on generationMode
+  let systemInstruction: string;
+  if (generationMode === 'plan') {
+    systemInstruction = PLANNER_SYSTEM_PROMPT;
+  } else if (generationMode === 'build') {
+    systemInstruction = BUILD_SYSTEM_PROMPT;
+  } else if (generationMode === 'chat') {
+    systemInstruction = CHAT_SYSTEM_PROMPT;
+  } else {
+    systemInstruction = FORGE_SYSTEM_PROMPT;
+  }
 
-  if (mode === 'edit' && currentHTML) {
-    // Always pass CURRENT_HTML when editing.
-    // ELEMENT_REF is optional — only included when user clicked a specific element.
-    userContent = `CURRENT_HTML:\n${currentHTML}\n\n`
+  // Build user content
+  let userContent: any;
+
+  if (generationMode === 'build' && planContext) {
+    // Build mode: inject the approved plan into the prompt
+    userContent = `APPROVED_PLAN:\n${planContext}\n\nUSER_REQUEST:\n${prompt}`;
+  } else if (generationMode === 'plan') {
+    // Plan mode: if there's an existing plan, include it for revision
+    if (planContext) {
+      userContent = `PREVIOUS_PLAN (revise based on user feedback below):\n${planContext}\n\nUSER_FEEDBACK:\n${prompt}\n\nGenerate a complete revised blueprint incorporating this feedback. Output the FULL updated plan, not just the changes.`;
+    } else {
+      userContent = prompt;
+    }
+  } else if (generationMode === 'chat') {
+    let chatContext = '';
+    if (planContext) chatContext += `\nCURRENT_PLAN:\n${planContext}\n`;
+    if (currentHTML) chatContext += `\nCURRENT_CODE:\n${currentHTML}\n`;
+    if (chatHistory && chatHistory.length > 0) {
+      chatContext += `\nPREVIOUS_CHAT_MESSAGES:\n${chatHistory.map((m: any) => `${m.role.toUpperCase()}: ${m.content}`).join('\n')}\n`;
+    }
+    
+    userContent = chatContext ? `CONTEXT:${chatContext}\n\nUSER_MESSAGE:\n${prompt}` : prompt;
+  } else if (mode === 'edit' && currentHTML) {
+    // Fast mode edit
+    let textPrompt = `CURRENT_HTML:\n${currentHTML}\n\n`
       + (elementRef ? `ELEMENT_REF: ${elementRef}\n\n` : '')
       + `CHANGE_REQUEST: ${prompt}`;
+    userContent = textPrompt;
   } else {
+    // Fast mode create
     userContent = prompt;
   }
 
+  // If there are images, format as multipart array
+  if (images && images.length > 0) {
+    const textPart = userContent;
+    userContent = images.map((img: { data: string, mimeType: string }) => ({
+      inlineData: { data: img.data, mimeType: img.mimeType }
+    }));
+    userContent.push(textPart);
+  }
+
+  const maxTokens = generationMode === 'build' ? 65536 : 32768;
+
   const model = genAI.getGenerativeModel({
     model: 'gemini-3.1-flash-lite-preview',
-    systemInstruction: FORGE_SYSTEM_PROMPT,
-    generationConfig: { temperature: 1.0, maxOutputTokens: 32768 },
+    systemInstruction,
+    generationConfig: { temperature: 1.0, maxOutputTokens: maxTokens },
   });
 
   let streamResult;
@@ -43,12 +87,23 @@ export async function POST(req: NextRequest) {
     async start(controller) {
       try {
         for await (const chunk of streamResult.stream) {
-          const text = chunk.text();
-          if (text) controller.enqueue(encoder.encode(text));
+          try {
+            const text = chunk.text();
+            if (text) controller.enqueue(encoder.encode(text));
+          } catch (chunkErr) {
+            // Skip malformed chunks but don't kill the stream
+            console.error('[stream chunk error]', chunkErr);
+          }
         }
         controller.close();
-      } catch (err) {
-        controller.error(err);
+      } catch (err: any) {
+        // If the stream errors, try to close gracefully
+        console.error('[stream error]', err?.message || err);
+        try {
+          controller.close();
+        } catch {
+          // Already closed or errored
+        }
       }
     },
   });

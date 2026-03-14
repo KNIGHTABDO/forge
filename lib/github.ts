@@ -28,8 +28,8 @@ export async function readFile(path: string): Promise<string | null> {
   }
 }
 
-export async function writeFile(path: string, content: string, message: string): Promise<void> {
-  const encoded = Buffer.from(content, 'utf-8').toString('base64');
+export async function writeFile(path: string, content: string, message: string, isBase64: boolean = false): Promise<void> {
+  const encoded = isBase64 ? content : Buffer.from(content, 'utf-8').toString('base64');
   let sha: string | undefined;
   try {
     const existing = await octokit.repos.getContent({ owner: OWNER, repo: REPO, path, ref: BRANCH });
@@ -90,4 +90,28 @@ export interface ForgeMeta {
 export interface GalleryEntry {
   slug: string; title: string; description: string;
   tags: string[]; created: string; updated: string;
+}
+
+export interface SessionState {
+  messages: any[];
+  planContent: string;
+  currentHTML: string;
+  mode: 'fast' | 'plan' | 'build';
+  toolName: string;
+}
+
+export async function saveSession(sessionId: string, state: SessionState): Promise<void> {
+  await writeFile(`sessions/${sessionId}/state.json`, JSON.stringify(state, null, 2), `Save session ${sessionId}`);
+}
+
+export async function loadSession(sessionId: string): Promise<SessionState | null> {
+  const raw = await readFile(`sessions/${sessionId}/state.json`);
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch { return null; }
+}
+
+export async function uploadAsset(sessionId: string, filename: string, base64Data: string): Promise<string> {
+  const path = `sessions/${sessionId}/assets/${filename}`;
+  await writeFile(path, base64Data, `Upload asset ${filename} to session ${sessionId}`, true);
+  return `https://raw.githubusercontent.com/${OWNER}/${REPO}/refs/heads/${BRANCH}/${path}`;
 }
