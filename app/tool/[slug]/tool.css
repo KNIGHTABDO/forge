@@ -85,13 +85,17 @@
 }
 
 .tool-frame-wrap {
-  flex: 1;
+  flex: 1 1 0;
   display: flex;
   position: relative;
   overflow: hidden;
+  min-height: 0;
 }
 
 .tool-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   border: none;
