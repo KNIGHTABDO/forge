@@ -550,7 +550,7 @@ html[data-theme="light"] .demo-browser {
   font-weight: 600;
   font-family: inherit;
   color: var(--text-muted);
-  background: #fff;
+  background: var(--bg);
   border: 1px solid var(--border);
   cursor: pointer;
   transition: all 0.2s;
@@ -568,6 +568,10 @@ html[data-theme="light"] .demo-browser {
 }
 
 .demo-btn-primary:hover {
+  background: var(--text-muted);
+}
+
+html[data-theme="light"] .demo-btn-primary:hover {
   background: #333;
 }
 

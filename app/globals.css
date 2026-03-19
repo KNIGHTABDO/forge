@@ -317,7 +317,7 @@ img, video { max-width: 100%; display: block; }
   justify-content: space-between;
   padding: 0 20px;
   height: 56px;
-  background: rgba(0, 0, 0, 0.85);
+  background: var(--bg-base);
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   border-bottom: 1px solid var(--border-subtle);
@@ -491,6 +491,52 @@ img, video { max-width: 100%; display: block; }
 }
 .forge-bar-deploy:active:not(:disabled) { transform: scale(0.97); }
 .forge-bar-deploy:disabled { opacity: 0.35; cursor: default; }
+
+/* Light mode overrides for forge-bar */
+html[data-theme="light"] .forge-bar {
+  background: rgba(255, 255, 255, 0.85);
+  border-bottom-color: #e5e0d5;
+}
+
+html[data-theme="light"] .forge-bar-btn {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: #e5e0d5;
+  color: #999;
+}
+
+html[data-theme="light"] .forge-bar-btn:hover:not(:disabled) {
+  background: #f5f0e8;
+  border-color: #d4d4d4;
+  color: #1a1a1a;
+}
+
+html[data-theme="light"] .forge-bar-btn.active {
+  background: #ede8dd;
+  color: #1a1a1a;
+  border-color: #bfbfbf;
+}
+
+html[data-theme="light"] .forge-name-btn {
+  color: #999;
+}
+
+html[data-theme="light"] .forge-name-btn:hover {
+  background: #f0f0f0;
+  color: #1a1a1a;
+}
+
+html[data-theme="light"] .generation-card {
+  border-color: #d4d4d4;
+}
+
+html[data-theme="light"] .gen-card-spinner {
+  border-color: #bfbfbf;
+  border-top-color: #999;
+}
+
+html[data-theme="light"] .gen-card-progress-bar {
+  background: #e8e8e8;
+}
 
 /* =====================================================================
    CHAT PANEL
@@ -763,7 +809,7 @@ img, video { max-width: 100%; display: block; }
 }
 @media (prefers-reduced-motion: no-preference) {
   .gen-card-progress-fill {
-    background: linear-gradient(90deg, #A1A1AA, #EDEDED, #A1A1AA);
+    background: linear-gradient(90deg, var(--text-secondary), var(--text-primary), var(--text-secondary));
     background-size: 200% 100%;
     animation: shimmer-slide 2s linear infinite;
   }

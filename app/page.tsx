@@ -3,7 +3,6 @@
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useTheme } from '@/lib/theme-context';
 import { ThemeToggle } from '@/components/theme-toggle';
 import type { GalleryEntry } from '@/lib/github';
 import './home.css';
@@ -164,8 +163,8 @@ export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [search, setSearch] = useState('');
   const [showSearch, setShowSearch] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const router = useRouter();
-  const { theme } = useTheme();
 
   // Video URLs for light and dark modes
   const videoUrl = theme === 'light' 
@@ -179,10 +178,25 @@ export default function Home() {
 
   useEffect(() => {
     setMounted(true);
+    
+    // Sync theme with document attribute changes
+    const updateTheme = () => {
+      const currentTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | null;
+      setTheme(currentTheme || 'dark');
+    };
+    
+    updateTheme();
+    
+    // Listen for theme changes (from toggle button)
+    const observer = new MutationObserver(updateTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    
     fetch('/api/gallery')
       .then(r => r.json())
       .then(data => { setTools(data); setLoading(false); })
       .catch(() => setLoading(false));
+    
+    return () => observer.disconnect();
   }, []);
 
   const filteredTools = tools.filter(t => 
