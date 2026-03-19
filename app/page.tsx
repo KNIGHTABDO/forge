@@ -110,7 +110,7 @@ function ToolCard({ tool, index }: { tool: GalleryEntry; index: number }) {
   const [hasError, setHasError] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const toolUrl = `/api/tool/${tool.slug}`;
+  const toolUrl = `/api/preview/${tool.slug}`;
 
   useEffect(() => {
     const el = ref.current;
@@ -150,7 +150,7 @@ function ToolCard({ tool, index }: { tool: GalleryEntry; index: number }) {
       </div>
       <div className="exhibit-info">
         <h4 className="exhibit-name">{tool.title || tool.slug.replace(/-/g, ' ')}</h4>
-        <p className="exhibit-protocol">Protocol {String(index + 1).padStart(2, '0')}.{(index * 3 + 1) % 10}</p>
+        <p className="exhibit-protocol">Protocol {String(index + 1).padStart(2, '0')}</p>
       </div>
     </Link>
   );
