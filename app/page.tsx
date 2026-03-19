@@ -107,32 +107,50 @@ function InteractiveDemo() {
 
 function ToolCard({ tool, index }: { tool: GalleryEntry; index: number }) {
   const [loaded, setLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const toolUrl = `${process.env.NEXT_PUBLIC_BASE_URL ?? ''}/t/${tool.slug}`;
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const toolUrl = `/api/tool/${tool.slug}`;
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     const observer = new IntersectionObserver(
       ([entry]) => { if (entry.isIntersecting) { setLoaded(true); observer.disconnect(); } },
-      { rootMargin: '200px' }
+      { rootMargin: '300px' }
     );
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
 
+  const handleIframeError = () => setHasError(true);
+
   return (
     <Link href={`/tool/${tool.slug}`} className="exhibit-card">
       <div ref={ref} className="exhibit-preview">
-        {loaded ? (
-          <iframe src={toolUrl} title={tool.title || tool.slug} loading="lazy" sandbox="allow-scripts allow-same-origin" />
+        {loaded && !hasError ? (
+          <iframe 
+            ref={iframeRef}
+            src={toolUrl} 
+            title={tool.title || tool.slug} 
+            loading="lazy" 
+            sandbox="allow-scripts allow-same-origin"
+            onError={handleIframeError}
+          />
+        ) : hasError ? (
+          <div className="exhibit-placeholder">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <path d="M3 9h18M9 21V9"/>
+            </svg>
+          </div>
         ) : (
           <div className="exhibit-skeleton" />
         )}
       </div>
       <div className="exhibit-info">
-        <h4 className="exhibit-name">{tool.title || tool.slug}</h4>
-        <p className="exhibit-protocol">Protocol {String(index + 1).padStart(2, '0')}.{Math.floor(Math.random() * 9)}</p>
+        <h4 className="exhibit-name">{tool.title || tool.slug.replace(/-/g, ' ')}</h4>
+        <p className="exhibit-protocol">Protocol {String(index + 1).padStart(2, '0')}.{(index * 3 + 1) % 10}</p>
       </div>
     </Link>
   );
@@ -142,6 +160,8 @@ export default function Home() {
   const [tools, setTools] = useState<GalleryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const [search, setSearch] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
   const router = useRouter();
 
   const startNewSession = () => {
@@ -157,6 +177,10 @@ export default function Home() {
       .catch(() => setLoading(false));
   }, []);
 
+  const filteredTools = tools.filter(t => 
+    (t.title || t.slug).toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
     <div className="page">
       {/* Navigation */}
@@ -167,7 +191,7 @@ export default function Home() {
           <a href="#gallery" className="nav-link">Gallery</a>
         </div>
         <div className="nav-right">
-          <button className="nav-search">Search</button>
+          <button className="nav-search" onClick={() => { setShowSearch(!showSearch); document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth' }); }}>Search</button>
           <button onClick={startNewSession} className="nav-cta">Inquire</button>
         </div>
       </nav>
@@ -256,21 +280,45 @@ export default function Home() {
             <h2 className="exhibition-title">Built Apps</h2>
             <p className="exhibition-desc">Recent creations from the Forge protocol.</p>
           </div>
-          <a href="#gallery" className="view-all">View all work</a>
+          <button className="view-all" onClick={() => setShowSearch(!showSearch)}>
+            {showSearch ? 'Hide Search' : 'Search Apps'}
+          </button>
         </div>
+
+        {showSearch && (
+          <div className="search-wrap">
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Search apps..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              autoFocus
+            />
+            {search && (
+              <button className="search-clear" onClick={() => setSearch('')}>Clear</button>
+            )}
+          </div>
+        )}
         
         {loading ? (
           <div className="exhibit-loading">
             <div className="demo-spinner" />
           </div>
-        ) : tools.length === 0 ? (
+        ) : filteredTools.length === 0 ? (
           <div className="exhibit-empty">
-            <p>No apps yet. Be the first to create something.</p>
-            <button onClick={startNewSession} className="btn-primary">Create First App</button>
+            {search ? (
+              <p>No apps match "{search}"</p>
+            ) : (
+              <>
+                <p>No apps yet. Be the first to create something.</p>
+                <button onClick={startNewSession} className="btn-primary">Create First App</button>
+              </>
+            )}
           </div>
         ) : (
           <div className="exhibit-grid">
-            {tools.slice(0, 4).map((t, i) => <ToolCard key={t.slug} tool={t} index={i} />)}
+            {filteredTools.map((t, i) => <ToolCard key={t.slug} tool={t} index={i} />)}
           </div>
         )}
       </section>
@@ -286,7 +334,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="footer">
-        <p className="footer-copy">© 2024 FORGE DIGITAL. ALL RIGHTS RESERVED.</p>
+        <p className="footer-copy">© 2026 FORGE DIGITAL. ALL RIGHTS RESERVED.</p>
         <div className="footer-links">
           <a href="#" className="footer-link">Privacy</a>
           <a href="#" className="footer-link">Terms</a>
