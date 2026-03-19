@@ -17,6 +17,111 @@ function timeAgo(iso: string): string {
   return `${d}d ago`;
 }
 
+// Interactive Demo Component with real working prototype
+function InteractiveDemo() {
+  const [phase, setPhase] = useState<'typing' | 'building' | 'complete'>('typing');
+  const [typedText, setTypedText] = useState('');
+  const [timerValue, setTimerValue] = useState(25 * 60);
+  const [isRunning, setIsRunning] = useState(false);
+  const fullPrompt = 'Build me a pomodoro timer';
+  
+  // Typing animation
+  useEffect(() => {
+    if (phase !== 'typing') return;
+    if (typedText.length < fullPrompt.length) {
+      const timeout = setTimeout(() => {
+        setTypedText(fullPrompt.slice(0, typedText.length + 1));
+      }, 80);
+      return () => clearTimeout(timeout);
+    } else {
+      const timeout = setTimeout(() => setPhase('building'), 800);
+      return () => clearTimeout(timeout);
+    }
+  }, [typedText, phase]);
+
+  // Building animation
+  useEffect(() => {
+    if (phase !== 'building') return;
+    const timeout = setTimeout(() => setPhase('complete'), 1500);
+    return () => clearTimeout(timeout);
+  }, [phase]);
+
+  // Timer logic when complete
+  useEffect(() => {
+    if (phase !== 'complete' || !isRunning) return;
+    const interval = setInterval(() => {
+      setTimerValue(v => (v > 0 ? v - 1 : 0));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [phase, isRunning]);
+
+  const formatTime = (s: number) => {
+    const mins = Math.floor(s / 60);
+    const secs = s % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const resetTimer = () => {
+    setTimerValue(25 * 60);
+    setIsRunning(false);
+  };
+
+  return (
+    <div className="demo-browser">
+      <div className="demo-bar">
+        <div className="demo-dots">
+          <span /><span /><span />
+        </div>
+        <div className="demo-url">forge.app/build</div>
+      </div>
+      <div className="demo-content">
+        {/* Prompt Input */}
+        <div className={`demo-input ${phase !== 'typing' ? 'demo-input-done' : ''}`}>
+          <span className="demo-cursor" style={{ opacity: phase === 'typing' ? 1 : 0 }} />
+          <span className="demo-text">{typedText || 'Describe your app...'}</span>
+          {phase === 'typing' && typedText.length === fullPrompt.length && (
+            <span className="demo-enter">Press Enter</span>
+          )}
+        </div>
+
+        {/* Building State */}
+        {phase === 'building' && (
+          <div className="demo-building">
+            <div className="demo-spinner" />
+            <span>Forging your app...</span>
+          </div>
+        )}
+
+        {/* Complete - Working Pomodoro Timer */}
+        {phase === 'complete' && (
+          <div className="demo-app">
+            <div className="demo-app-header">Pomodoro Timer</div>
+            <div className="demo-timer-display">{formatTime(timerValue)}</div>
+            <div className="demo-timer-progress">
+              <div 
+                className="demo-timer-bar" 
+                style={{ width: `${(timerValue / (25 * 60)) * 100}%` }} 
+              />
+            </div>
+            <div className="demo-timer-controls">
+              <button 
+                className="demo-btn demo-btn-primary"
+                onClick={() => setIsRunning(!isRunning)}
+              >
+                {isRunning ? 'Pause' : 'Start'}
+              </button>
+              <button className="demo-btn" onClick={resetTimer}>
+                Reset
+              </button>
+            </div>
+            <div className="demo-app-badge">Built with FORGE</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function ToolCard({ tool, index }: { tool: GalleryEntry; index: number }) {
   const [loaded, setLoaded] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -168,27 +273,9 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Browser mockup */}
-        <div className={`hero-mockup ${mounted ? 'visible' : ''}`}>
-          <div className="mockup-browser">
-            <div className="browser-bar">
-              <div className="browser-dots">
-                <span /><span /><span />
-              </div>
-              <div className="browser-url">forge.app/build</div>
-            </div>
-            <div className="browser-content">
-              <div className="mock-input">
-                <span className="mock-cursor" />
-                <span className="mock-text">Build me a pomodoro timer with ambient sounds...</span>
-              </div>
-              <div className="mock-preview">
-                <div className="mock-header" />
-                <div className="mock-timer" />
-                <div className="mock-controls" />
-              </div>
-            </div>
-          </div>
+        {/* Interactive Demo */}
+        <div className={`hero-demo ${mounted ? 'visible' : ''}`}>
+          <InteractiveDemo />
         </div>
       </section>
 
