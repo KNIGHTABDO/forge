@@ -342,10 +342,10 @@ export default function Home() {
       <footer className="footer">
         <p className="footer-copy">© 2026 FORGE DIGITAL. ALL RIGHTS RESERVED.</p>
         <div className="footer-links">
-          <a href="#" className="footer-link">Privacy</a>
-          <a href="#" className="footer-link">Terms</a>
-          <a href="#" className="footer-link">Contact</a>
-          <a href="#" className="footer-link">Twitter / X</a>
+          <Link href="/privacy" className="footer-link">Privacy</Link>
+          <Link href="/terms" className="footer-link">Terms</Link>
+          <Link href="/contact" className="footer-link">Contact</Link>
+          <a href="https://twitter.com/jip7e" target="_blank" rel="noopener noreferrer" className="footer-link">Twitter / X</a>
         </div>
       </footer>
     </div>
