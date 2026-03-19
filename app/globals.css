@@ -4,8 +4,7 @@
  * No pink. All borders smooth. Full of animations.
  */
 
-/* Google Fonts — MUST be first rule */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+/* Fonts loaded via next/font in layout.tsx */
 
 /* =====================================================================
    DESIGN TOKENS
@@ -79,8 +78,9 @@
   --r-full: 9999px;
 
   /* ── Typography ── */
-  --font-sans: 'Inter', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-headline: var(--font-headline), 'Space Grotesk', system-ui, sans-serif;
+  --font-sans: var(--font-sans), 'Inter', system-ui, sans-serif;
+  --font-mono: var(--font-mono), 'JetBrains Mono', 'Fira Code', monospace;
 
   /* ── Animation ── */
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);

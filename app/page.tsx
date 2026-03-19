@@ -1,9 +1,12 @@
 'use client';
 
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useEffect, useState, useMemo, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { Float, Environment, MeshDistortMaterial } from '@react-three/drei';
 import type { GalleryEntry } from '@/lib/github';
+import * as THREE from 'three';
 import './home.css';
 
 function timeAgo(iso: string): string {
@@ -15,6 +18,111 @@ function timeAgo(iso: string): string {
   if (h < 24) return `${h}h ago`;
   const d = Math.floor(h / 24);
   return `${d}d ago`;
+}
+
+// Floating metallic sphere for 3D background
+function FloatingSphere({ position, scale, speed = 1 }: { position: [number, number, number]; scale: number; speed?: number }) {
+  const meshRef = useRef<THREE.Mesh>(null);
+  
+  useFrame((state) => {
+    if (meshRef.current) {
+      meshRef.current.rotation.x = state.clock.elapsedTime * 0.1 * speed;
+      meshRef.current.rotation.y = state.clock.elapsedTime * 0.15 * speed;
+    }
+  });
+
+  return (
+    <Float speed={speed} rotationIntensity={0.5} floatIntensity={0.5}>
+      <mesh ref={meshRef} position={position} scale={scale}>
+        <icosahedronGeometry args={[1, 1]} />
+        <MeshDistortMaterial
+          color="#ffffff"
+          metalness={0.9}
+          roughness={0.1}
+          distort={0.3}
+          speed={2}
+        />
+      </mesh>
+    </Float>
+  );
+}
+
+// Spark particles
+function Sparks() {
+  const count = 50;
+  const meshRef = useRef<THREE.Points>(null);
+  
+  const particles = useMemo(() => {
+    const positions = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
+    
+    for (let i = 0; i < count; i++) {
+      positions[i * 3] = (Math.random() - 0.5) * 10;
+      positions[i * 3 + 1] = (Math.random() - 0.5) * 10;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 10;
+      
+      // Orange and white sparks
+      const isOrange = Math.random() > 0.5;
+      colors[i * 3] = 1;
+      colors[i * 3 + 1] = isOrange ? 0.6 : 1;
+      colors[i * 3 + 2] = isOrange ? 0 : 1;
+    }
+    
+    return { positions, colors };
+  }, []);
+
+  useFrame((state) => {
+    if (meshRef.current) {
+      meshRef.current.rotation.y = state.clock.elapsedTime * 0.05;
+      meshRef.current.rotation.x = state.clock.elapsedTime * 0.03;
+    }
+  });
+
+  return (
+    <points ref={meshRef}>
+      <bufferGeometry>
+        <bufferAttribute
+          attach="attributes-position"
+          count={count}
+          array={particles.positions}
+          itemSize={3}
+        />
+        <bufferAttribute
+          attach="attributes-color"
+          count={count}
+          array={particles.colors}
+          itemSize={3}
+        />
+      </bufferGeometry>
+      <pointsMaterial
+        size={0.05}
+        vertexColors
+        transparent
+        opacity={0.8}
+        sizeAttenuation
+      />
+    </points>
+  );
+}
+
+// 3D Scene
+function Scene3D() {
+  return (
+    <>
+      <Environment preset="night" />
+      <ambientLight intensity={0.2} />
+      <pointLight position={[10, 10, 10]} intensity={1} color="#ff9d00" />
+      <pointLight position={[-10, -10, -10]} intensity={0.5} color="#00d4ff" />
+      <spotLight position={[0, 5, 0]} intensity={1} angle={0.3} penumbra={1} color="#ffffff" />
+      
+      <FloatingSphere position={[-4, 2, -3]} scale={0.8} speed={0.8} />
+      <FloatingSphere position={[4, -1, -4]} scale={0.5} speed={1.2} />
+      <FloatingSphere position={[3, 3, -5]} scale={0.3} speed={1.5} />
+      <FloatingSphere position={[-3, -2, -2]} scale={0.4} speed={1} />
+      
+      <Sparks />
+    </>
+  );
 }
 
 function LazyIframe({ src, title }: { src: string; title: string }) {
@@ -65,11 +173,50 @@ function ToolCard({ tool, index }: { tool: GalleryEntry; index: number }) {
         <h3 className="tool-card-title">{tool.title || tool.slug}</h3>
         {tool.description && <p className="tool-card-desc">{tool.description}</p>}
         <div className="tool-card-actions">
-          <a href={toolUrl} target="_blank" rel="noopener" className="tool-card-btn open">Open ↗</a>
+          <a href={toolUrl} target="_blank" rel="noopener" className="tool-card-btn open">Open</a>
           <Link href={`/build?tool=${tool.slug}`} className="tool-card-btn edit">Edit</Link>
         </div>
       </div>
     </div>
+  );
+}
+
+// Features section
+function FeaturesSection() {
+  const features = [
+    {
+      icon: '01',
+      title: 'Describe Your Idea',
+      description: 'Type a single sentence describing the tool you want. Our AI understands context and intent.'
+    },
+    {
+      icon: '02', 
+      title: 'Instant Generation',
+      description: 'Watch as your fully functional web application is forged in real-time, code and all.'
+    },
+    {
+      icon: '03',
+      title: 'Deploy & Share',
+      description: 'Your app gets a unique URL instantly. Share it with anyone, anywhere in the world.'
+    }
+  ];
+
+  return (
+    <section className="features-section">
+      <div className="features-header" data-animate>
+        <span className="features-label">How It Works</span>
+        <h2 className="features-title">From idea to app in seconds</h2>
+      </div>
+      <div className="features-grid">
+        {features.map((feature, i) => (
+          <div key={i} className="feature-card" data-animate data-delay={String(i + 1)}>
+            <div className="feature-number">{feature.icon}</div>
+            <h3 className="feature-title">{feature.title}</h3>
+            <p className="feature-desc">{feature.description}</p>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -90,19 +237,6 @@ export default function Home() {
       .then(r => r.json())
       .then(data => { setTools(data); setLoading(false); })
       .catch(() => setLoading(false));
-  }, []);
-
-  // Cursor glow
-  useEffect(() => {
-    const glow = document.createElement('div');
-    glow.id = 'cursor-glow';
-    document.body.appendChild(glow);
-    const handleMove = (e: MouseEvent) => {
-      glow.style.left = e.clientX - 250 + 'px';
-      glow.style.top  = e.clientY - 250 + 'px';
-    };
-    window.addEventListener('mousemove', handleMove, { passive: true });
-    return () => { window.removeEventListener('mousemove', handleMove); glow.parentNode?.removeChild(glow); };
   }, []);
 
   // Navbar scroll shadow
@@ -143,80 +277,91 @@ export default function Home() {
 
   return (
     <main className="home" ref={homeRef}>
-      {/* Animated mesh background */}
-      <div className="home-bg" aria-hidden="true">
-        <div className="home-bg-mesh" />
-        <div className="home-bg-grid" />
+      {/* 3D Background Canvas */}
+      <div className="canvas-container">
+        <Canvas camera={{ position: [0, 0, 8], fov: 50 }}>
+          <Suspense fallback={null}>
+            <Scene3D />
+          </Suspense>
+        </Canvas>
       </div>
+
+      {/* Gradient overlays */}
+      <div className="hero-gradient-top" />
+      <div className="hero-gradient-bottom" />
 
       <nav className="home-nav">
         <Link href="/" className="home-nav-logo">
-          <img src="/logo.png" alt="Forge Logo" className="home-nav-logo-img" style={{ width: 28, height: 28, borderRadius: 6, objectFit: 'cover' }} />
           <span className="home-nav-logo-text">FORGE</span>
         </Link>
-        <button onClick={startNewSession} className="home-nav-cta">Start Building →</button>
+        <div className="nav-links">
+          <a href="#features" className="nav-link">How It Works</a>
+          <a href="#gallery" className="nav-link">Gallery</a>
+          <button onClick={startNewSession} className="home-nav-cta">Start Forging</button>
+        </div>
       </nav>
 
       <section className="home-hero">
-        {/* Ambient orbs for hero */}
-        <div className="orb-container" aria-hidden="true">
-          <div className="orb orb-1" />
-          <div className="orb orb-2" />
-          <div className="orb orb-3" />
-          <div className="orb orb-4" />
-        </div>
-
-        <div className="home-hero-badge hero-anim hero-anim-1">
-          <span className="home-hero-badge-dot" />
-          AI-Powered Builder
+        {/* Hero Anvil Image */}
+        <div className="hero-image-container hero-anim hero-anim-1">
+          <img 
+            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Image%201%203-9oV0oa1aeNppoWJMX10ZOBibQIKHI4.png"
+            alt="Metallic anvil being struck with sparks flying"
+            className="hero-anvil-image"
+          />
+          <div className="hero-image-glow" />
         </div>
 
         <h1 className="home-hero-title hero-anim hero-anim-2">
-          Describe a tool.<br />Get a <span className="gradient-word">working app.</span>
+          FORGE ANY APP
         </h1>
 
         <p className="home-hero-sub hero-anim hero-anim-3">
-          Type one sentence. FORGE generates a fully interactive web app — instantly.
-          No code, no config, no limits.
+          Describe your idea in one sentence. Get a fully working
+          interactive web app instantly. No code. No limits.
         </p>
 
         <div className="home-hero-actions hero-anim hero-anim-4">
-          <button onClick={startNewSession} className="home-hero-btn">
-            Start Building
+          <button onClick={startNewSession} className="forge-btn-primary">
+            <span className="forge-btn-text">START FORGING</span>
+            <div className="forge-btn-sparks">
+              <span className="spark spark-1" />
+              <span className="spark spark-2" />
+              <span className="spark spark-3" />
+            </div>
           </button>
-          <a href="#gallery" className="home-hero-btn-secondary">
-            View Gallery ↓
-          </a>
         </div>
 
         <div className="home-hero-stats hero-anim hero-anim-5">
           <div className="home-hero-stat">
-            <span className="home-hero-stat-num">∞</span>
-            <span className="home-hero-stat-lbl">Apps Built</span>
+            <span className="home-hero-stat-num">0.024ms</span>
+            <span className="home-hero-stat-lbl">Latency</span>
           </div>
           <div className="home-hero-stat-sep" />
           <div className="home-hero-stat">
-            <span className="home-hero-stat-num">&lt;10s</span>
-            <span className="home-hero-stat-lbl">To First App</span>
-          </div>
-          <div className="home-hero-stat-sep" />
-          <div className="home-hero-stat">
-            <span className="home-hero-stat-num">0</span>
-            <span className="home-hero-stat-lbl">Lines of Code</span>
+            <span className="home-hero-stat-num">V.04</span>
+            <span className="home-hero-stat-lbl">Engine</span>
           </div>
         </div>
       </section>
 
+      <FeaturesSection />
+
       <section className="home-gallery" id="gallery">
         <div className="gallery-header" data-animate>
           <div className="gallery-heading-group">
-            <h2 className="gallery-heading">Previously built</h2>
+            <h2 className="gallery-heading">Previously Forged</h2>
             {!loading && tools.length > 0 && (
               <span className="gallery-count">{tools.length}</span>
             )}
           </div>
           <div className="gallery-search-wrap">
-            <span className="gallery-search-icon">⌕</span>
+            <span className="gallery-search-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="m21 21-4.35-4.35"/>
+              </svg>
+            </span>
             <input
               className="gallery-search"
               type="search"
@@ -226,7 +371,11 @@ export default function Home() {
               spellCheck={false}
             />
             {query && (
-              <button className="gallery-search-clear" onClick={() => setQuery('')} aria-label="Clear">✕</button>
+              <button className="gallery-search-clear" onClick={() => setQuery('')} aria-label="Clear">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 6 6 18M6 6l12 12"/>
+                </svg>
+              </button>
             )}
           </div>
         </div>
@@ -246,10 +395,14 @@ export default function Home() {
         )}
       </section>
 
-      <footer className="home-footer" style={{ padding: '60px 20px 40px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', opacity: 0.5, fontSize: '0.85rem' }}>
-        <span>Powered by</span>
-        <img src="/logo.png" alt="Forge" style={{ width: 16, height: 16, borderRadius: 4 }} />
-        <span style={{ fontWeight: 600, letterSpacing: '0.05em' }}>FORGE</span>
+      <footer className="home-footer">
+        <div className="footer-content">
+          <span className="footer-text">Powered by</span>
+          <span className="footer-logo">FORGE</span>
+        </div>
+        <div className="footer-meta">
+          <span>Engine V.04-KINETIC</span>
+        </div>
       </footer>
     </main>
   );
