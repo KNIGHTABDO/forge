@@ -177,8 +177,6 @@ export default function Home() {
   };
 
   useEffect(() => {
-    setMounted(true);
-    
     // Sync theme with document attribute changes
     const updateTheme = () => {
       const currentTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | null;
@@ -186,6 +184,7 @@ export default function Home() {
     };
     
     updateTheme();
+    setMounted(true);
     
     // Listen for theme changes (from toggle button)
     const observer = new MutationObserver(updateTheme);
@@ -198,6 +197,9 @@ export default function Home() {
     
     return () => observer.disconnect();
   }, []);
+  
+  // Prevent hydration mismatch by using a key that forces video to remount when theme changes
+  const videoKey = `video-${theme}`;
 
   const filteredTools = tools.filter(t => 
     (t.title || t.slug).toLowerCase().includes(search.toLowerCase())
@@ -245,7 +247,7 @@ export default function Home() {
         
         <div className={`hero-visual ${mounted ? 'visible' : ''}`}>
           <video 
-            key={videoUrl}
+            key={videoKey}
             className="hero-video"
             autoPlay
             muted
