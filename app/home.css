@@ -1,7 +1,6 @@
 /*
  * FORGE — Cinematic Landing Page
- * Theme: Deep Black + Metallic + Orange/Blue Sparks
- * Bold typography, 3D elements, dramatic feel
+ * Theme: Deep Black + Metallic + Orange Sparks
  */
 
 /* ─── Home wrapper ──────────────────────────────────── */
@@ -18,13 +17,138 @@
   position: relative;
 }
 
-/* ─── 3D Canvas Background ─────────────────────────── */
-.canvas-container {
+/* ─── Animated Background ─────────────────────────── */
+.background-container {
   position: fixed;
   inset: 0;
   z-index: 0;
+  overflow: hidden;
   pointer-events: none;
+}
+
+/* Grid overlay */
+.grid-overlay {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+  background-size: 80px 80px;
   opacity: 0.6;
+}
+
+/* Floating orbs */
+.orbs-container {
+  position: absolute;
+  inset: 0;
+}
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.25;
+  animation: float-orb 25s ease-in-out infinite;
+}
+
+.orb-1 {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, #ff6b00 0%, transparent 70%);
+  top: 5%;
+  left: 15%;
+  animation-delay: 0s;
+}
+
+.orb-2 {
+  width: 350px;
+  height: 350px;
+  background: radial-gradient(circle, #ff9500 0%, transparent 70%);
+  top: 55%;
+  right: 5%;
+  animation-delay: -8s;
+}
+
+.orb-3 {
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, #ff4400 0%, transparent 70%);
+  bottom: 15%;
+  left: 5%;
+  animation-delay: -16s;
+}
+
+.orb-4 {
+  width: 250px;
+  height: 250px;
+  background: radial-gradient(circle, #ffffff 0%, transparent 70%);
+  top: 25%;
+  right: 25%;
+  animation-delay: -4s;
+  opacity: 0.08;
+}
+
+.orb-5 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, #ff7700 0%, transparent 70%);
+  top: 45%;
+  left: 45%;
+  transform: translate(-50%, -50%);
+  animation-delay: -12s;
+  opacity: 0.15;
+}
+
+@keyframes float-orb {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(40px, -40px) scale(1.1);
+  }
+  50% {
+    transform: translate(-30px, 30px) scale(0.9);
+  }
+  75% {
+    transform: translate(30px, 15px) scale(1.05);
+  }
+}
+
+/* Spark particles */
+.sparks-container {
+  position: absolute;
+  inset: 0;
+}
+
+.spark-particle {
+  position: absolute;
+  width: var(--size);
+  height: var(--size);
+  left: var(--x);
+  top: var(--y);
+  background: radial-gradient(circle, #ff9500 0%, #ff6b00 50%, transparent 70%);
+  border-radius: 50%;
+  animation: spark-float var(--duration) var(--delay) ease-in-out infinite;
+  opacity: 0;
+}
+
+@keyframes spark-float {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0);
+  }
+  15% {
+    opacity: 0.8;
+    transform: translateY(-20px) scale(1);
+  }
+  85% {
+    opacity: 0.6;
+    transform: translateY(-120px) scale(0.4);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-150px) scale(0);
+  }
 }
 
 /* ─── Gradient Overlays ─────────────────────────────── */
@@ -171,6 +295,12 @@
   filter: contrast(1.1) brightness(1.05);
   position: relative;
   z-index: 1;
+  animation: float-anvil 6s ease-in-out infinite;
+}
+
+@keyframes float-anvil {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
 }
 
 .hero-image-glow {
@@ -178,12 +308,18 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 80%;
-  height: 80%;
-  background: radial-gradient(ellipse, rgba(255, 157, 0, 0.15) 0%, transparent 70%);
-  filter: blur(40px);
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(ellipse, rgba(255, 107, 0, 0.25) 0%, transparent 60%);
+  filter: blur(60px);
   z-index: 0;
   pointer-events: none;
+  animation: pulse-glow 4s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
 }
 
 .home-hero-title {
@@ -223,11 +359,18 @@
   font-family: inherit;
   transition: all 0.3s ease;
   overflow: visible;
+  animation: forging-pulse 3s ease-in-out infinite;
+}
+
+@keyframes forging-pulse {
+  0%, 100% { box-shadow: 0 0 15px rgba(255, 255, 255, 0.2); }
+  50% { box-shadow: 0 0 40px rgba(255, 255, 255, 0.5); }
 }
 
 .forge-btn-primary:hover {
-  box-shadow: 0 0 40px rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 50px rgba(255, 255, 255, 0.5);
   transform: scale(1.02);
+  animation: none;
 }
 
 .forge-btn-primary:active {
@@ -263,8 +406,8 @@
 }
 
 .spark-2 {
-  background: #00d4ff;
-  box-shadow: 0 0 6px #00d4ff;
+  background: #ff6b00;
+  box-shadow: 0 0 6px #ff6b00;
   top: 50%;
   right: 10%;
 }
@@ -285,30 +428,9 @@
   animation: spark-fly 0.6s ease-out forwards;
 }
 
-.forge-btn-primary:hover .spark-1 {
-  --tx: -30px;
-  --ty: -40px;
-}
-
-.forge-btn-primary:hover .spark-2 {
-  --tx: 40px;
-  --ty: -30px;
-}
-
-.forge-btn-primary:hover .spark-3 {
-  --tx: -20px;
-  --ty: 50px;
-}
-
-/* Pulsing glow animation */
-@keyframes forging-pulse {
-  0%, 100% { box-shadow: 0 0 15px rgba(255, 255, 255, 0.2); }
-  50% { box-shadow: 0 0 30px rgba(255, 255, 255, 0.5); }
-}
-
-.forge-btn-primary {
-  animation: forging-pulse 3s ease-in-out infinite;
-}
+.forge-btn-primary:hover .spark-1 { --tx: -30px; --ty: -40px; }
+.forge-btn-primary:hover .spark-2 { --tx: 40px; --ty: -30px; }
+.forge-btn-primary:hover .spark-3 { --tx: -20px; --ty: 50px; }
 
 /* Stats Row */
 .home-hero-stats {
@@ -316,7 +438,7 @@
   align-items: center;
   gap: 40px;
   margin-top: 40px;
-  opacity: 0.4;
+  opacity: 0.5;
 }
 
 .home-hero-stat {
@@ -420,7 +542,7 @@
 .feature-number {
   font-size: 48px;
   font-weight: 900;
-  color: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 107, 0, 0.15);
   letter-spacing: -0.02em;
   margin-bottom: 24px;
   line-height: 1;
@@ -619,16 +741,12 @@
   inset: 0;
   background: linear-gradient(90deg, rgba(255,255,255,0.02) 25%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0.02) 75%);
   background-size: 200% 100%;
+  animation: skeleton-sweep 2s ease-in-out infinite;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .tool-card-skeleton {
-    animation: skeleton-sweep 2s ease-in-out infinite;
-  }
-  @keyframes skeleton-sweep {
-    0% { background-position: 200% center; }
-    100% { background-position: -200% center; }
-  }
+@keyframes skeleton-sweep {
+  0% { background-position: 200% center; }
+  100% { background-position: -200% center; }
 }
 
 .tool-card-preview-overlay {
@@ -758,24 +876,22 @@
   height: 8px;
   background: #ffffff;
   display: inline-block;
+  animation: dot-bounce 1.4s infinite ease-in-out;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .gen-dot {
-    animation: dot-bounce 1.4s infinite ease-in-out;
-  }
-  .gen-dot:nth-child(2) {
-    animation-delay: 0.15s;
-    opacity: 0.6;
-  }
-  .gen-dot:nth-child(3) {
-    animation-delay: 0.3s;
-    opacity: 0.3;
-  }
-  @keyframes dot-bounce {
-    0%, 80%, 100% { transform: scale(0.6); }
-    40% { transform: scale(1.2); }
-  }
+.gen-dot:nth-child(2) {
+  animation-delay: 0.15s;
+  opacity: 0.6;
+}
+
+.gen-dot:nth-child(3) {
+  animation-delay: 0.3s;
+  opacity: 0.3;
+}
+
+@keyframes dot-bounce {
+  0%, 80%, 100% { transform: scale(0.6); }
+  40% { transform: scale(1.2); }
 }
 
 .gallery-empty {
@@ -823,21 +939,21 @@
 }
 
 /* ─── Scroll Reveal Animations ─────────────────────── */
-@media (prefers-reduced-motion: no-preference) {
-  [data-animate] {
-    opacity: 0;
-    transform: translateY(30px);
-    transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-    will-change: transform;
-  }
-  [data-animate][data-delay="1"] { transition-delay: 100ms; }
-  [data-animate][data-delay="2"] { transition-delay: 200ms; }
-  [data-animate][data-delay="3"] { transition-delay: 300ms; }
-  [data-animate][data-delay="4"] { transition-delay: 400ms; }
-  [data-animate].animate-in {
-    opacity: 1;
-    transform: translateY(0);
-  }
+[data-animate] {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+[data-animate][data-delay="1"] { transition-delay: 100ms; }
+[data-animate][data-delay="2"] { transition-delay: 200ms; }
+[data-animate][data-delay="3"] { transition-delay: 300ms; }
+[data-animate][data-delay="4"] { transition-delay: 400ms; }
+
+[data-animate].animate-in {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 /* ─── Responsive ──────────────────────────────────────── */

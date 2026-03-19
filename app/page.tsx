@@ -1,12 +1,9 @@
 'use client';
 
-import { useEffect, useState, useMemo, useRef, Suspense } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { Float, Environment, MeshDistortMaterial } from '@react-three/drei';
 import type { GalleryEntry } from '@/lib/github';
-import * as THREE from 'three';
 import './home.css';
 
 function timeAgo(iso: string): string {
@@ -20,108 +17,37 @@ function timeAgo(iso: string): string {
   return `${d}d ago`;
 }
 
-// Floating metallic sphere for 3D background
-function FloatingSphere({ position, scale, speed = 1 }: { position: [number, number, number]; scale: number; speed?: number }) {
-  const meshRef = useRef<THREE.Mesh>(null);
-  
-  useFrame((state) => {
-    if (meshRef.current) {
-      meshRef.current.rotation.x = state.clock.elapsedTime * 0.1 * speed;
-      meshRef.current.rotation.y = state.clock.elapsedTime * 0.15 * speed;
-    }
-  });
-
+// Animated sparks background
+function SparksBackground() {
   return (
-    <Float speed={speed} rotationIntensity={0.5} floatIntensity={0.5}>
-      <mesh ref={meshRef} position={position} scale={scale}>
-        <icosahedronGeometry args={[1, 1]} />
-        <MeshDistortMaterial
-          color="#ffffff"
-          metalness={0.9}
-          roughness={0.1}
-          distort={0.3}
-          speed={2}
+    <div className="sparks-container">
+      {Array.from({ length: 30 }).map((_, i) => (
+        <div
+          key={i}
+          className="spark-particle"
+          style={{
+            '--x': `${Math.random() * 100}%`,
+            '--y': `${Math.random() * 100}%`,
+            '--delay': `${Math.random() * 5}s`,
+            '--duration': `${2 + Math.random() * 3}s`,
+            '--size': `${2 + Math.random() * 4}px`,
+          } as React.CSSProperties}
         />
-      </mesh>
-    </Float>
+      ))}
+    </div>
   );
 }
 
-// Spark particles
-function Sparks() {
-  const count = 50;
-  const meshRef = useRef<THREE.Points>(null);
-  
-  const particles = useMemo(() => {
-    const positions = new Float32Array(count * 3);
-    const colors = new Float32Array(count * 3);
-    
-    for (let i = 0; i < count; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 10;
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 10;
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 10;
-      
-      // Orange and white sparks
-      const isOrange = Math.random() > 0.5;
-      colors[i * 3] = 1;
-      colors[i * 3 + 1] = isOrange ? 0.6 : 1;
-      colors[i * 3 + 2] = isOrange ? 0 : 1;
-    }
-    
-    return { positions, colors };
-  }, []);
-
-  useFrame((state) => {
-    if (meshRef.current) {
-      meshRef.current.rotation.y = state.clock.elapsedTime * 0.05;
-      meshRef.current.rotation.x = state.clock.elapsedTime * 0.03;
-    }
-  });
-
+// Floating orbs with CSS animations
+function FloatingOrbs() {
   return (
-    <points ref={meshRef}>
-      <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          count={count}
-          array={particles.positions}
-          itemSize={3}
-        />
-        <bufferAttribute
-          attach="attributes-color"
-          count={count}
-          array={particles.colors}
-          itemSize={3}
-        />
-      </bufferGeometry>
-      <pointsMaterial
-        size={0.05}
-        vertexColors
-        transparent
-        opacity={0.8}
-        sizeAttenuation
-      />
-    </points>
-  );
-}
-
-// 3D Scene
-function Scene3D() {
-  return (
-    <>
-      <Environment preset="night" />
-      <ambientLight intensity={0.2} />
-      <pointLight position={[10, 10, 10]} intensity={1} color="#ff9d00" />
-      <pointLight position={[-10, -10, -10]} intensity={0.5} color="#00d4ff" />
-      <spotLight position={[0, 5, 0]} intensity={1} angle={0.3} penumbra={1} color="#ffffff" />
-      
-      <FloatingSphere position={[-4, 2, -3]} scale={0.8} speed={0.8} />
-      <FloatingSphere position={[4, -1, -4]} scale={0.5} speed={1.2} />
-      <FloatingSphere position={[3, 3, -5]} scale={0.3} speed={1.5} />
-      <FloatingSphere position={[-3, -2, -2]} scale={0.4} speed={1} />
-      
-      <Sparks />
-    </>
+    <div className="orbs-container">
+      <div className="orb orb-1" />
+      <div className="orb orb-2" />
+      <div className="orb orb-3" />
+      <div className="orb orb-4" />
+      <div className="orb orb-5" />
+    </div>
   );
 }
 
@@ -185,24 +111,24 @@ function ToolCard({ tool, index }: { tool: GalleryEntry; index: number }) {
 function FeaturesSection() {
   const features = [
     {
-      icon: '01',
+      num: '01',
       title: 'Describe Your Idea',
       description: 'Type a single sentence describing the tool you want. Our AI understands context and intent.'
     },
     {
-      icon: '02', 
+      num: '02', 
       title: 'Instant Generation',
       description: 'Watch as your fully functional web application is forged in real-time, code and all.'
     },
     {
-      icon: '03',
+      num: '03',
       title: 'Deploy & Share',
       description: 'Your app gets a unique URL instantly. Share it with anyone, anywhere in the world.'
     }
   ];
 
   return (
-    <section className="features-section">
+    <section className="features-section" id="features">
       <div className="features-header" data-animate>
         <span className="features-label">How It Works</span>
         <h2 className="features-title">From idea to app in seconds</h2>
@@ -210,7 +136,7 @@ function FeaturesSection() {
       <div className="features-grid">
         {features.map((feature, i) => (
           <div key={i} className="feature-card" data-animate data-delay={String(i + 1)}>
-            <div className="feature-number">{feature.icon}</div>
+            <div className="feature-number">{feature.num}</div>
             <h3 className="feature-title">{feature.title}</h3>
             <p className="feature-desc">{feature.description}</p>
           </div>
@@ -277,13 +203,11 @@ export default function Home() {
 
   return (
     <main className="home" ref={homeRef}>
-      {/* 3D Background Canvas */}
-      <div className="canvas-container">
-        <Canvas camera={{ position: [0, 0, 8], fov: 50 }}>
-          <Suspense fallback={null}>
-            <Scene3D />
-          </Suspense>
-        </Canvas>
+      {/* Animated Background */}
+      <div className="background-container">
+        <FloatingOrbs />
+        <SparksBackground />
+        <div className="grid-overlay" />
       </div>
 
       {/* Gradient overlays */}
@@ -318,7 +242,7 @@ export default function Home() {
 
         <p className="home-hero-sub hero-anim hero-anim-3">
           Describe your idea in one sentence. Get a fully working
-          interactive web app instantly. No code. No limits.
+          <br />interactive web app instantly. No code. No limits.
         </p>
 
         <div className="home-hero-actions hero-anim hero-anim-4">
@@ -334,13 +258,13 @@ export default function Home() {
 
         <div className="home-hero-stats hero-anim hero-anim-5">
           <div className="home-hero-stat">
+            <span className="home-hero-stat-lbl">LATENCY</span>
             <span className="home-hero-stat-num">0.024ms</span>
-            <span className="home-hero-stat-lbl">Latency</span>
           </div>
           <div className="home-hero-stat-sep" />
           <div className="home-hero-stat">
-            <span className="home-hero-stat-num">V.04</span>
-            <span className="home-hero-stat-lbl">Engine</span>
+            <span className="home-hero-stat-lbl">ENGINE</span>
+            <span className="home-hero-stat-num">V.04-KINETIC</span>
           </div>
         </div>
       </section>
