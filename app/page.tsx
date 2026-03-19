@@ -126,12 +126,7 @@ export default function Home() {
       {/* Hero */}
       <section className="hero">
         <div className={`hero-content ${mounted ? 'visible' : ''}`}>
-          <div className="hero-eyebrow">
-            <span className="eyebrow-dot" />
-            Powered by AI
-          </div>
-          
-          <h1 className="hero-title">
+<h1 className="hero-title">
             Build apps with
             <br />
             <span className="hero-highlight">one sentence</span>
