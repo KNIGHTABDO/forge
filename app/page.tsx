@@ -221,11 +221,17 @@ export default function Home() {
         </div>
         
         <div className={`hero-visual ${mounted ? 'visible' : ''}`}>
-          <img 
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDySEgToMEsKdqcZzkxKwlZgPJqFJLZXQ0vONLVkj6MuPA_UZ3CbQbq_wCq9mBA3ceAzUsJ8W5CziPYS_lI_263dAZV74zrK2_C_uQXU3GP2dQsWxd6md3P7s9ly16I9ueX5IsxKHdiK3JjIi8UnCiPG15mP9g1pFYNQqqQbYo2DL7AjJj6s0dYKxlcxDf6JQrv0eTikI4nP0lMWeMlCdpYvFhoEoVvs3uvxLvpsXy-VnouDomro6DR082eOhCZtPJ_LoOvHzraCAbs" 
-            alt="Abstract 3D sculpture" 
-            className="hero-image"
-          />
+          <video 
+            className="hero-video"
+            autoPlay
+            muted
+            loop
+            playsInline
+            poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'%3E%3Crect fill='%23000' width='1200' height='800'/%3E%3C/svg%3E"
+          >
+            <source src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/forge-promo-2uvaCuwY7ICqXFSLctTSVIYQDIpxJC.mp4" type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
           <div className="hero-number">001</div>
         </div>
       </section>
