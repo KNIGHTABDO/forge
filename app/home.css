@@ -9,6 +9,19 @@
 }
 
 :root {
+  --bg: #0d0d0d;
+  --bg-alt: #1a1a1a;
+  --bg-dark: #0d0d0d;
+  --text: #ededed;
+  --text-muted: #a1a1aa;
+  --text-light: #71717a;
+  --border: #333333;
+  --font-headline: var(--font-headline), 'Space Grotesk', system-ui, sans-serif;
+  --font-body: var(--font-body), 'Manrope', system-ui, sans-serif;
+  --font-mono: var(--font-mono), 'JetBrains Mono', monospace;
+}
+
+html[data-theme="light"] {
   --bg: #fffcf7;
   --bg-alt: #f5f0e8;
   --bg-dark: #0d0d0d;
@@ -16,9 +29,6 @@
   --text-muted: #666;
   --text-light: #999;
   --border: #e5e0d5;
-  --font-headline: var(--font-headline), 'Space Grotesk', system-ui, sans-serif;
-  --font-body: var(--font-body), 'Manrope', system-ui, sans-serif;
-  --font-mono: var(--font-mono), 'JetBrains Mono', monospace;
 }
 
 /* ── Page ── */
@@ -103,7 +113,45 @@
   transition: background 0.2s;
 }
 
-.nav-cta:hover { background: #333; }
+.nav-cta:hover { background: var(--text-muted); }
+
+html[data-theme="light"] .nav-cta {
+  color: #fff;
+}
+
+html[data-theme="light"] .nav-cta:hover {
+  background: #333;
+}
+
+/* ── Theme Toggle ── */
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.theme-toggle:hover {
+  background: var(--bg-alt);
+  border-color: var(--text);
+}
+
+html[data-theme="light"] .theme-toggle {
+  border-color: #d4d4d4;
+}
+
+html[data-theme="light"] .theme-toggle:hover {
+  background: #f0f0f0;
+  border-color: var(--text);
+}
 
 /* ── Hero ── */
 .hero {
@@ -180,7 +228,15 @@
   transition: background 0.2s;
 }
 
-.btn-primary:hover { background: #333; }
+.btn-primary:hover { background: var(--text-muted); }
+
+html[data-theme="light"] .btn-primary {
+  color: #fff;
+}
+
+html[data-theme="light"] .btn-primary:hover {
+  background: #333;
+}
 
 .btn-ghost {
   display: inline-flex;
@@ -232,6 +288,10 @@
   font-weight: 700;
   color: rgba(255,255,255,0.1);
   line-height: 1;
+}
+
+html[data-theme="light"] .hero-number {
+  color: rgba(0,0,0,0.08);
 }
 
 /* ── How It Works ── */

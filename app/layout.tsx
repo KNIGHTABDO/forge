@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Space_Grotesk, Manrope, JetBrains_Mono } from 'next/font/google';
+import { ThemeProvider } from '@/lib/theme-context';
 import './globals.css';
 import './home.css';
 
@@ -40,7 +41,9 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${spaceGrotesk.variable} ${manrope.variable} ${jetbrainsMono.variable}`}>
-      <body>{children}</body>
+      <body>
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
     </html>
   );
 }

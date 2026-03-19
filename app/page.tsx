@@ -3,6 +3,8 @@
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTheme } from '@/lib/theme-context';
+import { ThemeToggle } from '@/components/theme-toggle';
 import type { GalleryEntry } from '@/lib/github';
 import './home.css';
 
@@ -163,6 +165,12 @@ export default function Home() {
   const [search, setSearch] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const router = useRouter();
+  const { theme } = useTheme();
+
+  // Video URLs for light and dark modes
+  const videoUrl = theme === 'light' 
+    ? 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/forge-promo-light-fzsAp3fDNiMsZzPANvEfFnZAx0o7Sp.mp4'
+    : 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/forge-promo-2uvaCuwY7ICqXFSLctTSVIYQDIpxJC.mp4';
 
   const startNewSession = () => {
     localStorage.removeItem('forge-session-id');
@@ -192,6 +200,7 @@ export default function Home() {
         </div>
         <div className="nav-right">
           <button className="nav-search" onClick={() => { setShowSearch(!showSearch); document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth' }); }}>Search</button>
+          <ThemeToggle />
           <button onClick={startNewSession} className="nav-cta">Inquire</button>
         </div>
       </nav>
@@ -222,6 +231,7 @@ export default function Home() {
         
         <div className={`hero-visual ${mounted ? 'visible' : ''}`}>
           <video 
+            key={videoUrl}
             className="hero-video"
             autoPlay
             muted
@@ -229,7 +239,7 @@ export default function Home() {
             playsInline
             poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'%3E%3Crect fill='%23000' width='1200' height='800'/%3E%3C/svg%3E"
           >
-            <source src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/forge-promo-2uvaCuwY7ICqXFSLctTSVIYQDIpxJC.mp4" type="video/mp4" />
+            <source src={videoUrl} type="video/mp4" />
             Your browser does not support the video tag.
           </video>
           <div className="hero-number">001</div>
