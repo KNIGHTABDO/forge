@@ -81,7 +81,7 @@ function EmptyState() {
           width: '100%',
           maxWidth: '520px',
           background: 'rgba(12,12,12,0.8)',
-          border: '1px solid #333',
+          border: 'none',
           borderRadius: '16px',
           overflow: 'hidden',
           boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
@@ -203,7 +203,7 @@ export default function PreviewFrame({ html, isStreaming, inspectMode, onElement
               height: '100%',
               border: 'none',
               display: 'block',
-              background: '#000000',
+              background: 'transparent',
               opacity: isStreaming ? 0.2 : 1,
               transition: 'opacity 0.4s ease',
             } as React.CSSProperties}

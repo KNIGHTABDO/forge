@@ -378,9 +378,13 @@ html[data-theme="light"] .hero-number {
 }
 
 .demo-browser {
-  background: #fff;
-  border: 1px solid var(--border);
+  background: var(--bg);
+  border: none;
   overflow: hidden;
+  box-shadow: 0 40px 80px -20px rgba(0,0,0,0.2);
+}
+
+html[data-theme="light"] .demo-browser {
   box-shadow: 0 40px 80px -20px rgba(0,0,0,0.1);
 }
 
@@ -389,8 +393,8 @@ html[data-theme="light"] .hero-number {
   align-items: center;
   gap: 16px;
   padding: 16px 20px;
-  background: #fafafa;
-  border-bottom: 1px solid var(--border);
+  background: var(--bg-alt);
+  border-bottom: none;
 }
 
 .demo-dots {
@@ -414,8 +418,8 @@ html[data-theme="light"] .hero-number {
   font-size: 13px;
   font-family: var(--font-mono);
   color: var(--text-muted);
-  background: #fff;
-  border: 1px solid var(--border);
+  background: var(--bg);
+  border: none;
   text-align: center;
 }
 
@@ -424,7 +428,7 @@ html[data-theme="light"] .hero-number {
   min-height: 400px;
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: var(--bg);
 }
 
 .demo-input {
@@ -684,8 +688,8 @@ html[data-theme="light"] .hero-number {
 
 .exhibit-preview {
   aspect-ratio: 16 / 10;
-  background: #fafafa;
-  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  border-bottom: none;
   overflow: hidden;
   position: relative;
 }

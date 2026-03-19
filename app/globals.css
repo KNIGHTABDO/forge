@@ -1160,7 +1160,7 @@ img, video { max-width: 100%; display: block; }
 .preview-browser-chrome {
   position: absolute;
   inset: 16px;
-  border: 1px solid var(--border-default);
+  border: none;
   border-radius: var(--r-xl);
   overflow: hidden;
   background: var(--bg-surface);
