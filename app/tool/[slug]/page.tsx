@@ -52,7 +52,7 @@ export default async function ToolPage({ params }: Props) {
           srcDoc={html}
           className="tool-frame"
           title={meta?.title || slug}
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads"
         />
       </main>
     </div>
