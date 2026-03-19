@@ -1,28 +1,45 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
+import { Space_Grotesk, Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import './home.css';
 
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  variable: '--font-headline',
+  display: 'swap',
+});
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
-  title: 'FORGE — Your app in one sentence',
-  description: 'Describe a tool. Get a working app. Share it instantly.',
+  title: 'FORGE — Forge Any App',
+  description: 'Describe your idea in one sentence. Get a fully working interactive web app instantly. No code. No limits.',
   openGraph: {
-    title: 'FORGE',
-    description: 'Describe a tool. Get a working app. Share it instantly.',
+    title: 'FORGE — Forge Any App',
+    description: 'Describe your idea in one sentence. Get a fully working interactive web app instantly.',
     type: 'website',
   },
 };
 
+export const viewport: Viewport = {
+  themeColor: '#000000',
+  width: 'device-width',
+  initialScale: 1,
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html lang="en" className={`${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable}`}>
       <body>{children}</body>
     </html>
   );
