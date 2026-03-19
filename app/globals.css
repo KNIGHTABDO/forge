@@ -106,8 +106,10 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100%;
+  min-height: 100dvh;
   overflow-x: hidden;
-  overflow: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 ::selection { background: rgba(255,255,255,0.2); color: var(--text-primary); }
