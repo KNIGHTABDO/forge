@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Space_Grotesk, Inter, JetBrains_Mono } from 'next/font/google';
+import { Space_Grotesk, Manrope, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import './home.css';
 
@@ -9,9 +9,9 @@ const spaceGrotesk = Space_Grotesk({
   display: 'swap',
 });
 
-const inter = Inter({
+const manrope = Manrope({
   subsets: ['latin'],
-  variable: '--font-sans',
+  variable: '--font-body',
   display: 'swap',
 });
 
@@ -22,24 +22,24 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'FORGE — Forge Any App',
+  title: 'FORGE — Build Apps With One Sentence',
   description: 'Describe your idea in one sentence. Get a fully working interactive web app instantly. No code. No limits.',
   openGraph: {
-    title: 'FORGE — Forge Any App',
-    description: 'Describe your idea in one sentence. Get a fully working interactive web app instantly.',
+    title: 'FORGE — Build Apps With One Sentence',
+    description: 'Describe your idea. Get a fully working interactive web app instantly.',
     type: 'website',
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: '#000000',
+  themeColor: '#fffcf7',
   width: 'device-width',
   initialScale: 1,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" className={`${spaceGrotesk.variable} ${manrope.variable} ${jetbrainsMono.variable}`}>
       <body>{children}</body>
     </html>
   );

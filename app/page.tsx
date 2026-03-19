@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { GalleryEntry } from '@/lib/github';
@@ -17,7 +17,7 @@ function timeAgo(iso: string): string {
   return `${d}d ago`;
 }
 
-// Interactive Demo Component with real working prototype
+// Interactive Demo - Light themed to match page
 function InteractiveDemo() {
   const [phase, setPhase] = useState<'typing' | 'building' | 'complete'>('typing');
   const [typedText, setTypedText] = useState('');
@@ -25,7 +25,6 @@ function InteractiveDemo() {
   const [isRunning, setIsRunning] = useState(false);
   const fullPrompt = 'Build me a pomodoro timer';
   
-  // Typing animation
   useEffect(() => {
     if (phase !== 'typing') return;
     if (typedText.length < fullPrompt.length) {
@@ -39,14 +38,12 @@ function InteractiveDemo() {
     }
   }, [typedText, phase]);
 
-  // Building animation
   useEffect(() => {
     if (phase !== 'building') return;
     const timeout = setTimeout(() => setPhase('complete'), 1500);
     return () => clearTimeout(timeout);
   }, [phase]);
 
-  // Timer logic when complete
   useEffect(() => {
     if (phase !== 'complete' || !isRunning) return;
     const interval = setInterval(() => {
@@ -75,16 +72,11 @@ function InteractiveDemo() {
         <div className="demo-url">forge.app/build</div>
       </div>
       <div className="demo-content">
-        {/* Prompt Input */}
         <div className={`demo-input ${phase !== 'typing' ? 'demo-input-done' : ''}`}>
           <span className="demo-cursor" style={{ opacity: phase === 'typing' ? 1 : 0 }} />
           <span className="demo-text">{typedText || 'Describe your app...'}</span>
-          {phase === 'typing' && typedText.length === fullPrompt.length && (
-            <span className="demo-enter">Press Enter</span>
-          )}
         </div>
 
-        {/* Building State */}
         {phase === 'building' && (
           <div className="demo-building">
             <div className="demo-spinner" />
@@ -92,27 +84,18 @@ function InteractiveDemo() {
           </div>
         )}
 
-        {/* Complete - Working Pomodoro Timer */}
         {phase === 'complete' && (
           <div className="demo-app">
             <div className="demo-app-header">Pomodoro Timer</div>
             <div className="demo-timer-display">{formatTime(timerValue)}</div>
             <div className="demo-timer-progress">
-              <div 
-                className="demo-timer-bar" 
-                style={{ width: `${(timerValue / (25 * 60)) * 100}%` }} 
-              />
+              <div className="demo-timer-bar" style={{ width: `${(timerValue / (25 * 60)) * 100}%` }} />
             </div>
             <div className="demo-timer-controls">
-              <button 
-                className="demo-btn demo-btn-primary"
-                onClick={() => setIsRunning(!isRunning)}
-              >
+              <button className="demo-btn demo-btn-primary" onClick={() => setIsRunning(!isRunning)}>
                 {isRunning ? 'Pause' : 'Start'}
               </button>
-              <button className="demo-btn" onClick={resetTimer}>
-                Reset
-              </button>
+              <button className="demo-btn" onClick={resetTimer}>Reset</button>
             </div>
             <div className="demo-app-badge">Built with FORGE</div>
           </div>
@@ -124,52 +107,50 @@ function InteractiveDemo() {
 
 function ToolCard({ tool, index }: { tool: GalleryEntry; index: number }) {
   const [loaded, setLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const toolUrl = `${process.env.NEXT_PUBLIC_BASE_URL ?? ''}/t/${tool.slug}`;
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const toolUrl = `/api/preview/${tool.slug}`;
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     const observer = new IntersectionObserver(
       ([entry]) => { if (entry.isIntersecting) { setLoaded(true); observer.disconnect(); } },
-      { rootMargin: '200px' }
+      { rootMargin: '300px' }
     );
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
 
+  const handleIframeError = () => setHasError(true);
+
   return (
-    <Link 
-      href={`/tool/${tool.slug}`} 
-      className="card" 
-      style={{ '--delay': `${index * 0.05}s` } as React.CSSProperties}
-    >
-      <div ref={ref} className="card-preview">
-        {loaded ? (
-          <iframe
-            src={toolUrl}
-            title={tool.title || tool.slug}
-            loading="lazy"
+    <Link href={`/tool/${tool.slug}`} className="exhibit-card">
+      <div ref={ref} className="exhibit-preview">
+        {loaded && !hasError ? (
+          <iframe 
+            ref={iframeRef}
+            src={toolUrl} 
+            title={tool.title || tool.slug} 
+            loading="lazy" 
             sandbox="allow-scripts allow-same-origin"
+            onError={handleIframeError}
           />
-        ) : (
-          <div className="card-skeleton" />
-        )}
-        <div className="card-overlay">
-          <span>View App</span>
-        </div>
-      </div>
-      <div className="card-body">
-        <h3 className="card-title">{tool.title || tool.slug}</h3>
-        <p className="card-desc">{tool.description}</p>
-        <div className="card-footer">
-          <div className="card-tags">
-            {tool.tags?.slice(0, 2).map(tag => (
-              <span key={tag} className="tag">{tag}</span>
-            ))}
+        ) : hasError ? (
+          <div className="exhibit-placeholder">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <path d="M3 9h18M9 21V9"/>
+            </svg>
           </div>
-          <span className="card-time">{timeAgo(tool.updated ?? tool.created)}</span>
-        </div>
+        ) : (
+          <div className="exhibit-skeleton" />
+        )}
+      </div>
+      <div className="exhibit-info">
+        <h4 className="exhibit-name">{tool.title || tool.slug.replace(/-/g, ' ')}</h4>
+        <p className="exhibit-protocol">Protocol {String(index + 1).padStart(2, '0')}</p>
       </div>
     </Link>
   );
@@ -177,9 +158,10 @@ function ToolCard({ tool, index }: { tool: GalleryEntry; index: number }) {
 
 export default function Home() {
   const [tools, setTools] = useState<GalleryEntry[]>([]);
-  const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const [search, setSearch] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
   const router = useRouter();
 
   const startNewSession = () => {
@@ -195,184 +177,148 @@ export default function Home() {
       .catch(() => setLoading(false));
   }, []);
 
-  const filtered = useMemo(() => {
-    if (!query.trim()) return tools;
-    const q = query.toLowerCase();
-    return tools.filter(t =>
-      t.title?.toLowerCase().includes(q) ||
-      t.slug.toLowerCase().includes(q) ||
-      t.description?.toLowerCase().includes(q) ||
-      t.tags?.some(tag => tag.toLowerCase().includes(q))
-    );
-  }, [tools, query]);
+  const filteredTools = tools.filter(t => 
+    (t.title || t.slug).toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div className="page">
-      {/* Subtle gradient background */}
-      <div className="bg-gradient" />
-      
       {/* Navigation */}
       <nav className="nav">
-        <div className="nav-inner">
-          <Link href="/" className="logo">FORGE</Link>
-          <div className="nav-links">
-            <a href="#how" className="nav-link">How it works</a>
-            <a href="#gallery" className="nav-link">Gallery</a>
-          </div>
-          <button onClick={startNewSession} className="nav-cta">
-            Start Building
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M3 7H11M11 7L7 3M11 7L7 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
+        <Link href="/" className="nav-logo">FORGE</Link>
+        <div className="nav-links">
+          <a href="#how" className="nav-link">How it works</a>
+          <a href="#gallery" className="nav-link">Gallery</a>
+        </div>
+        <div className="nav-right">
+          <button className="nav-search" onClick={() => { setShowSearch(!showSearch); document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth' }); }}>Search</button>
+          <button onClick={startNewSession} className="nav-cta">Inquire</button>
         </div>
       </nav>
 
-      {/* Hero */}
+      {/* Hero Section */}
       <section className="hero">
         <div className={`hero-content ${mounted ? 'visible' : ''}`}>
-<h1 className="hero-title">
-            Build apps with
-            <br />
-            <span className="hero-highlight">one sentence</span>
+          <span className="hero-eyebrow">Autonomous Creation / Protocol</span>
+          <h1 className="hero-title">
+            BUILD<br />
+            APPS<br />
+            <span className="hero-title-outline">WITH ONE</span><br />
+            SENTENCE.
           </h1>
-          
-          <p className="hero-sub">
-            Describe your idea. Get a fully working interactive web app instantly.
-            <br />
-            No code required. No limits.
+          <p className="hero-desc">
+            Describe your idea. Get a fully working interactive web app instantly. No code required. No limits.
           </p>
-
           <div className="hero-actions">
-            <button onClick={startNewSession} className="btn-primary">
-              Start Forging
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M3 8H13M13 8L8 3M13 8L8 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
+            <button onClick={startNewSession} className="btn-primary">Start Forging</button>
             <a href="#gallery" className="btn-ghost">
               Explore Gallery
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M1 7h12M8 2l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             </a>
           </div>
-
-          <div className="hero-stats">
-            <div className="stat">
-              <span className="stat-value">{tools.length || '—'}</span>
-              <span className="stat-label">Apps built</span>
-            </div>
-            <div className="stat-sep" />
-            <div className="stat">
-              <span className="stat-value">{'<'}10s</span>
-              <span className="stat-label">Generation time</span>
-            </div>
-            <div className="stat-sep" />
-            <div className="stat">
-              <span className="stat-value">Free</span>
-              <span className="stat-label">Forever</span>
-            </div>
-          </div>
         </div>
-
-        {/* Interactive Demo */}
-        <div className={`hero-demo ${mounted ? 'visible' : ''}`}>
-          <InteractiveDemo />
+        
+        <div className={`hero-visual ${mounted ? 'visible' : ''}`}>
+          <img 
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDySEgToMEsKdqcZzkxKwlZgPJqFJLZXQ0vONLVkj6MuPA_UZ3CbQbq_wCq9mBA3ceAzUsJ8W5CziPYS_lI_263dAZV74zrK2_C_uQXU3GP2dQsWxd6md3P7s9ly16I9ueX5IsxKHdiK3JjIi8UnCiPG15mP9g1pFYNQqqQbYo2DL7AjJj6s0dYKxlcxDf6JQrv0eTikI4nP0lMWeMlCdpYvFhoEoVvs3uvxLvpsXy-VnouDomro6DR082eOhCZtPJ_LoOvHzraCAbs" 
+            alt="Abstract 3D sculpture" 
+            className="hero-image"
+          />
+          <div className="hero-number">001</div>
         </div>
       </section>
 
-      {/* How it works */}
+      {/* How it Works */}
       <section className="how" id="how">
-        <div className="section-head">
-          <h2 className="section-title">How it works</h2>
-          <p className="section-sub">Three steps from idea to deployed app</p>
-        </div>
+        <span className="section-eyebrow">Workflow</span>
+        <h2 className="section-title">How it works</h2>
+        <p className="section-desc">Three steps from idea to deployed app.</p>
         
         <div className="steps">
           <div className="step">
-            <div className="step-num">01</div>
+            <span className="step-num">01</span>
             <h3 className="step-title">Describe</h3>
-            <p className="step-desc">
-              Tell us what you want in plain English. A sentence is all it takes.
-            </p>
+            <p className="step-desc">Tell us what you want in plain English. A sentence is all it takes.</p>
+            <svg className="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+            </svg>
           </div>
+          
           <div className="step">
-            <div className="step-num">02</div>
+            <span className="step-num">02</span>
             <h3 className="step-title">Generate</h3>
-            <p className="step-desc">
-              Our AI builds your complete app in seconds. Preview it instantly.
-            </p>
+            <p className="step-desc">Our AI builds your complete app in seconds. Preview it instantly.</p>
+            <svg className="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <rect x="4" y="4" width="16" height="16" rx="2"/>
+              <path d="M9 9h6M9 12h6M9 15h4"/>
+            </svg>
           </div>
+          
           <div className="step">
-            <div className="step-num">03</div>
+            <span className="step-num">03</span>
             <h3 className="step-title">Ship</h3>
-            <p className="step-desc">
-              Deploy with one click. Share your unique URL with the world.
-            </p>
+            <p className="step-desc">Deploy with one click. Share your unique URL with the world.</p>
+            <svg className="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M5 12l5 5L20 7"/>
+            </svg>
           </div>
         </div>
       </section>
 
-      {/* Gallery */}
-      <section className="gallery" id="gallery">
-        <div className="section-head">
-          <div className="gallery-title-row">
-            <h2 className="section-title">Gallery</h2>
-            {!loading && tools.length > 0 && (
-              <span className="gallery-count">{tools.length}</span>
+      {/* Demo Section */}
+      <section className="demo-section">
+        <InteractiveDemo />
+      </section>
+
+      {/* Exhibition / Gallery */}
+      <section className="exhibition" id="gallery">
+        <div className="exhibition-header">
+          <div>
+            <span className="section-eyebrow">Exhibition</span>
+            <h2 className="exhibition-title">Built Apps</h2>
+            <p className="exhibition-desc">Recent creations from the Forge protocol.</p>
+          </div>
+          <button className="view-all" onClick={() => setShowSearch(!showSearch)}>
+            {showSearch ? 'Hide Search' : 'Search Apps'}
+          </button>
+        </div>
+
+        {showSearch && (
+          <div className="search-wrap">
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Search apps..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              autoFocus
+            />
+            {search && (
+              <button className="search-clear" onClick={() => setSearch('')}>Clear</button>
             )}
           </div>
-          <p className="section-sub">Explore what others have built</p>
-        </div>
-
-        <div className="search-wrap">
-          <svg className="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="8"/>
-            <path d="m21 21-4.35-4.35"/>
-          </svg>
-          <input
-            type="search"
-            className="search-input"
-            placeholder="Search apps..."
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-          />
-          {query && (
-            <button className="search-clear" onClick={() => setQuery('')}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M18 6 6 18M6 6l12 12"/>
-              </svg>
-            </button>
-          )}
-        </div>
-
+        )}
+        
         {loading ? (
-          <div className="gallery-loading">
-            <div className="spinner" />
+          <div className="exhibit-loading">
+            <div className="demo-spinner" />
           </div>
-        ) : filtered.length === 0 ? (
-          <div className="gallery-empty">
-            <div className="empty-icon">
-              <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <rect x="8" y="12" width="32" height="24" rx="3"/>
-                <path d="M8 18h32"/>
-                <circle cx="14" cy="15" r="1.5" fill="currentColor" stroke="none"/>
-                <circle cx="19" cy="15" r="1.5" fill="currentColor" stroke="none"/>
-              </svg>
-            </div>
-            <h3 className="empty-title">
-              {query ? `No results for "${query}"` : 'No apps yet'}
-            </h3>
-            <p className="empty-desc">
-              {query ? 'Try a different search term' : 'Be the first to create something'}
-            </p>
-            {!query && (
-              <button onClick={startNewSession} className="btn-primary">
-                Create First App
-              </button>
+        ) : filteredTools.length === 0 ? (
+          <div className="exhibit-empty">
+            {search ? (
+              <p>No apps match "{search}"</p>
+            ) : (
+              <>
+                <p>No apps yet. Be the first to create something.</p>
+                <button onClick={startNewSession} className="btn-primary">Create First App</button>
+              </>
             )}
           </div>
         ) : (
-          <div className="cards">
-            {filtered.map((t, i) => <ToolCard key={t.slug} tool={t} index={i} />)}
+          <div className="exhibit-grid">
+            {filteredTools.map((t, i) => <ToolCard key={t.slug} tool={t} index={i} />)}
           </div>
         )}
       </section>
@@ -380,19 +326,21 @@ export default function Home() {
       {/* CTA */}
       <section className="cta">
         <h2 className="cta-title">Ready to build?</h2>
-        <p className="cta-sub">Turn your ideas into working apps in seconds</p>
-        <button onClick={startNewSession} className="btn-primary btn-lg">
-          Start Forging
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-            <path d="M4 9H14M14 9L9 4M14 9L9 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
+        <p className="cta-desc">Turn your ideas into working apps in seconds.</p>
+        <button onClick={startNewSession} className="cta-button">Start Forging</button>
+        <p className="cta-tagline">FORGE: Build anything. Ship instantly.</p>
+        <div className="cta-watermark">FORGE</div>
       </section>
 
       {/* Footer */}
       <footer className="footer">
-        <span className="footer-logo">FORGE</span>
-        <span className="footer-text">Build anything. Ship instantly.</span>
+        <p className="footer-copy">© 2026 FORGE DIGITAL. ALL RIGHTS RESERVED.</p>
+        <div className="footer-links">
+          <a href="#" className="footer-link">Privacy</a>
+          <a href="#" className="footer-link">Terms</a>
+          <a href="#" className="footer-link">Contact</a>
+          <a href="#" className="footer-link">Twitter / X</a>
+        </div>
       </footer>
     </div>
   );
