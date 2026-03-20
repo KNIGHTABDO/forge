@@ -163,13 +163,10 @@ export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [search, setSearch] = useState('');
   const [showSearch, setShowSearch] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const router = useRouter();
 
-  // Video URLs for light and dark modes
-  const videoUrl = theme === 'light' 
-    ? 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/forge-promo-light-fzsAp3fDNiMsZzPANvEfFnZAx0o7Sp.mp4'
-    : 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/forge-promo-2uvaCuwY7ICqXFSLctTSVIYQDIpxJC.mp4';
+  // Use dark video by default to avoid hydration mismatch
+  const videoUrl = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/forge-promo-2uvaCuwY7ICqXFSLctTSVIYQDIpxJC.mp4';
 
   const startNewSession = () => {
     localStorage.removeItem('forge-session-id');
@@ -177,29 +174,13 @@ export default function Home() {
   };
 
   useEffect(() => {
-    // Sync theme with document attribute changes
-    const updateTheme = () => {
-      const currentTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | null;
-      setTheme(currentTheme || 'dark');
-    };
-    
-    updateTheme();
     setMounted(true);
-    
-    // Listen for theme changes (from toggle button)
-    const observer = new MutationObserver(updateTheme);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
     
     fetch('/api/gallery')
       .then(r => r.json())
       .then(data => { setTools(data); setLoading(false); })
       .catch(() => setLoading(false));
-    
-    return () => observer.disconnect();
   }, []);
-  
-  // Prevent hydration mismatch by using a key that forces video to remount when theme changes
-  const videoKey = `video-${theme}`;
 
   const filteredTools = tools.filter(t => 
     (t.title || t.slug).toLowerCase().includes(search.toLowerCase())
@@ -247,7 +228,6 @@ export default function Home() {
         
         <div className={`hero-visual ${mounted ? 'visible' : ''}`}>
           <video 
-            key={videoKey}
             className="hero-video"
             autoPlay
             muted

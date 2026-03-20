@@ -1,9 +1,26 @@
 'use client';
 
-import { useTheme } from '@/lib/theme-context';
+import { useState, useEffect } from 'react';
 
 export function ThemeToggle() {
-  const { theme, toggleTheme } = useTheme();
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    // Get initial theme from document
+    const currentTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | null;
+    setTheme(currentTheme || 'dark');
+    setMounted(true);
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+  };
+
+  if (!mounted) return null;
 
   return (
     <button
