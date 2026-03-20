@@ -31,7 +31,7 @@ FORGE turns a single sentence into a deployed, shareable web application in seco
 | UI | React 19 + TypeScript |
 | Styling | Hand-written CSS (no Tailwind) |
 | Fonts | Space Grotesk · Manrope · JetBrains Mono (via `next/font`) |
-| AI | OpenAI / Anthropic API (server-side) |
+| AI | Google Gemini API (`@google/generative-ai`) |
 | Storage | GitHub (app gallery via GitHub API) |
 | Hosting | Vercel |
 
@@ -65,10 +65,11 @@ cp .env.local.example .env.local
 
 | Variable | Description |
 |----------|-------------|
-| `OPENAI_API_KEY` | Your OpenAI API key for app generation |
-| `GITHUB_TOKEN` | GitHub personal access token for gallery storage |
-| `GITHUB_REPO` | GitHub repo used for storing deployed apps (e.g. `username/forge-apps`) |
-| `ADMIN_SECRET` | Secret key for accessing the admin dashboard |
+| `GEMINI_API_KEY` | Your Google Gemini API key for app generation |
+| `GITHUB_TOKEN` | GitHub personal access token with `repo` read/write scope |
+| `GITHUB_OWNER` | GitHub username or org that owns the apps storage repo |
+| `GITHUB_REPO` | GitHub repo used for storing deployed apps (e.g. `forge-apps`) |
+| `NEXT_PUBLIC_BASE_URL` | Public base URL of the deployment, no trailing slash (e.g. `https://forge-app.vercel.app`) |
 
 ### Development
 
@@ -123,9 +124,12 @@ forge/
 │   └── t/[slug]/         # Short URL redirect for deployed apps
 ├── components/
 │   ├── ForgeBar.tsx       # Top toolbar in the builder
-│   └── PreviewFrame.tsx   # Iframe wrapper for app preview
+│   ├── PreviewFrame.tsx   # Iframe wrapper for app preview
+│   └── theme-toggle.tsx   # Light/dark mode toggle button
 ├── lib/
-│   └── github.ts         # GitHub API helpers for gallery storage
+│   ├── github.ts         # GitHub API helpers for gallery storage
+│   ├── slugify.ts        # Slug generation utility
+│   └── system-prompt.ts  # AI system prompt for app generation
 └── public/
     └── logo.png
 ```
