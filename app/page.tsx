@@ -3,8 +3,13 @@
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { ThemeToggle } from '@/components/theme-toggle';
 import type { GalleryEntry } from '@/lib/github';
 import './home.css';
+
+// Light video is the default for SSR
+const LIGHT_VIDEO = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/forge-promo-light-fzsAp3fDNiMsZzPANvEfFnZAx0o7Sp.mp4';
+const DARK_VIDEO = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/forge-promo-2uvaCuwY7ICqXFSLctTSVIYQDIpxJC.mp4';
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -162,7 +167,13 @@ export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [search, setSearch] = useState('');
   const [showSearch, setShowSearch] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const videoElementRef = useRef<HTMLVideoElement>(null);
   const router = useRouter();
+
+  // Always render light video URL initially to avoid hydration mismatch
+  // Will be updated dynamically after mount
+  const videoUrl = LIGHT_VIDEO;
 
   const startNewSession = () => {
     localStorage.removeItem('forge-session-id');
@@ -170,11 +181,45 @@ export default function Home() {
   };
 
   useEffect(() => {
+    // Initialize theme from localStorage or document, default to light
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+    const documentTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | null;
+    const initialTheme = savedTheme || documentTheme || 'light';
+    
+    setTheme(initialTheme);
+    document.documentElement.setAttribute('data-theme', initialTheme);
+    localStorage.setItem('theme', initialTheme);
+    
+    // Update video src after hydration to match theme
+    const newVideoUrl = initialTheme === 'light' ? LIGHT_VIDEO : DARK_VIDEO;
+    if (videoElementRef.current && videoElementRef.current.src !== newVideoUrl) {
+      videoElementRef.current.src = newVideoUrl;
+    }
+    
+    // Watch for theme changes from toggle button
+    const handleThemeChange = () => {
+      const newTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | null;
+      const updatedTheme = newTheme || 'light';
+      setTheme(updatedTheme);
+      
+      const newVideoUrl = updatedTheme === 'light' ? LIGHT_VIDEO : DARK_VIDEO;
+      if (videoElementRef.current && videoElementRef.current.src !== newVideoUrl) {
+        videoElementRef.current.src = newVideoUrl;
+        videoElementRef.current.play().catch(() => {}); // Resume playback if paused
+      }
+    };
+    
+    const observer = new MutationObserver(handleThemeChange);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    
     setMounted(true);
+    
     fetch('/api/gallery')
       .then(r => r.json())
       .then(data => { setTools(data); setLoading(false); })
       .catch(() => setLoading(false));
+    
+    return () => observer.disconnect();
   }, []);
 
   const filteredTools = tools.filter(t => 
@@ -192,6 +237,7 @@ export default function Home() {
         </div>
         <div className="nav-right">
           <button className="nav-search" onClick={() => { setShowSearch(!showSearch); document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth' }); }}>Search</button>
+          <ThemeToggle />
           <button onClick={startNewSession} className="nav-cta">Inquire</button>
         </div>
       </nav>
@@ -222,16 +268,17 @@ export default function Home() {
         
         <div className={`hero-visual ${mounted ? 'visible' : ''}`}>
           <video 
+            ref={videoElementRef}
             className="hero-video"
             autoPlay
             muted
             loop
             playsInline
             poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'%3E%3Crect fill='%23000' width='1200' height='800'/%3E%3C/svg%3E"
-          >
-            <source src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/forge-promo-2uvaCuwY7ICqXFSLctTSVIYQDIpxJC.mp4" type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
+            src={videoUrl}
+            type="video/mp4"
+          />
+          Your browser does not support the video tag.
           <div className="hero-number">001</div>
         </div>
       </section>

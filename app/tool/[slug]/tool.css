@@ -3,8 +3,8 @@
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  background: #000;
-  color: #ededed;
+  background: var(--bg-base);
+  color: var(--text-primary);
 }
 
 .tool-header {
@@ -12,8 +12,8 @@
   align-items: center;
   gap: 24px;
   padding: 16px 24px;
-  background: #0a0a0a;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-glow);
   flex-wrap: wrap;
 }
 
@@ -21,7 +21,7 @@
   font-size: 16px;
   font-weight: 700;
   letter-spacing: 0.1em;
-  color: #fff;
+  color: var(--text-primary);
   text-decoration: none;
 }
 
@@ -33,13 +33,13 @@
 .tool-title {
   font-size: 16px;
   font-weight: 600;
-  color: #fff;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .tool-desc {
   font-size: 13px;
-  color: #888;
+  color: var(--text-secondary);
   margin: 4px 0 0;
   max-width: 400px;
   overflow: hidden;
@@ -59,9 +59,9 @@
   padding: 10px 16px;
   font-size: 13px;
   font-weight: 500;
-  color: #888;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-glow);
   border-radius: 8px;
   text-decoration: none;
   transition: all 0.2s;
@@ -69,19 +69,19 @@
 }
 
 .tool-btn:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  background: var(--bg-highlight);
 }
 
 .tool-btn-primary {
-  color: #000;
-  background: #fff;
-  border-color: #fff;
+  color: var(--text-inverse);
+  background: var(--accent);
+  border-color: var(--accent);
 }
 
 .tool-btn-primary:hover {
-  background: #e5e5e5;
-  color: #000;
+  background: var(--accent-hv);
+  color: var(--text-inverse);
 }
 
 .tool-frame-wrap {
@@ -99,7 +99,13 @@
   width: 100%;
   height: 100%;
   border: none;
-  background: #fff;
+  background: var(--bg-base);
+  color-scheme: light;
+}
+
+html[data-theme="dark"] .tool-frame {
+  filter: invert(1) hue-rotate(180deg);
+  color-scheme: dark;
 }
 
 /* Mobile responsive */

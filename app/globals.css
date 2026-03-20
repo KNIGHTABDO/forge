@@ -11,34 +11,34 @@
    ===================================================================== */
 :root {
   /* ── Backgrounds ── */
-  --bg-void:        #000000;
-  --bg-base:        #000000;
-  --bg-surface:     #0A0A0A;
-  --bg-elevated:    #111111;
-  --bg-overlay:     #1A1A1A;
-  --bg-highlight:   #222222;
-  --bg-glass:       rgba(0, 0, 0, 0.75);
+  --bg-void:        #FFFFFF;
+  --bg-base:        #FFFFFF;
+  --bg-surface:     #F8F8F8;
+  --bg-elevated:    #F0F0F0;
+  --bg-overlay:     #E8E8E8;
+  --bg-highlight:   #E0E0E0;
+  --bg-glass:       rgba(255, 255, 255, 0.75);
 
   /* ── Borders ── */
-  --border-subtle:  #1A1A1A;
-  --border-default: #333333;
-  --border-strong:  #444444;
-  --border-glow:    rgba(255,255,255,0.1);
-  --border-cyan:    rgba(255,255,255,0.1);
+  --border-subtle:  #E8E8E8;
+  --border-default: #D4D4D4;
+  --border-strong:  #BFBFBF;
+  --border-glow:    rgba(0,0,0,0.08);
+  --border-cyan:    rgba(0,0,0,0.08);
 
   /* ── Accent Colors (pure monochrome vercel style) ── */
-  --accent:         #FFFFFF;
-  --accent-hv:      #EAEAEA;
-  --accent-dim:     #1A1A1A;
-  --accent-glow:    rgba(255,255,255,0.05);
-  --accent-glow-lg: rgba(255,255,255,0.02);
+  --accent:         #000000;
+  --accent-hv:      #1A1A1A;
+  --accent-dim:     #E8E8E8;
+  --accent-glow:    rgba(0,0,0,0.03);
+  --accent-glow-lg: rgba(0,0,0,0.01);
 
-  --cyan:           #FFFFFF;
-  --cyan-dim:       rgba(255,255,255,0.05);
-  --cyan-glow:      rgba(255,255,255,0.1);
+  --cyan:           #000000;
+  --cyan-dim:       rgba(0,0,0,0.04);
+  --cyan-glow:      rgba(0,0,0,0.1);
 
-  --violet:         #888888;
-  --violet-dim:     rgba(136,136,136,0.1);
+  --violet:         #6B7280;
+  --violet-dim:     rgba(107,114,128,0.1);
 
   --emerald:        #10B981;
   --emerald-dim:    rgba(16,185,129,0.12);
@@ -48,25 +48,25 @@
   --red-dim:        rgba(239,68,68,0.12);
 
   /* ── Text ── */
-  --text-primary:   #EDEDED;
-  --text-secondary: #A1A1AA;
-  --text-tertiary:  #71717A;
-  --text-inverse:   #000000;
+  --text-primary:   #1A1A1A;
+  --text-secondary: #666666;
+  --text-tertiary:  #999999;
+  --text-inverse:   #FFFFFF;
 
   /* ── Gradients ── */
-  --grad-accent:    #FFFFFF;
-  --grad-surface:   #000000;
-  --grad-shine:     linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 60%);
+  --grad-accent:    #000000;
+  --grad-surface:   #FFFFFF;
+  --grad-shine:     linear-gradient(135deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0) 60%);
   --grad-glow:      none;
   --grad-hero:      none;
 
   /* ── Shadows ── */
-  --shadow-sm:      0 1px 2px rgba(0,0,0,1);
-  --shadow-md:      0 4px 12px rgba(0,0,0,1);
-  --shadow-lg:      0 12px 24px rgba(0,0,0,1);
+  --shadow-sm:      0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md:      0 4px 12px rgba(0,0,0,0.08);
+  --shadow-lg:      0 12px 24px rgba(0,0,0,0.1);
   --shadow-glow:    none;
   --shadow-cyan:    none;
-  --shadow-inset:   inset 0 1px 0 rgba(255,255,255,0.05);
+  --shadow-inset:   inset 0 1px 0 rgba(0,0,0,0.05);
 
   /* ── Border Radius — ALL SMOOTH ── */
   --r-xs:   6px;
@@ -90,6 +90,62 @@
   --t-base:  220ms;
   --t-slow:  380ms;
   --t-xslow: 600ms;
+}
+
+/* =====================================================================
+   DARK MODE (data-theme="dark")
+   ===================================================================== */
+html[data-theme="dark"] {
+  /* ── Backgrounds ── */
+  --bg-void:        #000000;
+  --bg-base:        #000000;
+  --bg-surface:     #0A0A0A;
+  --bg-elevated:    #111111;
+  --bg-overlay:     #1A1A1A;
+  --bg-highlight:   #222222;
+  --bg-glass:       rgba(0, 0, 0, 0.75);
+
+  /* ── Borders ── */
+  --border-subtle:  #1A1A1A;
+  --border-default: #333333;
+  --border-strong:  #444444;
+  --border-glow:    rgba(255,255,255,0.1);
+  --border-cyan:    rgba(255,255,255,0.1);
+
+  /* ── Accent Colors ── */
+  --accent:         #FFFFFF;
+  --accent-hv:      #EAEAEA;
+  --accent-dim:     #1A1A1A;
+  --accent-glow:    rgba(255,255,255,0.05);
+  --accent-glow-lg: rgba(255,255,255,0.02);
+
+  --cyan:           #FFFFFF;
+  --cyan-dim:       rgba(255,255,255,0.05);
+  --cyan-glow:      rgba(255,255,255,0.1);
+
+  --violet:         #888888;
+  --violet-dim:     rgba(136,136,136,0.1);
+
+  /* ── Text ── */
+  --text-primary:   #EDEDED;
+  --text-secondary: #A1A1AA;
+  --text-tertiary:  #71717A;
+  --text-inverse:   #000000;
+
+  /* ── Gradients ── */
+  --grad-accent:    #FFFFFF;
+  --grad-surface:   #000000;
+  --grad-shine:     linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 60%);
+  --grad-glow:      none;
+  --grad-hero:      none;
+
+  /* ── Shadows ── */
+  --shadow-sm:      0 1px 2px rgba(0,0,0,1);
+  --shadow-md:      0 4px 12px rgba(0,0,0,1);
+  --shadow-lg:      0 12px 24px rgba(0,0,0,1);
+  --shadow-glow:    none;
+  --shadow-cyan:    none;
+  --shadow-inset:   inset 0 1px 0 rgba(255,255,255,0.05);
 }
 
 /* =====================================================================
@@ -261,7 +317,7 @@ img, video { max-width: 100%; display: block; }
   justify-content: space-between;
   padding: 0 20px;
   height: 56px;
-  background: rgba(0, 0, 0, 0.85);
+  background: var(--bg-base);
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   border-bottom: 1px solid var(--border-subtle);
@@ -435,6 +491,52 @@ img, video { max-width: 100%; display: block; }
 }
 .forge-bar-deploy:active:not(:disabled) { transform: scale(0.97); }
 .forge-bar-deploy:disabled { opacity: 0.35; cursor: default; }
+
+/* Light mode overrides for forge-bar */
+html[data-theme="light"] .forge-bar {
+  background: rgba(255, 255, 255, 0.85);
+  border-bottom-color: #e5e0d5;
+}
+
+html[data-theme="light"] .forge-bar-btn {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: #e5e0d5;
+  color: #999;
+}
+
+html[data-theme="light"] .forge-bar-btn:hover:not(:disabled) {
+  background: #f5f0e8;
+  border-color: #d4d4d4;
+  color: #1a1a1a;
+}
+
+html[data-theme="light"] .forge-bar-btn.active {
+  background: #ede8dd;
+  color: #1a1a1a;
+  border-color: #bfbfbf;
+}
+
+html[data-theme="light"] .forge-name-btn {
+  color: #999;
+}
+
+html[data-theme="light"] .forge-name-btn:hover {
+  background: #f0f0f0;
+  color: #1a1a1a;
+}
+
+html[data-theme="light"] .generation-card {
+  border-color: #d4d4d4;
+}
+
+html[data-theme="light"] .gen-card-spinner {
+  border-color: #bfbfbf;
+  border-top-color: #999;
+}
+
+html[data-theme="light"] .gen-card-progress-bar {
+  background: #e8e8e8;
+}
 
 /* =====================================================================
    CHAT PANEL
@@ -707,7 +809,7 @@ img, video { max-width: 100%; display: block; }
 }
 @media (prefers-reduced-motion: no-preference) {
   .gen-card-progress-fill {
-    background: linear-gradient(90deg, #A1A1AA, #EDEDED, #A1A1AA);
+    background: linear-gradient(90deg, var(--text-secondary), var(--text-primary), var(--text-secondary));
     background-size: 200% 100%;
     animation: shimmer-slide 2s linear infinite;
   }
@@ -1104,7 +1206,7 @@ img, video { max-width: 100%; display: block; }
 .preview-browser-chrome {
   position: absolute;
   inset: 16px;
-  border: 1px solid var(--border-default);
+  border: none;
   border-radius: var(--r-xl);
   overflow: hidden;
   background: var(--bg-surface);
