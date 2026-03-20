@@ -275,10 +275,10 @@ export default function Home() {
             loop
             playsInline
             poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'%3E%3Crect fill='%23000' width='1200' height='800'/%3E%3C/svg%3E"
-            src={videoUrl}
-            type="video/mp4"
-          />
-          Your browser does not support the video tag.
+          >
+            <source src={videoUrl} type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
           <div className="hero-number">001</div>
         </div>
       </section>
