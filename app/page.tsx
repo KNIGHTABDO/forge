@@ -7,6 +7,10 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import type { GalleryEntry } from '@/lib/github';
 import './home.css';
 
+// Light video is the default for SSR
+const LIGHT_VIDEO = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/forge-promo-light-fzsAp3fDNiMsZzPANvEfFnZAx0o7Sp.mp4';
+const DARK_VIDEO = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/forge-promo-2uvaCuwY7ICqXFSLctTSVIYQDIpxJC.mp4';
+
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
@@ -163,13 +167,12 @@ export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [search, setSearch] = useState('');
   const [showSearch, setShowSearch] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const videoUrlRef = useRef(LIGHT_VIDEO);
   const router = useRouter();
 
-  // Video URLs for light and dark modes
-  const videoUrl = theme === 'light' 
-    ? 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/forge-promo-light-fzsAp3fDNiMsZzPANvEfFnZAx0o7Sp.mp4'
-    : 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/forge-promo-2uvaCuwY7ICqXFSLctTSVIYQDIpxJC.mp4';
+  // Default to light video for SSR, will switch on client after hydration
+  const videoUrl = mounted ? (theme === 'light' ? LIGHT_VIDEO : DARK_VIDEO) : LIGHT_VIDEO;
 
   const startNewSession = () => {
     localStorage.removeItem('forge-session-id');
@@ -177,19 +180,28 @@ export default function Home() {
   };
 
   useEffect(() => {
-    // Initialize theme from document
-    const currentTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | null;
-    setTheme(currentTheme || 'dark');
-    setMounted(true);
+    // Initialize theme from localStorage or document, default to light
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+    const documentTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | null;
+    const initialTheme = savedTheme || documentTheme || 'light';
+    
+    setTheme(initialTheme);
+    document.documentElement.setAttribute('data-theme', initialTheme);
+    localStorage.setItem('theme', initialTheme);
+    videoUrlRef.current = initialTheme === 'light' ? LIGHT_VIDEO : DARK_VIDEO;
     
     // Watch for theme changes from toggle button
     const handleThemeChange = () => {
       const newTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | null;
-      setTheme(newTheme || 'dark');
+      const updatedTheme = newTheme || 'light';
+      setTheme(updatedTheme);
+      videoUrlRef.current = updatedTheme === 'light' ? LIGHT_VIDEO : DARK_VIDEO;
     };
     
     const observer = new MutationObserver(handleThemeChange);
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    
+    setMounted(true);
     
     fetch('/api/gallery')
       .then(r => r.json())

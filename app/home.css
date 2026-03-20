@@ -9,19 +9,6 @@
 }
 
 :root {
-  --bg: #0d0d0d;
-  --bg-alt: #1a1a1a;
-  --bg-dark: #0d0d0d;
-  --text: #ededed;
-  --text-muted: #a1a1aa;
-  --text-light: #71717a;
-  --border: #333333;
-  --font-headline: var(--font-headline), 'Space Grotesk', system-ui, sans-serif;
-  --font-body: var(--font-body), 'Manrope', system-ui, sans-serif;
-  --font-mono: var(--font-mono), 'JetBrains Mono', monospace;
-}
-
-html[data-theme="light"] {
   --bg: #fffcf7;
   --bg-alt: #f5f0e8;
   --bg-dark: #0d0d0d;
@@ -29,6 +16,19 @@ html[data-theme="light"] {
   --text-muted: #666;
   --text-light: #999;
   --border: #e5e0d5;
+  --font-headline: var(--font-headline), 'Space Grotesk', system-ui, sans-serif;
+  --font-body: var(--font-body), 'Manrope', system-ui, sans-serif;
+  --font-mono: var(--font-mono), 'JetBrains Mono', monospace;
+}
+
+html[data-theme="dark"] {
+  --bg: #0d0d0d;
+  --bg-alt: #1a1a1a;
+  --bg-dark: #0d0d0d;
+  --text: #ededed;
+  --text-muted: #a1a1aa;
+  --text-light: #71717a;
+  --border: #333333;
 }
 
 /* ── Page ── */
