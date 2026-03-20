@@ -708,6 +708,11 @@ html[data-theme="light"] .demo-btn-primary:hover {
   pointer-events: none;
   transform: scale(0.5);
   transform-origin: top left;
+  filter: color-scheme(light);
+}
+
+html[data-theme="dark"] .exhibit-preview iframe {
+  filter: invert(1) hue-rotate(180deg) color-scheme(dark);
 }
 
 .exhibit-skeleton {
@@ -805,7 +810,9 @@ html[data-theme="light"] .demo-btn-primary:hover {
   transition: background 0.2s;
 }
 
-.cta-button:hover { background: #333; }
+.cta-button:hover { background: var(--text-muted); }
+
+html[data-theme="light"] .cta-button:hover { background: #333; }
 
 .cta-tagline {
   margin-top: 64px;
@@ -820,7 +827,8 @@ html[data-theme="light"] .demo-btn-primary:hover {
   font-family: var(--font-headline);
   font-size: clamp(60px, 12vw, 140px);
   font-weight: 700;
-  color: rgba(0,0,0,0.03);
+  color: var(--text-tertiary);
+  opacity: 0.15;
   letter-spacing: 0.1em;
   pointer-events: none;
 }

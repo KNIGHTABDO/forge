@@ -168,11 +168,12 @@ export default function Home() {
   const [search, setSearch] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const videoUrlRef = useRef(LIGHT_VIDEO);
+  const videoElementRef = useRef<HTMLVideoElement>(null);
   const router = useRouter();
 
-  // Default to light video for SSR, will switch on client after hydration
-  const videoUrl = mounted ? (theme === 'light' ? LIGHT_VIDEO : DARK_VIDEO) : LIGHT_VIDEO;
+  // Always render light video URL initially to avoid hydration mismatch
+  // Will be updated dynamically after mount
+  const videoUrl = LIGHT_VIDEO;
 
   const startNewSession = () => {
     localStorage.removeItem('forge-session-id');
@@ -188,14 +189,24 @@ export default function Home() {
     setTheme(initialTheme);
     document.documentElement.setAttribute('data-theme', initialTheme);
     localStorage.setItem('theme', initialTheme);
-    videoUrlRef.current = initialTheme === 'light' ? LIGHT_VIDEO : DARK_VIDEO;
+    
+    // Update video src after hydration to match theme
+    const newVideoUrl = initialTheme === 'light' ? LIGHT_VIDEO : DARK_VIDEO;
+    if (videoElementRef.current && videoElementRef.current.src !== newVideoUrl) {
+      videoElementRef.current.src = newVideoUrl;
+    }
     
     // Watch for theme changes from toggle button
     const handleThemeChange = () => {
       const newTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | null;
       const updatedTheme = newTheme || 'light';
       setTheme(updatedTheme);
-      videoUrlRef.current = updatedTheme === 'light' ? LIGHT_VIDEO : DARK_VIDEO;
+      
+      const newVideoUrl = updatedTheme === 'light' ? LIGHT_VIDEO : DARK_VIDEO;
+      if (videoElementRef.current && videoElementRef.current.src !== newVideoUrl) {
+        videoElementRef.current.src = newVideoUrl;
+        videoElementRef.current.play().catch(() => {}); // Resume playback if paused
+      }
     };
     
     const observer = new MutationObserver(handleThemeChange);
@@ -257,18 +268,17 @@ export default function Home() {
         
         <div className={`hero-visual ${mounted ? 'visible' : ''}`}>
           <video 
-            key={`video-${theme}`}
+            ref={videoElementRef}
             className="hero-video"
             autoPlay
             muted
             loop
             playsInline
-            suppressHydrationWarning
             poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'%3E%3Crect fill='%23000' width='1200' height='800'/%3E%3C/svg%3E"
-          >
-            <source src={videoUrl} type="video/mp4" suppressHydrationWarning />
-            Your browser does not support the video tag.
-          </video>
+            src={videoUrl}
+            type="video/mp4"
+          />
+          Your browser does not support the video tag.
           <div className="hero-number">001</div>
         </div>
       </section>

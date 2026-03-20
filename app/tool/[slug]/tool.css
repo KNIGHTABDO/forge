@@ -100,6 +100,12 @@
   height: 100%;
   border: none;
   background: var(--bg-base);
+  color-scheme: light;
+}
+
+html[data-theme="dark"] .tool-frame {
+  filter: invert(1) hue-rotate(180deg);
+  color-scheme: dark;
 }
 
 /* Mobile responsive */
