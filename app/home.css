@@ -497,7 +497,7 @@ html[data-theme="light"] .demo-browser {
   align-items: center;
   justify-content: center;
   padding: 40px;
-  background: #fafafa;
+  background: var(--bg-alt);
   border: 1px solid var(--border);
   animation: fadeIn 0.5s;
 }
@@ -573,6 +573,19 @@ html[data-theme="light"] .demo-browser {
 
 html[data-theme="light"] .demo-btn-primary:hover {
   background: #333;
+}
+
+/* Dark mode: primary buttons have a light background (var(--text) = #ededed),
+   so text must be dark to remain readable */
+html[data-theme="dark"] .btn-primary,
+html[data-theme="dark"] .btn-primary:hover,
+html[data-theme="dark"] .nav-cta,
+html[data-theme="dark"] .nav-cta:hover,
+html[data-theme="dark"] .cta-button,
+html[data-theme="dark"] .cta-button:hover,
+html[data-theme="dark"] .demo-btn-primary,
+html[data-theme="dark"] .demo-btn-primary:hover {
+  color: #000;
 }
 
 .demo-app-badge {
@@ -831,6 +844,11 @@ html[data-theme="light"] .cta-button:hover { background: #333; }
   opacity: 0.15;
   letter-spacing: 0.1em;
   pointer-events: none;
+}
+
+html[data-theme="dark"] .cta-watermark {
+  color: var(--text);
+  opacity: 0.08;
 }
 
 /* ── Footer ── */
