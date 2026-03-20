@@ -65,7 +65,10 @@ export default function PrivacyPage() {
               <strong>Automatically collected information:</strong> When you visit FORGE, we may collect standard server logs including your IP address, browser type, referring URL, and pages visited. This data is used solely for security and performance monitoring.
             </p>
             <p>
-              <strong>Session data:</strong> We use a session identifier stored in your browser's local storage to associate your builds with a session. No account registration is required.
+              <strong>Session data:</strong> We use a session identifier stored in your browser's local storage and reflected in our GitHub-backed session store to associate your builds. No email signup is required.
+            </p>
+            <p>
+              <strong>App Data (BaaS):</strong> If you build an app that saves data, that data is stored in our GitHub-based database (Forge BaaS). This data is associated with your unique session ID.
             </p>
           </div>
 
@@ -109,7 +112,7 @@ export default function PrivacyPage() {
               <li><strong>Functional cookies:</strong> Strictly necessary cookies that enable core site functionality.</li>
             </ul>
             <p>
-              We do not use tracking cookies, advertising cookies, or any third-party analytics that track you across the web. You can clear your browser&apos;s local storage at any time to reset your session.
+              We do not use tracking cookies, advertising cookies, or any third-party analytics that track you across the web. You can clear your browser&apos;s local storage at any time to reset your session. Note that this will disconnect you from any Forge BaaS data associated with that session ID.
             </p>
           </div>
 

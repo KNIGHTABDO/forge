@@ -72,7 +72,8 @@ export default function TermsPage() {
               FORGE is an AI-powered web application builder that allows users to describe an idea in plain English and receive a fully functional interactive web app. Features include:
             </p>
             <ul>
-              <li>Natural language to web application generation</li>
+              <li>Multi-Agent generation (Architectural Planning + Build phase)</li>
+              <li>Forge BaaS for cloud-synced application data persistence</li>
               <li>Instant preview and iteration on generated apps</li>
               <li>One-click deployment with a unique shareable URL</li>
               <li>Public gallery of community-built applications</li>
@@ -114,6 +115,9 @@ export default function TermsPage() {
             </p>
             <p>
               <strong>Public gallery:</strong> Apps you deploy may appear in the public gallery, visible to all visitors. If you wish to have your app removed from the gallery, contact us.
+            </p>
+            <p>
+              <strong>Data Persistence:</strong> Apps that use Forge BaaS for data storage will have their data persisted on our servers via GitHub storage. You are responsible for any personal data you input into these apps.
             </p>
           </div>
 

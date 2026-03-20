@@ -168,6 +168,7 @@ export default function Home() {
   const [search, setSearch] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [displayLimit, setDisplayLimit] = useState(4);
   const videoElementRef = useRef<HTMLVideoElement>(null);
   const router = useRouter();
 
@@ -371,7 +372,21 @@ export default function Home() {
           </div>
         ) : (
           <div className="exhibit-grid">
-            {filteredTools.map((t, i) => <ToolCard key={t.slug} tool={t} index={i} />)}
+            {filteredTools.slice(0, displayLimit).map((t, i) => <ToolCard key={t.slug} tool={t} index={i} />)}
+          </div>
+        )}
+
+        {filteredTools.length > 4 && !loading && (
+          <div className="gallery-actions">
+            <button 
+              className={`btn-show-more ${displayLimit > 4 ? 'active' : ''}`}
+              onClick={() => setDisplayLimit(displayLimit > 4 ? 4 : filteredTools.length)}
+            >
+              <span>{displayLimit > 4 ? 'Show Less' : 'Show More'}</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M7 13l5 5 5-5M7 6l5 5 5-5"/>
+              </svg>
+            </button>
           </div>
         )}
       </section>

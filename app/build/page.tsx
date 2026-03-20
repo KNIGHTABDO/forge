@@ -4,6 +4,8 @@ import { useState, useRef, useCallback, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import ForgeBar from '@/components/ForgeBar';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const PreviewFrame = dynamic(() => import('@/components/PreviewFrame'), { ssr: false });
 
@@ -321,7 +323,6 @@ function BuildPage() {
     streamBufferRef.current = '';
     let streamError = false;
     let lastUpdate = 0;
-
     try {
       const res = await fetch('/api/generate', {
         method: 'POST',
@@ -332,20 +333,18 @@ function BuildPage() {
           currentHTML: (isEdit || activeMode === 'chat') ? currentHTML : undefined,
           elementRef: isEdit ? (elementRef || null) : undefined,
           images: snapshotImages.map(img => ({ data: img.data, mimeType: img.mimeType })),
-          generationMode: shouldSendPlan ? 'build' : (isEdit ? 'fast' : activeMode),
+          generationMode: shouldSendPlan ? 'build' : (activeMode === 'fast' && !isEdit ? 'plan' : activeMode),
           planContext: (shouldSendPlan || activeMode === 'plan' || activeMode === 'chat') ? planContent : undefined,
           chatHistory: messages.map(m => ({ role: m.role, content: m.content })),
         }),
       });
 
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`API error ${res.status}: ${errText}`);
-      }
-      if (!res.body) throw new Error('No stream body');
+      if (!res.ok) throw new Error('API Error: ' + res.statusText);
 
-      const reader = res.body.getReader();
+      const reader = res.body?.getReader();
       const decoder = new TextDecoder();
+      if (!reader) throw new Error('No reader found');
+
       let charCount = 0;
       try {
         while (true) {
@@ -354,11 +353,11 @@ function BuildPage() {
           const chunk = decoder.decode(value, { stream: true });
           streamBufferRef.current += chunk;
           charCount += chunk.length;
-          const threshold = activeMode === 'chat' ? 20 : 120;
+          const threshold = (activeMode === 'chat' || activeMode === 'plan') ? 20 : 120;
           if (charCount - lastUpdate > threshold) {
             lastUpdate = charCount;
             setMessages(prev => prev.map((m, i) =>
-              i === prev.length - 1 && m.isGenerating ? { ...m, charCount, content: activeMode === 'chat' ? streamBufferRef.current : m.content } : m
+              i === prev.length - 1 && m.isGenerating ? { ...m, charCount, content: (activeMode === 'chat' || activeMode === 'plan') ? streamBufferRef.current : m.content } : m
             ));
           }
         }
@@ -372,11 +371,17 @@ function BuildPage() {
       if (!finalContent) throw new Error('Empty response from AI — check GEMINI_API_KEY.');
 
       const isRefusal = finalContent.includes('[STRICT_REFUSAL]');
+      let nextPhase = false;
 
       if (!isRefusal) {
         if (activeMode === 'plan') {
           setPlanContent(finalContent);
           setPlanApproved(false);
+        } else if (activeMode === 'fast' && !isEdit) {
+           // This was an automatic plan phase for Fast mode
+           setPlanContent(finalContent);
+           setPlanApproved(true);
+           nextPhase = true;
         } else if (activeMode !== 'chat') {
           setCurrentHTML(finalContent);
         }
@@ -390,11 +395,20 @@ function BuildPage() {
           finalMessage = (finalContent.replace('[STRICT_REFUSAL]', '').trim()) + suffix;
         } else if (activeMode === 'plan') {
           finalMessage = `✓ Plan created! Review it on the right and approve to continue.${suffix}`;
+        } else if (activeMode === 'fast' && !isEdit) {
+          finalMessage = `✓ Tech Blueprint ready. Now building your app...${suffix}`;
         } else {
           finalMessage = isEdit ? `✓ Updated${suffix}` : `✓ Tool built${suffix}`;
         }
         return { ...m, isGenerating: false, content: finalMessage, charCount: undefined };
       }));
+
+      // AUTO-CONTINUE to build phase if we just finished automatic planning
+      if (nextPhase && !isRefusal) {
+        setTimeout(() => {
+           generate(userMsg, 'build');
+        }, 800);
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unknown error';
       setMessages(prev => prev.map((m, i) =>
@@ -731,9 +745,9 @@ function BuildPage() {
 
         {/* ─── Preview Panel ─── */}
         <main className={`preview-panel ${inspectMode ? 'inspect-active' : ''}`}>
-          {generationMode === 'plan' && planContent ? (
+          {((generationMode === 'plan' || generationMode === 'build' || generationMode === 'fast') && planContent && !currentHTML) ? (
             <div className="plan-frame-wrapper">
-              {!planApproved && (
+              {!planApproved && !currentHTML && (
                 <div className="plan-approval-bar">
                   <span>📋 Review the blueprint below</span>
                   <div className="plan-approval-actions">
@@ -749,13 +763,15 @@ function BuildPage() {
                   </div>
                 </div>
               )}
-              {planApproved && (
+              {(planApproved || isGenerating) && !currentHTML && (
                 <div className="plan-approval-bar approved">
-                  <span>✅ Plan approved — ready to build</span>
+                  <span>{isGenerating ? '🏗️ Architect is executing the plan...' : '✅ Plan approved — ready to build'}</span>
                 </div>
               )}
               <div className="plan-frame-content">
-                {planContent}
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {planContent}
+                </ReactMarkdown>
               </div>
             </div>
           ) : (

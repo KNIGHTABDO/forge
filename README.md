@@ -1,211 +1,90 @@
-# FORGE — Build Apps With One Sentence
+# ⚒️ FORGE — The AI Micro-SaaS Engine
 
-FORGE is an AI-powered web application builder. Describe your idea in plain English and get a fully working interactive web app instantly — no code required.
+FORGE is a high-performance AI deployment engine that turns single-sentence ideas into fully functional, responsive, and persistent web applications. No code, no setup, no limits.
 
----
-
-## What Is FORGE?
-
-FORGE turns a single sentence into a deployed, shareable web application in seconds. Built on top of state-of-the-art AI, FORGE handles everything from code generation to deployment so you can focus entirely on your idea.
-
-**Live:** [forge.app](https://forge.app) · **Twitter:** [@jip7e](https://twitter.com/jip7e)
+![Landing Page Header](public/screenshots/landing_page_hero_1774007612405.png)
 
 ---
 
-## Features
+## 🚀 The Forge V2 Revolution
 
-- **One-sentence generation** — Describe what you want in plain English. FORGE generates a complete, interactive web app.
-- **Instant preview** — See your app running live as soon as it's generated.
-- **Iterative building** — Refine your app with follow-up prompts. Inspect and edit individual elements.
-- **One-click deploy** — Ship your app with a unique public URL instantly.
-- **Public gallery** — Browse apps built by the FORGE community.
-- **No account required** — Start building immediately with no sign-up.
+Forge V2 represents a massive leap in autonomous app creation. We've moved beyond simple code snippets to a sophisticated **Multi-Agent Workflow** that plans, builds, and persists.
+
+### 🧠 Architect & Builder Workflow
+Every request starts in the **Architect Phase**. Our AI Planner creates a detailed Technical Blueprint covering architecture, state models, and UI strategy before a single line of code is written. Once approved, the **Builder Engine** executes the plan with surgical precision.
+
+![Architect Planning](public/screenshots/build_page_planning_1774007691839.png)
+
+### 💎 Premium Tailwind Generation
+Forge tools aren't just functional — they are beautiful. The engine is mandated to use a **Mobile-First Tailwind CSS** strategy, ensuring glassmorphism effects, smooth animations, and perfect responsiveness on every device.
+
+### ☁️ Forge BaaS (Backend-as-a-Service)
+Stop building static demos. Forge tools come with built-in **Data Persistence**. Using `window.forge.db`, your generated apps can save and load data across sessions, effectively turning every "tool" into a real "app".
+
+![Final Tool Result](public/screenshots/build_page_completed_tool_1774007722903.png)
 
 ---
 
-## Tech Stack
+## ✨ Core Features
+
+- **Multi-Agent Intelligence** — Architect plans, Builder constructs.
+- **High-Fidelity Inspector** — Point and click to edit any element in real-time.
+- **Mobile-First Design** — Finger-friendly layouts and responsive ECharts included by default.
+- **Zero-Config Deployment** — Ship your app to a public URL in one click.
+- **Real Persistence** — Cloud-synced database storage (Forge BaaS).
+- **Dark Mode / Light Mode** — Native support for premium aesthetics.
+
+---
+
+## 🛠️ Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
-| Framework | [Next.js 16](https://nextjs.org/) (App Router) |
-| UI | React 19 + TypeScript |
-| Styling | Hand-written CSS (no Tailwind) |
-| Fonts | Space Grotesk · Manrope · JetBrains Mono (via `next/font`) |
-| AI | Google Gemini API (`@google/generative-ai`) |
-| Storage | GitHub (app gallery via GitHub API) |
-| Hosting | Vercel |
+| **Core** | [Next.js 16](https://nextjs.org/) (App Router) |
+| **Logic** | TypeScript + React 19 |
+| **AI Engine** | Google Gemini (Multi-Agent Prompting) |
+| **Styling** | Vanilla CSS (Internal) + Tailwind (Generated) |
+| **Persistence** | GitHub JSON Database (Forge BaaS) |
+| **UI Assets** | Lucide Icons · ECharts · Google Fonts |
 
 ---
 
-## Getting Started
+## 🚦 Getting Started
 
-### Prerequisites
-
+### 1. Prerequisites
 - Node.js 18+
-- A package manager (`npm`, `yarn`, or `pnpm`)
+- GitHub Personal Access Token (for storage)
+- Google Gemini API Key
 
-### Installation
-
+### 2. Quick Start
 ```bash
-# Clone the repository
 git clone https://github.com/KNIGHTABDO/forge.git
 cd forge
-
-# Install dependencies
 npm install
-```
-
-### Environment Variables
-
-Copy `.env.local.example` to `.env.local` and fill in the required values:
-
-```bash
-cp .env.local.example .env.local
-```
-
-| Variable | Description |
-|----------|-------------|
-| `GEMINI_API_KEY` | Your Google Gemini API key for app generation |
-| `GITHUB_TOKEN` | GitHub personal access token with `repo` read/write scope |
-| `GITHUB_OWNER` | GitHub username or org that owns the apps storage repo |
-| `GITHUB_REPO` | GitHub repo used for storing deployed apps (e.g. `forge-apps`) |
-| `NEXT_PUBLIC_BASE_URL` | Public base URL of the deployment, no trailing slash (e.g. `https://forge-app.vercel.app`) |
-
-### Development
-
-```bash
+cp .env.local.example .env.local  # Fill in your keys
 npm run dev
 ```
 
-Visit [http://localhost:3000](http://localhost:3000) to see the app.
-
-### Build
-
-```bash
-npm run build
-npm start
-```
+Visit `http://localhost:3000` to start forging.
 
 ---
 
-## Project Structure
+## 📂 Project Structure
 
-```
-forge/
-├── app/
-│   ├── page.tsx          # Landing page
-│   ├── layout.tsx        # Root layout (fonts, metadata)
-│   ├── globals.css       # Global styles (build/tool pages)
-│   ├── home.css          # Landing page styles (warm cream editorial)
-│   ├── legal.css         # Shared styles for privacy/terms/contact pages
-│   ├── privacy/          # Privacy Policy page
-│   │   └── page.tsx
-│   ├── terms/            # Terms of Service page
-│   │   └── page.tsx
-│   ├── contact/          # Contact page
-│   │   └── page.tsx
-│   ├── build/            # App builder interface
-│   │   └── page.tsx
-│   ├── tool/[slug]/      # Deployed app viewer
-│   │   ├── page.tsx
-│   │   └── tool.css
-│   ├── admin/            # Admin dashboard
-│   │   ├── page.tsx
-│   │   ├── layout.tsx
-│   │   └── admin.css
-│   ├── api/
-│   │   ├── generate/     # POST — generate app from prompt
-│   │   ├── deploy/       # POST — deploy app to GitHub
-│   │   ├── gallery/      # GET  — fetch gallery apps
-│   │   ├── preview/[slug]/ # GET — serve app HTML for iframe
-│   │   ├── session/      # GET/POST — session management
-│   │   ├── tool/[slug]/  # GET — fetch tool details
-│   │   └── admin/        # Admin API routes
-│   └── t/[slug]/         # Short URL redirect for deployed apps
-├── components/
-│   ├── ForgeBar.tsx       # Top toolbar in the builder
-│   ├── PreviewFrame.tsx   # Iframe wrapper for app preview
-│   └── theme-toggle.tsx   # Light/dark mode toggle button
-├── lib/
-│   ├── github.ts         # GitHub API helpers for gallery storage
-│   ├── slugify.ts        # Slug generation utility
-│   └── system-prompt.ts  # AI system prompt for app generation
-└── public/
-    └── logo.png
-```
+- `app/build/` — The high-performance builder interface.
+- `app/api/db/` — The Forge BaaS endpoint.
+- `lib/system-prompt.ts` — The "Brain" containing the Architect and Builder mandates.
+- `app/globals.css` — The premium design system tokens.
 
 ---
 
-## How It Works
+## 🤝 Contributing & Legal
 
-```
-User types a prompt
-       ↓
-POST /api/generate
-  → Sends prompt to AI model
-  → Returns complete HTML/CSS/JS app as a single file
-       ↓
-User previews the app in an iframe
-  → Can iterate with follow-up prompts
-  → Can inspect and click-to-edit elements
-       ↓
-User clicks Deploy
-POST /api/deploy
-  → Commits the HTML file to a GitHub repository
-  → Returns a unique shareable URL: /t/{slug}
-       ↓
-App is live at forge.app/t/{slug}
-  → Appears in the public gallery
-```
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+- **License**: [MIT](LICENSE)
+- **Legal**: [Terms of Service](app/terms/page.tsx) | [Privacy Policy](app/privacy/page.tsx)
 
 ---
 
-## Pages
-
-| Route | Description |
-|-------|-------------|
-| `/` | Landing page with hero, how-it-works, gallery |
-| `/build` | The app builder interface |
-| `/tool/[slug]` | View a deployed app with its details |
-| `/t/[slug]` | Short URL — serves the raw HTML app |
-| `/privacy` | Privacy Policy |
-| `/terms` | Terms of Service |
-| `/contact` | Contact page |
-| `/admin` | Admin dashboard (protected) |
-
----
-
-## Design System
-
-FORGE uses a custom hand-written CSS design system with two visual modes:
-
-**Landing page** (`home.css`): Warm cream editorial aesthetic
-- Background: `#fffcf7`
-- Text: `#1a1a1a`
-- Accents: Subtle borders `#e5e0d5`
-- Fonts: Space Grotesk (headlines) + Manrope (body)
-
-**Builder & tools** (`globals.css`): Dark minimal aesthetic
-- Background: `#000000`
-- Text: `#ffffff`
-- Accents: Monochrome grays
-
----
-
-## Contributing
-
-FORGE is currently in early development. Contributions, bug reports, and feature suggestions are welcome via [Twitter @jip7e](https://twitter.com/jip7e).
-
----
-
-## Legal
-
-- [Privacy Policy](https://forge.app/privacy)
-- [Terms of Service](https://forge.app/terms)
-- [Contact](https://forge.app/contact)
-
----
-
-## License
-
-© 2026 FORGE DIGITAL. All rights reserved.
+© 2026 FORGE DIGITAL. Created by [KNIGHTABDO](https://github.com/KNIGHTABDO).

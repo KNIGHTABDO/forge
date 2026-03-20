@@ -168,6 +168,10 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
+input, textarea, select {
+  font-size: 16px;
+}
+
 ::selection { background: rgba(0,0,0,0.12); color: var(--text-primary); }
 html[data-theme="dark"] ::selection { background: rgba(255,255,255,0.2); color: var(--text-primary); }
 
@@ -417,7 +421,7 @@ img, video { max-width: 100%; display: block; }
   background: var(--bg-elevated);
   border: 1px solid var(--accent);
   color: var(--text-primary);
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 500;
   padding: 4px 12px;
   border-radius: var(--r-sm);
@@ -964,7 +968,7 @@ html[data-theme="light"] .gen-card-progress-bar {
   background: transparent;
   border: none;
   color: var(--text-primary);
-  font-size: 13px;
+  font-size: 16px;
   padding: 12px 16px 6px;
   resize: none;
   outline: none;
@@ -1610,4 +1614,124 @@ html[data-theme="light"] .inspect-hud {
   
   .mobile-tab-toggle { top: 68px; width: auto; max-width: none; }
   .mobile-tab-btn { padding: 6px 16px; }
+}
+
+/* =====================================================================
+   ARCHITECT BLUEPRINT UI
+   ===================================================================== */
+.plan-frame-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: var(--bg-surface);
+  animation: fade-in var(--t-base) var(--ease-out);
+}
+
+.plan-approval-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  z-index: 10;
+}
+
+.plan-approval-bar.approved {
+  background: var(--emerald-dim);
+  color: var(--emerald);
+  border-bottom-color: rgba(16,185,129,0.2);
+}
+
+.plan-approval-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.plan-approve-btn {
+  padding: 6px 14px;
+  background: var(--text-primary);
+  color: var(--bg-void);
+  border: none;
+  border-radius: var(--r-sm);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity var(--t-fast);
+}
+
+.plan-approve-btn:hover { opacity: 0.9; }
+
+.plan-edit-btn {
+  padding: 6px 14px;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-sm);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.plan-edit-btn:hover { background: var(--bg-highlight); color: var(--text-primary); }
+
+.plan-frame-content {
+  flex: 1;
+  padding: 40px;
+  overflow-y: auto;
+  max-width: 900px;
+  margin: 0 auto;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  font-size: 15px;
+}
+
+/* Blueprint Markdown Styling */
+.plan-frame-content h1 { font-size: 28px; margin-bottom: 24px; color: var(--text-primary); border-bottom: 1px solid var(--border-subtle); padding-bottom: 12px; }
+.plan-frame-content h2 { font-size: 20px; margin: 32px 0 16px; color: var(--text-primary); display: flex; align-items: center; gap: 10px; }
+.plan-frame-content h2::before { content: ''; width: 4px; height: 18px; background: var(--grad-accent); border-radius: 2px; }
+.plan-frame-content h3 { font-size: 16px; margin: 24px 0 12px; color: var(--text-primary); }
+.plan-frame-content p { margin-bottom: 16px; }
+.plan-frame-content ul, .plan-frame-content ol { margin-bottom: 20px; padding-left: 20px; }
+.plan-frame-content li { margin-bottom: 8px; }
+
+.plan-frame-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 13px;
+  background: var(--bg-elevated);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+}
+
+.plan-frame-content th {
+  background: var(--bg-highlight);
+  text-align: left;
+  padding: 12px 16px;
+  color: var(--text-primary);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.plan-frame-content td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.plan-frame-content tr:last-child td { border-bottom: none; }
+
+.plan-frame-content blockquote {
+  padding: 1px 20px;
+  margin: 24px 0;
+  border-left: 4px solid var(--border-default);
+  background: var(--bg-elevated);
+  border-radius: 0 var(--r-md) var(--r-md) 0;
+  font-style: italic;
+  color: var(--text-tertiary);
 }

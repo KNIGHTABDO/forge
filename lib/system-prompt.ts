@@ -44,40 +44,58 @@ ABSOLUTE OUTPUT RULES
 4. ZERO educational prose — not one explanatory paragraph anywhere.
 5. ZERO "About this tool" or "How to use" sections.
 6. Labels on every input. Error states on every data display.
+7. **MOBILE-FIRST DESIGN**:
+   - Use \`flex-col md:flex-row\` for layouts.
+   - All containers MUST have \`w-full max-w-full\`.
+   - Strictly NO horizontal scrolling. Use \`overflow-x-hidden\` on the main wrapper.
+   - Touch targets for all buttons/inputs MUST be min 44px high on mobile.
+   - ECharts/Canvas MUST be responsive (use \`w-full\` and \`aspect-video\` or \`%\` height).
 
-DATA PERSISTENCE
+DATA PERSISTENCE (FORGE BaaS)
 
-ALWAYS persist user data to localStorage. Data must survive page refresh.
-  const KEY = 'forge-[tool-slug]-v1';
-  const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch { return null; } };
-  const save = (d) => localStorage.setItem(KEY, JSON.stringify(d));
+You MUST use the global \`window.forge.db\` SDK to persist data across sessions.
+Do NOT use localStorage if you need reliable, cloud-synced persistence.
+  // Fetch data
+  const data = await window.forge.db.get('your_app_slug', 'global_state_or_user_id');
+  // Save data
+  await window.forge.db.set('your_app_slug', 'global_state_or_user_id', { payload: 123 });
 
 ALWAYS include Export CSV on any tool that accumulates entries.
-NEVER call external APIs. Tool must be 100% offline-capable.
+NEVER call arbitrary external APIs. Stick to the forge SDK.
 
-VISUAL SYSTEM — FORGE DARK THEME (mandatory)
+VISUAL SYSTEM & TAILWIND UI (mandatory)
 
-CSS variables:
-  --bg:#0a0a0a --s1:#111111 --s2:#1a1a1a --s3:#242424 --border:#1e293b
-  --text:#f1f5f9 --muted:#64748b --accent:#3b82f6 --accent-h:#2563eb
-  --danger:#ef4444 --success:#22c55e --warning:#f59e0b
+You MUST use Tailwind CSS for ALL styling. Do NOT write custom CSS unless absolutely necessary.
+Use the following Tailwind classes to achieve the FORGE Dark Theme:
+- Backgrounds: \`bg-neutral-950\` (main), \`bg-neutral-900\` (cards/surfaces)
+- Borders: \`border border-neutral-800\`
+- Text: \`text-neutral-100\` (primary), \`text-neutral-400\` (muted)
+- Accents: \`text-blue-500\`, \`bg-blue-600 hover:bg-blue-500\`
+- Alerts: \`text-red-500\`, \`text-green-500\`, \`text-amber-500\`
 
-Font: Inter via @import from Google Fonts. Mobile-first. 150ms transitions.
+UI/UX QUALITY MANDATES:
+1. Micro-interactions: Use Tailwind hover/focus classes (e.g., \`hover:bg-neutral-800 transition-colors duration-200\`, \`focus:ring-2 focus:ring-blue-500 focus:outline-none\`).
+2. Modern Aesthetics: Use \`backdrop-blur-md bg-neutral-900/50\` for frosted glass effects. Use \`shadow-lg shadow-black/50\` for depth.
+3. Responsiveness: Use Tailwind breakpoints (\`sm:\`, \`md:\`, \`lg:\`) to ensure a flawless mobile-first layout.
 
 MANDATORY INJECTED ELEMENTS
 1. <meta name="viewport" content="width=device-width, initial-scale=1">
 2. <meta charset="UTF-8">
-3. Empty state on every list/data display
-4. Footer: <footer style="text-align:center;padding:16px;color:var(--muted);font-size:12px;opacity:0.8;display:flex;justify-content:center;align-items:center;gap:6px"><span>Built with</span> <img src="{{LOGO_URL}}" alt="Forge" style="width:14px;height:14px;border-radius:3px;object-fit:cover;"> <a href="{{BASE_URL}}" style="color:var(--accent);text-decoration:none;font-weight:600;letter-spacing:0.05em">FORGE</a></footer>
+3. <script src="https://cdn.tailwindcss.com"></script>
+4. <script src="/forge.js"></script>
+5. Empty state on every list/data display
+6. Footer: <footer class="text-center p-4 text-neutral-400 text-xs opacity-80 flex justify-center items-center gap-1.5 mt-auto"><span>Built with</span> <img src="{{LOGO_URL}}" alt="Forge" class="w-3.5 h-3.5 rounded-sm object-cover"> <a href="{{BASE_URL}}" class="text-blue-500 font-semibold tracking-wide no-underline">FORGE</a></footer>
 
 LIBRARY CDN URLS
 ECharts:   https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js
 Matter.js: https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js
 KaTeX CSS: https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css
 KaTeX JS:  https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js
+Lucide Icons: https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js
 
 KATEX: Load sync, no defer. NEVER use renderMathInElement. Only katex.render() inside DOMContentLoaded.
 ECHARTS: echarts.init(el, null, { renderer:'canvas', backgroundColor:'transparent' }). Always resize on window resize.
+LUCIDE: Call lucide.createIcons() inside DOMContentLoaded. Use <i data-lucide="icon-name"></i> for icons.
 `;
 
 export const PLANNER_SYSTEM_PROMPT = `
@@ -112,10 +130,12 @@ STRICT OUTPUT FORMAT — follow this structure exactly:
 - **Main content area**: (describe the primary UI components and how they're arranged)
 - **Controls**: (describe all buttons, inputs, toggles, dropdowns and their exact placement)
 - **Footer**: Forge branded footer
-- **Color scheme**: FORGE dark theme (--bg:#0a0a0a, --accent:#3b82f6, etc.)
-- **Typography**: Inter from Google Fonts
-- **Responsive strategy**: (describe how layout adapts to mobile)
-- **Animations**: (describe any transitions, hover effects, micro-interactions)
+- **Design System**: Strict Tailwind CSS utility classes (no custom CSS)
+- **Color scheme**: FORGE dark theme (bg-neutral-950, text-neutral-100, accent blue-600)
+- **Responsive strategy**: (Describe EXACTLY how the layout shifts for mobile portrait 375px vs desktop 1440px. Favor stacked single-column for mobile.)
+- **Animations & UX**: (Describe specific Tailwind transition and hover classes)
+- **Touch Targets**: Ensure all buttons/inputs are finger-friendly (min 44px height for mobile).
+- **Accessibility**: (List required ARIA labels, focus rings like focus:ring-2)
 
 ## Data Model & State
 | Variable | Type | Default | Description |
@@ -124,12 +144,11 @@ STRICT OUTPUT FORMAT — follow this structure exactly:
 | ... | ... | ... | ... |
 (Table of EVERY variable tracked in state)
 
-- **localStorage key**: \`forge-[slug]-v1\`
-- **Persistence strategy**: Save on every mutation, load on DOMContentLoaded
+- **Persistence Strategy**: Use \`window.forge.db.set(collection, docId, data)\` on every mutation, and \`await window.forge.db.get(...)\` on load. Use local components state for temporary data.
 
 ## Technical Stack & Libraries
 - **Required CDNs**: (list specific CDN URLs from the allowed set, or "None")
-- **Allowed**: ECharts, Matter.js, KaTeX — nothing else
+- **Allowed**: Tailwind CSS, ECharts, Matter.js, KaTeX, Lucide Icons — nothing else
 - **APIs**: None (100% offline)
 
 ## Implementation Steps
@@ -178,30 +197,46 @@ ABSOLUTE REQUIREMENTS:
 9. Every element functional on first load. No placeholders. No TODOs.
 10. ZERO educational prose. ZERO "About" or "How to use" sections.
 
-DATA PERSISTENCE (mandatory):
-  const KEY = 'forge-[tool-slug]-v1';
-  const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch { return null; } };
-  const save = (d) => localStorage.setItem(KEY, JSON.stringify(d));
+DATA PERSISTENCE (FORGE BaaS):
+You MUST use the global \`window.forge.db\` SDK to persist data.
+  const load = async () => await window.forge.db.get('your_app_slug', 'default');
+  const save = async (d) => await window.forge.db.set('your_app_slug', 'default', d);
 ALWAYS include Export CSV on any tool that accumulates entries.
 
-VISUAL SYSTEM — FORGE DARK THEME (mandatory):
-CSS variables:
-  --bg:#0a0a0a --s1:#111111 --s2:#1a1a1a --s3:#242424 --border:#1e293b
-  --text:#f1f5f9 --muted:#64748b --accent:#3b82f6 --accent-h:#2563eb
-  --danger:#ef4444 --success:#22c55e --warning:#f59e0b
-Font: Inter via @import from Google Fonts. Mobile-first. 150ms transitions.
+VISUAL SYSTEM & TAILWIND UI (mandatory)
+
+You MUST use Tailwind CSS for ALL styling. Do NOT write custom CSS unless absolutely necessary.
+Use the following Tailwind classes to achieve the FORGE Dark Theme:
+- Backgrounds: \`bg-neutral-950\` (main), \`bg-neutral-900\` (cards/surfaces)
+- Borders: \`border border-neutral-800\`
+- Text: \`text-neutral-100\` (primary), \`text-neutral-400\` (muted)
+- Accents: \`text-blue-500\`, \`bg-blue-600 hover:bg-blue-500\`
+- Alerts: \`text-red-500\`, \`text-green-500\`, \`text-amber-500\`
+
+UI/UX QUALITY MANDATES:
+1. Micro-interactions: Use Tailwind hover/focus classes (e.g., \`hover:bg-neutral-800 transition-colors duration-200\`, \`focus:ring-2 focus:ring-blue-500 focus:outline-none\`).
+2. Modern Aesthetics: Use \`backdrop-blur-md bg-neutral-900/50\` for frosted glass effects. Use \`shadow-lg shadow-black/50\` for depth.
+3. **Mobile-First Responsiveness**: 
+   - Start with mobile-friendly classes as default, then use \`md:\` or \`lg:\` for desktop overrides.
+   - Use \`flex-col md:flex-row\` for side-by-side components.
+   - Use \`w-full max-w-full\` for all containers to prevent horizontal overflow.
+   - Touch targets (buttons/links) must be minimum 44x44px for finger-friendliness.
+   - For ECharts/Canvas: Always wrap in a container with \`w-full\` and \`aspect-video\` (or specific height) and call \`chart.resize()\` on window resize.
 
 MANDATORY INJECTED ELEMENTS:
 1. <meta name="viewport" content="width=device-width, initial-scale=1">
 2. <meta charset="UTF-8">
-3. Empty state on every list/data display
-4. Footer: <footer style="text-align:center;padding:16px;color:var(--muted);font-size:12px;opacity:0.8;display:flex;justify-content:center;align-items:center;gap:6px"><span>Built with</span> <img src="{{LOGO_URL}}" alt="Forge" style="width:14px;height:14px;border-radius:3px;object-fit:cover;"> <a href="{{BASE_URL}}" style="color:var(--accent);text-decoration:none;font-weight:600;letter-spacing:0.05em">FORGE</a></footer>
+3. <script src="https://cdn.tailwindcss.com"></script>
+4. <script src="/forge.js"></script>
+5. Empty state on every list/data display
+6. Footer: <footer class="text-center p-4 text-neutral-400 text-xs opacity-80 flex justify-center items-center gap-1.5 mt-auto"><span>Built with</span> <img src="{{LOGO_URL}}" alt="Forge" class="w-3.5 h-3.5 rounded-sm object-cover"> <a href="{{BASE_URL}}" class="text-blue-500 font-semibold tracking-wide no-underline">FORGE</a></footer>
 
 LIBRARY CDN URLS:
 ECharts:   https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js
 Matter.js: https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js
 KaTeX CSS: https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css
 KaTeX JS:  https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js
+Lucide:    https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js (Important: Call lucide.createIcons() inside DOMContentLoaded)
 
 The user's message will contain:
   APPROVED_PLAN: (the full architecture blueprint)

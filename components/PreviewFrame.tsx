@@ -128,8 +128,8 @@ function EmptyState() {
                 borderRadius: '6px',
                 background: 'linear-gradient(90deg, #111 25%, #222 50%, #111 75%)',
                 backgroundSize: '200% 100%',
-                width: `${w}%`,
-                animation: `skeleton-sweep 1.8s ease-in-out ${i * 0.12}s infinite`,
+                width: w + '%',
+                animation: 'skeleton-sweep 1.8s ease-in-out ' + (i * 0.12) + 's infinite',
               }} />
             ))}
           </div>

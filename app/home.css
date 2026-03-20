@@ -646,6 +646,49 @@ html[data-theme="dark"] .demo-btn-primary:hover {
   color: var(--bg);
 }
 
+.gallery-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 64px;
+}
+
+.btn-show-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 40px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all var(--t-base) var(--ease-smooth);
+}
+
+.btn-show-more:hover {
+  background: var(--text);
+  color: var(--bg);
+  border-color: var(--text);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.btn-show-more svg {
+  transition: transform 0.3s var(--ease-spring);
+}
+
+.btn-show-more:hover svg {
+  transform: translateY(2px);
+}
+
+.btn-show-more.active svg {
+  transform: rotate(180deg);
+}
+
 .search-wrap {
   display: flex;
   gap: 12px;

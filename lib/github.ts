@@ -30,16 +30,32 @@ export async function readFile(path: string): Promise<string | null> {
 
 export async function writeFile(path: string, content: string, message: string, isBase64: boolean = false): Promise<void> {
   const encoded = isBase64 ? content : Buffer.from(content, 'utf-8').toString('base64');
-  let sha: string | undefined;
-  try {
-    const existing = await octokit.repos.getContent({ owner: OWNER, repo: REPO, path, ref: BRANCH });
-    const data = existing.data as { sha?: string };
-    sha = data.sha;
-  } catch {}
-  await octokit.repos.createOrUpdateFileContents({
-    owner: OWNER, repo: REPO, path, message, content: encoded, branch: BRANCH,
-    ...(sha ? { sha } : {}),
-  });
+  let retries = 3;
+  while (retries > 0) {
+    try {
+      let sha: string | undefined;
+      try {
+        const existing = await octokit.repos.getContent({ owner: OWNER, repo: REPO, path, ref: BRANCH });
+        const data = existing.data as { sha?: string };
+        sha = data.sha;
+      } catch (err) {
+        // File doesn't exist yet, that's fine
+      }
+      await octokit.repos.createOrUpdateFileContents({
+        owner: OWNER, repo: REPO, path, message, content: encoded, branch: BRANCH,
+        ...(sha ? { sha } : {}),
+      });
+      return; // Success
+    } catch (err: any) {
+      if (err.status === 409 && retries > 1) {
+        console.warn(`[github] 409 conflict for ${path}, retrying... (${retries-1} left)`);
+        retries--;
+        await new Promise(r => setTimeout(r, 1000)); // Wait a bit for GitHub to settle
+        continue;
+      }
+      throw err;
+    }
+  }
 }
 
 export async function toolExists(slug: string): Promise<boolean> {
@@ -60,6 +76,7 @@ export async function deployTool(slug: string, html: string, meta: ForgeMeta): P
   const commitMsg = meta.promptHistory?.at(-1)?.content
     ? `[${slug}] ${meta.promptHistory.at(-1)!.content.slice(0, 72)}`
     : `Deploy ${slug}`;
+    
   await writeFile(`tools/${slug}/index.html`, html, commitMsg);
   await writeFile(`tools/${slug}/forge.json`, JSON.stringify(meta, null, 2), `meta: ${slug}`);
   await updateGalleryIndex(slug, meta);
@@ -169,7 +186,7 @@ export async function deleteToolFromGallery(slug: string): Promise<void> {
 }
 
 export async function saveCheckpoint(sessionId: string, state: SessionState): Promise<string> {
-  const checkpointId = `cp_${Date.now()}`;
+  const checkpointId = `cp_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   await writeFile(`sessions/${sessionId}/checkpoints/${checkpointId}.json`, JSON.stringify(state, null, 2), `Checkpoint ${checkpointId}`);
   return checkpointId;
 }
