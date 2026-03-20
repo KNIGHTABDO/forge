@@ -581,16 +581,14 @@ function BuildPage() {
                         <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{m.content}</div>
                         
                         {!m.isGenerating && !m.error && generationMode === 'chat' && i === messages.length - 1 && (
-                          <div className="chat-quick-actions" style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                          <div className="chat-quick-actions">
                             <button 
                               onClick={() => {
                                 setGenerationMode('plan');
                                 setPlanApproved(false);
                                 generate("Let's create a detailed plan based on our discussion.", 'plan');
                               }}
-                              style={{ padding: '6px 12px', fontSize: 12, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: 'var(--text)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.2s' }}
-                              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-                              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                              className="chat-quick-btn"
                             >
                               <span>📝</span> Start Planning
                             </button>
@@ -599,9 +597,7 @@ function BuildPage() {
                                 setGenerationMode('fast');
                                 generate("Build a tool based on our brainstorming.", 'fast');
                               }}
-                              style={{ padding: '6px 12px', fontSize: 12, background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.2)', borderRadius: 6, color: '#38bdf8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.2s' }}
-                              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(56, 189, 248, 0.2)'}
-                              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(56, 189, 248, 0.1)'}
+                              className="chat-quick-btn chat-quick-btn-primary"
                             >
                               <span>⚡</span> Build Instantly
                             </button>
@@ -841,7 +837,7 @@ function BuildPage() {
 
 export default function BuildPageWrapper() {
   return (
-    <Suspense fallback={<div style={{ background: '#05050A', height: '100dvh' }} />}>
+    <Suspense fallback={<div style={{ background: 'var(--bg-void)', height: '100dvh' }} />}>
       <BuildPage />
     </Suspense>
   );

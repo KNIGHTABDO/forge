@@ -1,41 +1,41 @@
 /*
- * FORGE — Premium UI/UX Redesign
- * Palette: Deep Space Black + Electric Indigo + Cyan Accent
- * No pink. All borders smooth. Full of animations.
+ * FORGE — Build Page UI
+ * Light mode: Warm cream editorial palette (matches landing page)
+ * Dark mode: Deep space black
  */
 
 /* Fonts loaded via next/font in layout.tsx */
 
 /* =====================================================================
-   DESIGN TOKENS
+   DESIGN TOKENS — Light Mode (Warm Cream Editorial)
    ===================================================================== */
 :root {
   /* ── Backgrounds ── */
-  --bg-void:        #FFFFFF;
-  --bg-base:        #FFFFFF;
-  --bg-surface:     #F8F8F8;
-  --bg-elevated:    #F0F0F0;
-  --bg-overlay:     #E8E8E8;
-  --bg-highlight:   #E0E0E0;
-  --bg-glass:       rgba(255, 255, 255, 0.75);
+  --bg-void:        #fffcf7;
+  --bg-base:        #fffcf7;
+  --bg-surface:     #f5f0e8;
+  --bg-elevated:    #ede8dd;
+  --bg-overlay:     #e5e0d5;
+  --bg-highlight:   #d8d0c5;
+  --bg-glass:       rgba(255, 252, 247, 0.85);
 
   /* ── Borders ── */
-  --border-subtle:  #E8E8E8;
-  --border-default: #D4D4D4;
-  --border-strong:  #BFBFBF;
-  --border-glow:    rgba(0,0,0,0.08);
-  --border-cyan:    rgba(0,0,0,0.08);
+  --border-subtle:  #e5e0d5;
+  --border-default: #d4c8bc;
+  --border-strong:  #bfb4a8;
+  --border-glow:    rgba(0,0,0,0.06);
+  --border-cyan:    rgba(0,0,0,0.06);
 
-  /* ── Accent Colors (pure monochrome vercel style) ── */
-  --accent:         #000000;
-  --accent-hv:      #1A1A1A;
-  --accent-dim:     #E8E8E8;
+  /* ── Accent Colors ── */
+  --accent:         #1a1a1a;
+  --accent-hv:      #1a1a1a;
+  --accent-dim:     #e5e0d5;
   --accent-glow:    rgba(0,0,0,0.03);
   --accent-glow-lg: rgba(0,0,0,0.01);
 
-  --cyan:           #000000;
+  --cyan:           #1a1a1a;
   --cyan-dim:       rgba(0,0,0,0.04);
-  --cyan-glow:      rgba(0,0,0,0.1);
+  --cyan-glow:      rgba(0,0,0,0.08);
 
   --violet:         #6B7280;
   --violet-dim:     rgba(107,114,128,0.1);
@@ -45,28 +45,28 @@
   --amber:          #F59E0B;
   --amber-dim:      rgba(245,158,11,0.12);
   --red:            #EF4444;
-  --red-dim:        rgba(239,68,68,0.12);
+  --red-dim:        rgba(239,68,68,0.1);
 
   /* ── Text ── */
-  --text-primary:   #1A1A1A;
+  --text-primary:   #1a1a1a;
   --text-secondary: #666666;
   --text-tertiary:  #999999;
-  --text-inverse:   #FFFFFF;
+  --text-inverse:   #fffcf7;
 
   /* ── Gradients ── */
-  --grad-accent:    #000000;
-  --grad-surface:   #FFFFFF;
+  --grad-accent:    #1a1a1a;
+  --grad-surface:   #fffcf7;
   --grad-shine:     linear-gradient(135deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0) 60%);
   --grad-glow:      none;
   --grad-hero:      none;
 
   /* ── Shadows ── */
-  --shadow-sm:      0 1px 2px rgba(0,0,0,0.05);
+  --shadow-sm:      0 1px 2px rgba(0,0,0,0.06);
   --shadow-md:      0 4px 12px rgba(0,0,0,0.08);
   --shadow-lg:      0 12px 24px rgba(0,0,0,0.1);
   --shadow-glow:    none;
   --shadow-cyan:    none;
-  --shadow-inset:   inset 0 1px 0 rgba(0,0,0,0.05);
+  --shadow-inset:   inset 0 1px 0 rgba(0,0,0,0.04);
 
   /* ── Border Radius — ALL SMOOTH ── */
   --r-xs:   6px;
@@ -168,7 +168,8 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
-::selection { background: rgba(255,255,255,0.2); color: var(--text-primary); }
+::selection { background: rgba(0,0,0,0.12); color: var(--text-primary); }
+html[data-theme="dark"] ::selection { background: rgba(255,255,255,0.2); color: var(--text-primary); }
 
 a {
   color: var(--accent);
@@ -342,6 +343,22 @@ img, video { max-width: 100%; display: block; }
   font-weight: 300;
 }
 
+/* Theme toggle inside forge-bar */
+.forge-bar .theme-toggle {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--r-sm);
+  border-color: var(--border-subtle);
+  color: var(--text-tertiary);
+}
+@media (hover: hover) {
+  .forge-bar .theme-toggle:hover {
+    background: var(--bg-elevated);
+    border-color: var(--border-default);
+    color: var(--text-secondary);
+  }
+}
+
 /* Logo */
 .forge-logo {
   display: flex;
@@ -423,7 +440,7 @@ img, video { max-width: 100%; display: block; }
 
 /* Bar Buttons */
 .forge-bar-btn {
-  background: rgba(255,255,255,0.04);
+  background: transparent;
   color: var(--text-tertiary);
   border: 1px solid var(--border-subtle);
   border-radius: var(--r-sm);
@@ -494,48 +511,48 @@ img, video { max-width: 100%; display: block; }
 
 /* Light mode overrides for forge-bar */
 html[data-theme="light"] .forge-bar {
-  background: rgba(255, 255, 255, 0.85);
-  border-bottom-color: #e5e0d5;
+  background: rgba(255, 252, 247, 0.92);
+  border-bottom-color: var(--border-subtle);
 }
 
 html[data-theme="light"] .forge-bar-btn {
-  background: rgba(0, 0, 0, 0.04);
-  border-color: #e5e0d5;
-  color: #999;
+  background: transparent;
+  border-color: var(--border-default);
+  color: var(--text-tertiary);
 }
 
 html[data-theme="light"] .forge-bar-btn:hover:not(:disabled) {
-  background: #f5f0e8;
-  border-color: #d4d4d4;
-  color: #1a1a1a;
+  background: var(--bg-elevated);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
 }
 
 html[data-theme="light"] .forge-bar-btn.active {
-  background: #ede8dd;
-  color: #1a1a1a;
-  border-color: #bfbfbf;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
 }
 
 html[data-theme="light"] .forge-name-btn {
-  color: #999;
+  color: var(--text-tertiary);
 }
 
 html[data-theme="light"] .forge-name-btn:hover {
-  background: #f0f0f0;
-  color: #1a1a1a;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
 }
 
 html[data-theme="light"] .generation-card {
-  border-color: #d4d4d4;
+  border-color: var(--border-default);
 }
 
 html[data-theme="light"] .gen-card-spinner {
-  border-color: #bfbfbf;
-  border-top-color: #999;
+  border-color: var(--border-strong);
+  border-top-color: var(--text-tertiary);
 }
 
 html[data-theme="light"] .gen-card-progress-bar {
-  background: #e8e8e8;
+  background: var(--bg-overlay);
 }
 
 /* =====================================================================
@@ -685,7 +702,7 @@ html[data-theme="light"] .gen-card-progress-bar {
 .chat-bubble.assistant.error {
   border-color: rgba(239,68,68,0.3);
   background: var(--red-dim);
-  color: #FCA5A5;
+  color: var(--red);
 }
 
 /* Generating Dots */
@@ -893,7 +910,7 @@ html[data-theme="light"] .gen-card-progress-bar {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+  box-shadow: var(--shadow-lg);
   z-index: 50;
   animation: dropdown-fade 0.15s var(--ease-spring);
 }
@@ -917,7 +934,7 @@ html[data-theme="light"] .gen-card-progress-bar {
   background: var(--bg-highlight);
 }
 .mode-dropdown-item.active {
-  background: rgba(255,255,255,0.05);
+  background: var(--bg-overlay);
 }
 .mode-dropdown-item-title {
   font-size: 13px;
@@ -986,10 +1003,10 @@ html[data-theme="light"] .gen-card-progress-bar {
   .chat-input-icon-btn:hover { background: var(--bg-overlay); color: var(--text-secondary); }
 }
 .chat-send {
-  background: #fff;
+  background: var(--text-primary);
   border: none;
   border-radius: var(--r-full);
-  color: #000;
+  color: var(--bg-void);
   width: 32px;
   height: 32px;
   min-width: 32px;
@@ -1089,8 +1106,8 @@ html[data-theme="light"] .gen-card-progress-bar {
 }
 .plan-approve-btn {
   padding: 6px 16px;
-  background: #fff;
-  color: #000;
+  background: var(--text-primary);
+  color: var(--bg-void);
   border: none;
   border-radius: var(--r-full);
   font-size: 12px;
@@ -1121,7 +1138,7 @@ html[data-theme="light"] .gen-card-progress-bar {
   font-size: 13px;
   line-height: 1.6;
   white-space: pre-wrap;
-  background: #000;
+  background: var(--bg-base);
 }
 .plan-frame-content h1, .plan-frame-content h2, .plan-frame-content h3 {
   color: var(--text-primary);
@@ -1212,8 +1229,11 @@ html[data-theme="light"] .gen-card-progress-bar {
   background: var(--bg-surface);
   display: flex;
   flex-direction: column;
-  box-shadow: 0 24px 64px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05);
+  box-shadow: 0 24px 64px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.05), 0 0 0 1px var(--border-subtle);
   animation: preview-reveal 0.5s var(--ease-out) both;
+}
+html[data-theme="dark"] .preview-browser-chrome {
+  box-shadow: 0 24px 64px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05);
 }
 @keyframes preview-reveal {
   from { opacity: 0; transform: scale(0.97) translateY(8px); }
@@ -1277,8 +1297,11 @@ html[data-theme="light"] .gen-card-progress-bar {
   justify-content: center;
   z-index: 5;
   pointer-events: none;
-  background: rgba(5,5,10,0.7);
+  background: rgba(0,0,0,0.4);
   backdrop-filter: blur(4px);
+}
+html[data-theme="light"] .stream-overlay {
+  background: rgba(255,252,247,0.6);
 }
 .stream-indicator {
   display: flex;
@@ -1315,6 +1338,11 @@ html[data-theme="light"] .gen-card-progress-bar {
   box-shadow: 0 0 24px rgba(99,102,241,0.2), var(--shadow-md);
   white-space: nowrap;
 }
+html[data-theme="light"] .inspect-hud {
+  background: rgba(255,252,247,0.95);
+  border-color: var(--border-default);
+  box-shadow: var(--shadow-md);
+}
 @media (prefers-reduced-motion: no-preference) {
   .inspect-hud { animation: hud-in 0.2s var(--ease-out); }
   @keyframes hud-in {
@@ -1339,7 +1367,7 @@ html[data-theme="light"] .gen-card-progress-bar {
   font-family: inherit;
 }
 @media (hover: hover) {
-  .inspect-hud-exit:hover { background: var(--red-dim); border-color: rgba(239,68,68,0.4); color: #FCA5A5; }
+  .inspect-hud-exit:hover { background: var(--red-dim); border-color: rgba(239,68,68,0.4); color: var(--red); }
 }
 
 /* =====================================================================
@@ -1428,6 +1456,45 @@ html[data-theme="light"] .gen-card-progress-bar {
 /* =====================================================================
    CHAT MESSAGE ACTIONS & CHECKPOINTS
    ===================================================================== */
+.chat-quick-actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chat-quick-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all var(--t-base) var(--ease-smooth);
+  font-family: inherit;
+}
+.chat-quick-btn:hover {
+  background: var(--bg-highlight);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+.chat-quick-btn-primary {
+  background: var(--bg-elevated);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+.chat-quick-btn-primary:hover {
+  background: var(--text-primary);
+  color: var(--bg-void);
+  border-color: var(--text-primary);
+}
+
+
 .chat-msg-actions {
   position: absolute;
   top: -14px;
@@ -1446,17 +1513,17 @@ html[data-theme="light"] .gen-card-progress-bar {
 }
 
 .restore-btn {
-  background: #1e293b;
-  border: 1px solid #334155;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
   padding: 4px 10px;
   border-radius: var(--r-sm);
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 6px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  box-shadow: var(--shadow-md);
   backdrop-filter: blur(8px);
   transition: all 0.15s ease;
   font-weight: 600;
@@ -1464,9 +1531,9 @@ html[data-theme="light"] .gen-card-progress-bar {
 }
 
 .restore-btn:hover {
-  background: #334155;
-  border-color: #475569;
-  color: #f1f5f9;
+  background: var(--bg-highlight);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
   transform: scale(1.05);
 }
 
@@ -1500,14 +1567,14 @@ html[data-theme="light"] .gen-card-progress-bar {
     top: 72px; /* 56px header + 16px gap */
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(10, 10, 10, 0.7);
+    background: var(--bg-glass);
     backdrop-filter: blur(24px) saturate(180%);
     -webkit-backdrop-filter: blur(24px) saturate(180%);
     padding: 4px;
     border-radius: var(--r-full);
-    border: 1px solid var(--border-glow);
+    border: 1px solid var(--border-default);
     z-index: 200;
-    box-shadow: 0 12px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+    box-shadow: var(--shadow-md);
     gap: 2px;
   }
   
