@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { ThemeToggle } from './theme-toggle';
 
 interface Props {
   toolName: string;
@@ -116,6 +117,7 @@ export default function ForgeBar({
             <span className="forge-bar-btn-label">{copied ? 'Copied!' : 'Share'}</span>
           </button>
         )}
+        <ThemeToggle />
         <button
           className={`forge-bar-deploy${isDeploying ? ' loading' : ''}`}
           onClick={onDeploy}
