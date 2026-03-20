@@ -163,10 +163,13 @@ export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [search, setSearch] = useState('');
   const [showSearch, setShowSearch] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const router = useRouter();
 
-  // Use dark video by default to avoid hydration mismatch
-  const videoUrl = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/forge-promo-2uvaCuwY7ICqXFSLctTSVIYQDIpxJC.mp4';
+  // Video URLs for light and dark modes
+  const videoUrl = theme === 'light' 
+    ? 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/forge-promo-light-fzsAp3fDNiMsZzPANvEfFnZAx0o7Sp.mp4'
+    : 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/forge-promo-2uvaCuwY7ICqXFSLctTSVIYQDIpxJC.mp4';
 
   const startNewSession = () => {
     localStorage.removeItem('forge-session-id');
@@ -174,12 +177,26 @@ export default function Home() {
   };
 
   useEffect(() => {
+    // Initialize theme from document
+    const currentTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | null;
+    setTheme(currentTheme || 'dark');
     setMounted(true);
+    
+    // Watch for theme changes from toggle button
+    const handleThemeChange = () => {
+      const newTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | null;
+      setTheme(newTheme || 'dark');
+    };
+    
+    const observer = new MutationObserver(handleThemeChange);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
     
     fetch('/api/gallery')
       .then(r => r.json())
       .then(data => { setTools(data); setLoading(false); })
       .catch(() => setLoading(false));
+    
+    return () => observer.disconnect();
   }, []);
 
   const filteredTools = tools.filter(t => 
@@ -228,14 +245,16 @@ export default function Home() {
         
         <div className={`hero-visual ${mounted ? 'visible' : ''}`}>
           <video 
+            key={`video-${theme}`}
             className="hero-video"
             autoPlay
             muted
             loop
             playsInline
+            suppressHydrationWarning
             poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'%3E%3Crect fill='%23000' width='1200' height='800'/%3E%3C/svg%3E"
           >
-            <source src={videoUrl} type="video/mp4" />
+            <source src={videoUrl} type="video/mp4" suppressHydrationWarning />
             Your browser does not support the video tag.
           </video>
           <div className="hero-number">001</div>
