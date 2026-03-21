@@ -235,6 +235,7 @@ export default function Home() {
         <div className="nav-links">
           <a href="#how" className="nav-link">How it works</a>
           <a href="#gallery" className="nav-link">Gallery</a>
+          <Link href="/changelog" className="nav-link">Changelog</Link>
         </div>
         <div className="nav-right">
           <button className="nav-search" onClick={() => { setShowSearch(!showSearch); document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth' }); }}>Search</button>
@@ -316,6 +317,34 @@ export default function Home() {
             <p className="step-desc">Deploy with one click. Share your unique URL with the world.</p>
             <svg className="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path d="M5 12l5 5L20 7"/>
+            </svg>
+          </div>
+        </div>
+      </section>
+      
+      {/* Advanced Evolution Section */}
+      <section className="how" style={{ borderTop: 'none', background: 'var(--bg-alt)' }}>
+        <span className="section-eyebrow">Advanced Evolution</span>
+        <h2 className="section-title">Superior Aesthetics & Multi-Page Scale</h2>
+        <p className="section-desc">Forge doesn't just build snippets. It engineers complete experiences.</p>
+        
+        <div className="steps-2-col">
+          <div className="step">
+            <span className="step-num">AI</span>
+            <h3 className="step-title">Stitch Design AI</h3>
+            <p className="step-desc">Describe your design and let Google Stitch AI generate high-fidelity UI mockups instantly. Use these designs as precise visual anchors for your Forge builds.</p>
+            <svg className="step-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
+          
+          <div className="step">
+            <span className="step-num">∞</span>
+            <h3 className="step-title">Enhance Mode (Beta)</h3>
+            <p className="step-desc">Break the single-page barrier. Scale your ideas into full-fledged multi-page applications with automated routing and shared state, powered by GitHub Models.</p>
+            <svg className="step-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+              <path d="M7 18.5v-13M17 18.5v-13M12 12l5-3M12 12l-5-3M12 12v9"/>
             </svg>
           </div>
         </div>

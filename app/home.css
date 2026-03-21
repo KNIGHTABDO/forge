@@ -333,6 +333,17 @@ html[data-theme="light"] .hero-number {
   grid-template-columns: repeat(3, 1fr);
 }
 
+.steps-2-col {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+@media (max-width: 900px) {
+  .steps, .steps-2-col {
+    grid-template-columns: 1fr;
+  }
+}
+
 .step {
   padding: 48px;
   border: 1px solid var(--border);

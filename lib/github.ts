@@ -1,6 +1,14 @@
 import { Octokit } from '@octokit/rest';
 
-const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
+const octokit = new Octokit({
+  auth: process.env.GITHUB_TOKEN,
+  log: {
+    debug: () => {},
+    info: () => {},
+    warn: () => {}, // Silence internal API warnings like 404 logs
+    error: () => {} // Silence verbose error stack traces for non-critical HTTP responses
+  }
+});
 
 const OWNER = process.env.GITHUB_OWNER!;
 const REPO  = process.env.GITHUB_REPO!;
@@ -82,6 +90,32 @@ export async function deployTool(slug: string, html: string, meta: ForgeMeta): P
   await updateGalleryIndex(slug, meta);
 }
 
+export async function deployProjectFiles(slug: string, files: { path: string, content: string }[], meta: ForgeMeta): Promise<void> {
+  const commitMsg = `[${slug}] Multi-page enhancement`;
+  for (const file of files) {
+    // Ensure path is relative to the tool directory if it's not already
+    const fullPath = file.path.startsWith(`tools/${slug}/`) ? file.path : `tools/${slug}/${file.path.replace(/^\//, '')}`;
+    await writeFile(fullPath, file.content, commitMsg);
+  }
+  await writeFile(`tools/${slug}/forge.json`, JSON.stringify(meta, null, 2), `meta: ${slug}`);
+  await updateGalleryIndex(slug, meta);
+}
+
+export async function getToolFiles(slug: string): Promise<{ path: string, content: string }[]> {
+  const items = await listDirectory(`tools/${slug}`);
+  const files: { path: string, content: string }[] = [];
+  
+  for (const item of items) {
+    if (item.type === 'file') {
+      const content = await readFile(item.path);
+      if (content !== null) {
+        files.push({ path: item.path, content });
+      }
+    }
+  }
+  return files;
+}
+
 async function updateGalleryIndex(slug: string, meta: ForgeMeta): Promise<void> {
   const raw = await readFile('index.json');
   const index: GalleryEntry[] = raw ? JSON.parse(raw) : [];
@@ -113,8 +147,9 @@ export interface SessionState {
   messages: any[];
   planContent: string;
   currentHTML: string;
-  mode: 'fast' | 'plan' | 'build';
+  mode: 'fast' | 'plan' | 'build' | 'enhance';
   toolName: string;
+  projectFiles?: { path: string, content: string }[];
 }
 
 export async function saveSession(sessionId: string, state: SessionState): Promise<void> {

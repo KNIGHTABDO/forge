@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic';
 import ForgeBar from '@/components/ForgeBar';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import StitchPanel, { StitchDesign } from '@/components/StitchPanel';
 
 const PreviewFrame = dynamic(() => import('@/components/PreviewFrame'), { ssr: false });
 
@@ -31,6 +32,7 @@ interface Message {
   charCount?: number;
   error?: boolean;
   checkpointId?: string;
+  mode?: 'fast' | 'plan' | 'build' | 'enhance' | 'chat';
 }
 
 // Generation steps shown in the thinking card
@@ -52,9 +54,15 @@ const GEN_STEPS_BUILD = [
   { id: 'implement', label: 'Implementing features' },
   { id: 'polish', label: 'Polishing & testing' },
 ];
+const GEN_STEPS_ENHANCE = [
+  { id: 'analyze', label: 'Analyzing project state' },
+  { id: 'context', label: 'Gathering file context' },
+  { id: 'enhance', label: 'Expanding architecture' },
+  { id: 'multi', label: 'Generating multi-page code' },
+];
 
-function ThinkingCard({ charCount, mode }: { charCount: number; mode: 'fast' | 'plan' | 'build' }) {
-  const steps = mode === 'plan' ? GEN_STEPS_PLAN : mode === 'build' ? GEN_STEPS_BUILD : GEN_STEPS_FAST;
+function ThinkingCard({ charCount, mode }: { charCount: number; mode: 'fast' | 'plan' | 'build' | 'enhance' }) {
+  const steps = mode === 'plan' ? GEN_STEPS_PLAN : mode === 'build' ? GEN_STEPS_BUILD : mode === 'enhance' ? GEN_STEPS_ENHANCE : GEN_STEPS_FAST;
   const progress = Math.min(charCount / 8000, 1);
   const stepIndex = Math.min(Math.floor(progress * steps.length), steps.length - 1);
 
@@ -108,12 +116,17 @@ function BuildPage() {
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
 
-  const [generationMode, setGenerationMode] = useState<'fast' | 'plan' | 'build' | 'chat'>('fast');
+  const [generationMode, setGenerationMode] = useState<'fast' | 'plan' | 'build' | 'chat' | 'enhance'>('fast');
   const [isModeMenuOpen, setIsModeMenuOpen] = useState(false);
   const [planContent, setPlanContent] = useState('');
   const [planApproved, setPlanApproved] = useState(false);
   const [sessionId, setSessionId] = useState<string>('');
   const [mobileTab, setMobileTab] = useState<'chat' | 'preview'>('chat');
+
+  // Stitch Design AI
+  const [showStitchPanel, setShowStitchPanel] = useState(false);
+  const [selectedStitchDesign, setSelectedStitchDesign] = useState<StitchDesign | null>(null);
+  const [projectFiles, setProjectFiles] = useState<{ path: string, content: string }[]>([]);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -143,6 +156,7 @@ function BuildPage() {
           if (data.state.mode) setGenerationMode(data.state.mode);
           if (data.state.toolName) setToolName(data.state.toolName);
           if (data.state.planApproved) setPlanApproved(data.state.planApproved);
+          if (data.state.projectFiles) setProjectFiles(data.state.projectFiles);
         }
       } catch (e) { console.error('Failed to load session', e); }
     };
@@ -152,6 +166,7 @@ function BuildPage() {
   useEffect(() => {
     if (!sessionId || isGenerating || !messages.length) return;
     const t = setTimeout(async () => {
+      // Avoid auto-saving if the generation just finished and should have triggered its own save/checkpoint
       try {
         await fetch('/api/session', {
           method: 'POST',
@@ -159,15 +174,34 @@ function BuildPage() {
           body: JSON.stringify({
             action: 'save',
             sessionId,
-            state: { messages, planContent, currentHTML, mode: generationMode, toolName, planApproved }
+            state: { messages, planContent, currentHTML, mode: generationMode, toolName, planApproved, projectFiles }
           })
         });
       } catch (e) {
         console.error('Save session failed', e);
       }
-    }, 1500);
+    }, 2500); // Increased debounce to stay clear of checkpoint saves
     return () => clearTimeout(t);
-  }, [messages, planContent, currentHTML, generationMode, toolName, sessionId, isGenerating]);
+  }, [messages, planContent, currentHTML, generationMode, toolName, sessionId, isGenerating, projectFiles]);
+
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      if (e.data?.__forge_nav) {
+        const targetPath = e.data.__forge_nav.replace(/^\//, '');
+        // Search in projectFiles (case-insensitive, handling potential relative paths)
+        const file = projectFiles.find(f => {
+            const path = f.path.toLowerCase();
+            const target = targetPath.toLowerCase();
+            return path === target || path.endsWith('/' + target) || path === `tools/${slug}/${target}`.toLowerCase();
+        });
+        if (file) {
+          setCurrentHTML(file.content);
+        }
+      }
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, [projectFiles, slug]);
 
   useEffect(() => {
     // Setup Speech Recognition on mount
@@ -269,7 +303,7 @@ function BuildPage() {
     inputRef.current?.focus();
   }, []);
 
-  const generate = useCallback(async (userMsg: string, overrideMode?: 'fast' | 'plan' | 'build' | 'chat') => {
+  const generate = useCallback(async (userMsg: string, overrideMode?: 'fast' | 'plan' | 'build' | 'chat' | 'enhance') => {
     if ((!userMsg.trim() && pendingImages.length === 0) || isGenerating) return;
 
     const activeMode = overrideMode || generationMode;
@@ -285,7 +319,7 @@ function BuildPage() {
     }
 
     // Edit flow: if we already have HTML (in any mode), treat as edit
-    const isEdit = Boolean(currentHTML) && activeMode !== 'plan' && activeMode !== 'chat';
+    const isEdit = Boolean(currentHTML) && activeMode !== 'plan' && activeMode !== 'chat' && activeMode !== 'enhance';
     // Only send plan context for the FIRST build (no HTML yet)
     const shouldSendPlan = activeMode === 'build' && !currentHTML && planContent;
     const now = new Date().toISOString();
@@ -316,6 +350,7 @@ function BuildPage() {
       at: assistantTimestamp,
       isGenerating: true,
       charCount: 0,
+      mode: activeMode,
     };
     turnMessages = [...turnMessages, assistantPlaceholder];
     setMessages(turnMessages);
@@ -324,19 +359,29 @@ function BuildPage() {
     let streamError = false;
     let lastUpdate = 0;
     try {
-      const res = await fetch('/api/generate', {
+      const isEnhance = activeMode === 'enhance';
+      const apiUrl = isEnhance ? '/api/enhance' : '/api/generate';
+      const fetchBody = isEnhance ? {
+        prompt: userMsg,
+        currentHTML,
+        stitchDesign: selectedStitchDesign || undefined,
+        slug: slug || undefined,
+      } : {
+        mode: isEdit ? 'edit' : 'create',
+        prompt: userMsg,
+        currentHTML: (isEdit || activeMode === 'chat') ? currentHTML : undefined,
+        elementRef: isEdit ? (elementRef || null) : undefined,
+        images: snapshotImages.map(img => ({ data: img.data, mimeType: img.mimeType })),
+        generationMode: shouldSendPlan ? 'build' : (activeMode === 'fast' && !isEdit ? 'plan' : activeMode),
+        planContext: (shouldSendPlan || activeMode === 'plan' || activeMode === 'chat') ? planContent : undefined,
+        chatHistory: messages.map(m => ({ role: m.role, content: m.content })),
+        stitchDesign: selectedStitchDesign || undefined,
+      };
+
+      const res = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mode: isEdit ? 'edit' : 'create',
-          prompt: userMsg,
-          currentHTML: (isEdit || activeMode === 'chat') ? currentHTML : undefined,
-          elementRef: isEdit ? (elementRef || null) : undefined,
-          images: snapshotImages.map(img => ({ data: img.data, mimeType: img.mimeType })),
-          generationMode: shouldSendPlan ? 'build' : (activeMode === 'fast' && !isEdit ? 'plan' : activeMode),
-          planContext: (shouldSendPlan || activeMode === 'plan' || activeMode === 'chat') ? planContent : undefined,
-          chatHistory: messages.map(m => ({ role: m.role, content: m.content })),
-        }),
+        body: JSON.stringify(fetchBody),
       });
 
       if (!res.ok) throw new Error('API Error: ' + res.statusText);
@@ -370,6 +415,24 @@ function BuildPage() {
       const finalContent = streamBufferRef.current.trim();
       if (!finalContent) throw new Error('Empty response from AI — check GEMINI_API_KEY.');
 
+      // PARSE MULTI-FILE OUTPUT if in Enhance mode
+      if (activeMode === 'enhance') {
+        const files: { path: string, content: string }[] = [];
+        const fileRegex = /<file\s+path=["']([^"']+)["']>\s*([\s\S]*?)<\/file>/gi;
+        let match;
+        while ((match = fileRegex.exec(finalContent)) !== null) {
+          files.push({ path: match[1], content: match[2].trim() });
+        }
+        if (files.length > 0) {
+          setProjectFiles(files);
+          const indexFile = files.find(f => f.path.toLowerCase().endsWith('index.html')) || files[0];
+          setCurrentHTML(indexFile.content);
+        } else {
+          // Fallback: if no tags found, treat as single HTML
+          setCurrentHTML(finalContent);
+        }
+      }
+
       const isRefusal = finalContent.includes('[STRICT_REFUSAL]');
       let nextPhase = false;
 
@@ -382,6 +445,9 @@ function BuildPage() {
            setPlanContent(finalContent);
            setPlanApproved(true);
            nextPhase = true;
+        } else if (activeMode === 'enhance') {
+          // Handled above in multi-file parsing
+          // We don't want to overwrite currentHTML with the raw tagged string
         } else if (activeMode !== 'chat') {
           setCurrentHTML(finalContent);
         }
@@ -445,6 +511,7 @@ function BuildPage() {
           mode: generationMode,
           toolName: toolName || (userMsg.charAt(0).toUpperCase() + userMsg.slice(1, 40)),
           planApproved,
+          projectFiles,
           sessionId
         };
 
@@ -460,7 +527,7 @@ function BuildPage() {
         }).catch(e => console.error('Failed to save checkpoint', e));
       }
     }
-  }, [isGenerating, elementRef, currentHTML, toolName, pendingImages, generationMode, planContent, planApproved, sessionId, messages]);
+  }, [isGenerating, elementRef, currentHTML, toolName, pendingImages, generationMode, planContent, planApproved, sessionId, messages, selectedStitchDesign]);
 
   const restoreToCheckpoint = useCallback(async (cpId: string) => {
     if (!sessionId) return;
@@ -478,6 +545,7 @@ function BuildPage() {
         setGenerationMode(data.state.mode);
         setToolName(data.state.toolName);
         setPlanApproved(data.state.planApproved);
+        setProjectFiles(data.state.projectFiles || []);
         setInput('');
         
         // Explicitly save the session after restoration to ensure persistence on refresh
@@ -504,6 +572,7 @@ function BuildPage() {
           title: toolName || 'My Tool',
           description: '',
           html: currentHTML,
+          files: projectFiles.length > 0 ? projectFiles : undefined,
           tags: [],
           promptHistory: messages.filter(m => !m.isGenerating),
           existingSlug: slug,
@@ -588,8 +657,8 @@ function BuildPage() {
                   <div className="chat-bubble user">{m.content}</div>
                 ) : (
                   <div className={`chat-bubble assistant${m.error ? ' error' : ''}`}>
-                    {m.isGenerating && generationMode !== 'chat' ? (
-                      <ThinkingCard charCount={m.charCount ?? 0} mode={generationMode} />
+                    {m.isGenerating && m.mode !== 'chat' ? (
+                      <ThinkingCard charCount={m.charCount ?? 0} mode={(m.mode as any) || generationMode} />
                     ) : (
                       <div className="chat-bubble-content-wrap">
                         <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{m.content}</div>
@@ -692,42 +761,62 @@ function BuildPage() {
                         onClick={() => setIsModeMenuOpen(!isModeMenuOpen)} 
                         type="button"
                       >
-                        <span className="mode-dropdown-icon" style={{ display: 'flex', alignItems: 'center' }}>
-                          {generationMode === 'chat' ? '💬' : (
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
-                          )}
-                        </span>
-                        <span>{generationMode === 'fast' ? 'Fast' : generationMode === 'plan' ? 'Planning' : generationMode === 'chat' ? 'Chat' : 'Build'}</span>
+                        <span>{generationMode === 'fast' ? 'Fast' : generationMode === 'plan' ? 'Planning' : generationMode === 'chat' ? 'Chat' : generationMode === 'enhance' ? 'Enhance' : 'Build'}</span>
                       </button>
                       
                       {isModeMenuOpen && (
                         <div className="mode-dropdown-menu">
-                          <button type="button" className={`mode-dropdown-item ${generationMode === 'chat' ? 'active' : ''}`} onClick={() => { setGenerationMode('chat'); setIsModeMenuOpen(false); }}>
-                            <div className="mode-dropdown-item-title">💬 Chat</div>
-                            <div className="mode-dropdown-item-desc">Brainstorm and ask questions without building.</div>
-                          </button>
-                          
-                          <button type="button" className={`mode-dropdown-item ${generationMode === 'fast' ? 'active' : ''}`} onClick={() => { setGenerationMode('fast'); setIsModeMenuOpen(false); }}>
-                            <div className="mode-dropdown-item-title">⚡ Fast</div>
-                            <div className="mode-dropdown-item-desc">{currentHTML ? 'Update the tool directly.' : 'Generate a tool instantly from your prompt.'}</div>
-                          </button>
-                          {!currentHTML && (
-                            <button type="button" className={`mode-dropdown-item ${generationMode === 'plan' ? 'active' : ''}`} onClick={() => { setGenerationMode('plan'); setIsModeMenuOpen(false); }}>
-                              <div className="mode-dropdown-item-title">📋 Planning</div>
-                              <div className="mode-dropdown-item-desc">Create a detailed blueprint before building complex tools.</div>
+                          {currentHTML ? (
+                            <button type="button" className={`mode-dropdown-item ${generationMode === 'fast' ? 'active' : ''}`} onClick={() => { setGenerationMode('fast'); setIsModeMenuOpen(false); }}>
+                              <div className="mode-dropdown-item-title">⚡ Edit</div>
+                              <div className="mode-dropdown-item-desc">Apply quick targeted updates.</div>
                             </button>
+                          ) : (
+                            <>
+                              <button type="button" className={`mode-dropdown-item ${generationMode === 'fast' ? 'active' : ''}`} onClick={() => { setGenerationMode('fast'); setIsModeMenuOpen(false); }}>
+                                <div className="mode-dropdown-item-title">⚡ Fast</div>
+                                <div className="mode-dropdown-item-desc">Generate instantly from your prompt.</div>
+                              </button>
+                              
+                              <button type="button" className={`mode-dropdown-item ${generationMode === 'plan' ? 'active' : ''}`} onClick={() => { setGenerationMode('plan'); setIsModeMenuOpen(false); }}>
+                                <div className="mode-dropdown-item-title">📋 Planning</div>
+                                <div className="mode-dropdown-item-desc">Create a blueprint before building.</div>
+                              </button>
+                            </>
                           )}
+
                           {planContent && !currentHTML && (
                             <button type="button" className={`mode-dropdown-item ${generationMode === 'build' ? 'active' : ''}`} onClick={() => { setGenerationMode('build'); setIsModeMenuOpen(false); }}>
                               <div className="mode-dropdown-item-title">🏗️ Build</div>
-                              <div className="mode-dropdown-item-desc">Execute the approved plan.</div>
+                              <div className="mode-dropdown-item-desc">Execute the approved blueprint.</div>
                             </button>
                           )}
+                          
+                          {currentHTML && (
+                            <button type="button" className={`mode-dropdown-item ${generationMode === 'enhance' ? 'active' : ''}`} onClick={() => { setGenerationMode('enhance'); setIsModeMenuOpen(false); }}>
+                              <div className="mode-dropdown-item-title">✨ Enhance <span className="beta-badge">BETA</span></div>
+                              <div className="mode-dropdown-item-desc">Expand into multi-page (GitHub Models).</div>
+                            </button>
+                          )}
+
+                          <button type="button" className={`mode-dropdown-item ${generationMode === 'chat' ? 'active' : ''}`} onClick={() => { setGenerationMode('chat'); setIsModeMenuOpen(false); }}>
+                            <div className="mode-dropdown-item-title">💬 Chat</div>
+                            <div className="mode-dropdown-item-desc">Brainstorm and technical Q&A.</div>
+                          </button>
                         </div>
                       )}
                     </div>
                     <button className="chat-input-icon-btn" title="Attach image" onClick={() => fileInputRef.current?.click()} type="button">＋</button>
                     <button className={`chat-input-icon-btn ${isListening ? 'listening' : ''}`} title="Voice input" onClick={toggleVoice} type="button" style={{ color: isListening ? '#f43f5e' : undefined }}>{isListening ? '🎙️' : '🎙'}</button>
+                    <button
+                      className={`chat-input-icon-btn stitch-toggle-btn ${showStitchPanel ? 'active' : ''} ${selectedStitchDesign ? 'has-design' : ''}`}
+                      title={selectedStitchDesign ? 'Stitch Design Active — click to manage' : 'Generate UI designs with Stitch AI'}
+                      onClick={() => setShowStitchPanel(v => !v)}
+                      type="button"
+                    >
+                      🎨
+                      {selectedStitchDesign && <span className="stitch-dot-indicator" />}
+                    </button>
                   </div>
                   <button
                     className="chat-send"
@@ -788,6 +877,7 @@ function BuildPage() {
                 isStreaming={isGenerating}
                 inspectMode={inspectMode}
                 onElementClick={handleElementClick}
+                mode={messages[messages.length - 1]?.mode || generationMode}
               />
             </>
           )}
@@ -823,6 +913,10 @@ function BuildPage() {
                 setDeployedUrl(undefined);
                 setGenerationMode('fast');
                 setShowHistory(false);
+                setShowStitchPanel(false);
+                setSelectedStitchDesign(null);
+                // Clear Stitch from backend as well
+                fetch('/api/stitch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'clear' }) }).catch(console.error);
               }}
             >
               + New Session
@@ -847,6 +941,21 @@ function BuildPage() {
           </div>
         </div>
       )}
+
+      {/* Stitch Design Panel */}
+      <StitchPanel
+        key={sessionId || 'empty'}
+        isOpen={showStitchPanel}
+        onClose={() => setShowStitchPanel(false)}
+        onSelectDesign={(design) => {
+          setSelectedStitchDesign(design);
+          if (design && generationMode === 'fast') {
+            setGenerationMode('plan');
+          }
+        }}
+        selectedDesign={selectedStitchDesign}
+        lastPrompt={messages.filter(m => m.role === 'user').slice(-1)[0]?.content}
+      />
     </div>
   );
 }

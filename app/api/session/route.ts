@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
       if (loadedState) {
         console.log(`[API] Load success: ${loadedState.messages?.length} messages | HTML length: ${loadedState.currentHTML?.length}`);
       } else {
-        console.warn(`[API] Load failed: No state found for ${sessionId}/${checkpointId}`);
+        console.log(`[API] New session started: No existing state for ${sessionId}`);
       }
       return NextResponse.json({ state: loadedState });
     }

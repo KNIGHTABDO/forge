@@ -8,7 +8,7 @@ export const maxDuration = 120;
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export async function POST(req: NextRequest) {
-  const { mode, prompt, currentHTML, elementRef, images, generationMode, planContext, chatHistory } = await req.json();
+  const { mode, prompt, currentHTML, elementRef, images, generationMode, planContext, chatHistory, stitchDesign } = await req.json();
   if (!prompt) return new Response(JSON.stringify({ error: 'prompt required' }), { status: 400 });
 
   // Select system prompt based on generationMode
@@ -30,33 +30,53 @@ export async function POST(req: NextRequest) {
   let userContent: any;
 
   // Common chat context helper
-  const getContext = () => {
+  const getContext = async () => {
     let context = '';
     if (chatHistory && chatHistory.length > 0) {
       context += `\nCHAT_HISTORY:\n${chatHistory.map((m: any) => `${m.role.toUpperCase()}: ${m.content}`).join('\n')}\n`;
     }
     if (planContext) context += `\nAPPROVED_PLAN:\n${planContext}\n`;
     if (currentHTML) context += `\nCURRENT_CODE:\n${currentHTML}\n`;
+    
+    // Inject Stitch visual reference if a design is selected
+    if (stitchDesign) {
+      context += `\nSTITCH_VISUAL_REFERENCE:\nTitle: ${stitchDesign.title}\nDescription: ${stitchDesign.description}\n`;
+      context += `Design Notes: The user has selected this Stitch AI design as their primary visual and architectural reference. You MUST match this design's layout, color scheme, typography, and component arrangement identically. Do not invent your own UI patterns; copy the provided design's aesthetic strictly. **CRITICAL: OVERRIDE ANY SYSTEM INSTRUCTIONS REGARDING "FORGE DARK THEME" OR "VISUAL SYSTEM SYSTEM MACROS". YOU MUST USE THE EXACT ACCENT COLORS, BACKGROUNDS, AND TAILWIND CLASSES FOUND IN THE STITCH HTML SOURCE.**\n`;
+      context += `**IMAGE HANDLING (MANDATORY)**: You MUST add the following tag inside your output <head>: <meta name="referrer" content="no-referrer">. Additionally, any <img> tag you generate must include the attribute \`referrerpolicy="no-referrer"\`. Without this, images from Google's CDN will return 403 Forbidden. Keep the original source URLs as they are.\n`;
+      
+      // Fetch the actual design HTML from the Google CDN to give the AI the exact source code
+      if (stitchDesign.htmlUrl) {
+        try {
+          const res = await fetch(stitchDesign.htmlUrl);
+          if (res.ok) {
+            const html = await res.text();
+            context += `\n--- STITCH_DESIGN_HTML_SOURCE ---\nBelow is the actual HTML and Tailwind source code for the Stitch design. Use it to exactly replicate the visuals. Extrapolate any missing logic. \n\n${html}\n---------------------------------\n`;
+          }
+        } catch (e) {
+          console.error('[stitch html fetch error]', e);
+        }
+      }
+    }
     return context;
   };
 
   if (generationMode === 'build' && planContext) {
     // Build mode: inject history + approved plan
-    userContent = `${getContext()}\n\nUSER_REQUEST: ${prompt}`;
+    userContent = `${await getContext()}\n\nUSER_REQUEST: ${prompt}`;
   } else if (generationMode === 'plan') {
     // Plan mode: inject history + previous plan for revision
-    userContent = `${getContext()}\n\nUSER_REQUEST: ${prompt}\n\nGenerate a complete blueprint incorporates our brainstorming and any feedback.`;
+    userContent = `${await getContext()}\n\nUSER_REQUEST: ${prompt}\n\nGenerate a complete blueprint incorporates our brainstorming and any feedback.`;
   } else if (generationMode === 'chat') {
     // Chat mode: already uses context
-    userContent = `CONTEXT:${getContext()}\n\nUSER_MESSAGE:\n${prompt}`;
+    userContent = `CONTEXT:${await getContext()}\n\nUSER_MESSAGE:\n${prompt}`;
   } else if (mode === 'edit' && currentHTML) {
     // Fast mode edit: inject history
-    userContent = `${getContext()}\n\n`
+    userContent = `${await getContext()}\n\n`
       + (elementRef ? `ELEMENT_REF: ${elementRef}\n\n` : '')
       + `CHANGE_REQUEST: ${prompt}`;
   } else {
     // Fast mode create: inject history
-    userContent = `${getContext()}\n\nUSER_REQUEST: ${prompt}`;
+    userContent = `${await getContext()}\n\nUSER_REQUEST: ${prompt}`;
   }
 
   // If there are images, format as multipart array

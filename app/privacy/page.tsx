@@ -17,6 +17,7 @@ export default function PrivacyPage() {
         <div className="nav-links">
           <Link href="/#how" className="nav-link">How it works</Link>
           <Link href="/#gallery" className="nav-link">Gallery</Link>
+          <Link href="/changelog" className="nav-link">Changelog</Link>
         </div>
         <div className="nav-right">
           <Link href="/build" className="nav-cta">Inquire</Link>
@@ -59,7 +60,7 @@ export default function PrivacyPage() {
               FORGE is designed to be privacy-first. We collect only the minimum data necessary to operate the service effectively.
             </p>
             <p>
-              <strong>Information you provide:</strong> When you use FORGE to build an app, we store the prompts you submit and the generated HTML output. This allows us to host your deployed apps and show them in the public gallery.
+              <strong>Information you provide:</strong> When you use FORGE to build an app, we store the prompts you submit and the generated HTML output (including multi-file projects generated in Enhance Mode). This allows us to host your deployed apps and show them in the public gallery.
             </p>
             <p>
               <strong>Automatically collected information:</strong> When you visit FORGE, we may collect standard server logs including your IP address, browser type, referring URL, and pages visited. This data is used solely for security and performance monitoring.
@@ -120,7 +121,7 @@ export default function PrivacyPage() {
             <span className="legal-section-num">05</span>
             <h2 className="legal-section-title">Data Retention</h2>
             <p>
-              Apps you deploy via FORGE are stored on our servers and remain accessible via their unique URL. Session data is retained as long as necessary to maintain the service.
+              <strong>Apps you deploy:</strong> Apps you deploy via FORGE (both single-page and multi-page "Enhanced" apps) are stored on our servers and remain accessible via their unique URL. Session data is retained as long as necessary to maintain the service.
             </p>
             <p>
               If you wish to have your deployed app or associated data removed, please contact us at the address below and we will process your request promptly.

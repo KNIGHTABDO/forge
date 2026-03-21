@@ -28,11 +28,14 @@ Stop building static demos. Forge tools come with built-in **Data Persistence**.
 ## ✨ Core Features
 
 - **Multi-Agent Intelligence** — Architect plans, Builder constructs.
+- **Enhance Mode (Beta)** — Scale your tool into a multi-page app with GitHub Models.
 - **High-Fidelity Inspector** — Point and click to edit any element in real-time.
+- **Stitch Design AI** — Automatically generate mockup variations as visual references.
+- **Conversational Chat Mode** — Brainstorm and ideate before you build.
 - **Mobile-First Design** — Finger-friendly layouts and responsive ECharts included by default.
 - **Zero-Config Deployment** — Ship your app to a public URL in one click.
 - **Real Persistence** — Cloud-synced database storage (Forge BaaS).
-- **Dark Mode / Light Mode** — Native support for premium aesthetics.
+- **Admin Protocol** — Secure project management via the `/admin` interface.
 
 ---
 

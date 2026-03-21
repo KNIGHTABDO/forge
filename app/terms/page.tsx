@@ -17,6 +17,7 @@ export default function TermsPage() {
         <div className="nav-links">
           <Link href="/#how" className="nav-link">How it works</Link>
           <Link href="/#gallery" className="nav-link">Gallery</Link>
+          <Link href="/changelog" className="nav-link">Changelog</Link>
         </div>
         <div className="nav-right">
           <Link href="/build" className="nav-cta">Inquire</Link>
@@ -73,6 +74,7 @@ export default function TermsPage() {
             </p>
             <ul>
               <li>Multi-Agent generation (Architectural Planning + Build phase)</li>
+              <li>Multi-page app generation (Enhance Mode / Beta)</li>
               <li>Forge BaaS for cloud-synced application data persistence</li>
               <li>Instant preview and iteration on generated apps</li>
               <li>One-click deployment with a unique shareable URL</li>
@@ -114,7 +116,7 @@ export default function TermsPage() {
               <strong>Responsibility:</strong> You are solely responsible for the content of apps you create and deploy. FORGE does not endorse any user-created content and is not responsible for its accuracy, legality, or suitability.
             </p>
             <p>
-              <strong>Public gallery:</strong> Apps you deploy may appear in the public gallery, visible to all visitors. If you wish to have your app removed from the gallery, contact us.
+              <strong>Public gallery:</strong> Apps you deploy (including multi-page projects) may appear in the public gallery, visible to all visitors. If you wish to have your app removed from the gallery, contact us.
             </p>
             <p>
               <strong>Data Persistence:</strong> Apps that use Forge BaaS for data storage will have their data persisted on our servers via GitHub storage. You are responsible for any personal data you input into these apps.

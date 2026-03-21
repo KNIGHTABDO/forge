@@ -7,6 +7,7 @@ interface Props {
   isStreaming: boolean;
   inspectMode: boolean;
   onElementClick: (ref: string) => void;
+  mode?: 'fast' | 'plan' | 'build' | 'enhance' | 'chat';
 }
 
 const INSPECTOR_SCRIPT = `<script id="__forge_inspector__">(function(){
@@ -57,18 +58,31 @@ const INSPECTOR_SCRIPT = `<script id="__forge_inspector__">(function(){
     mkOverlay();
     document.addEventListener('mouseover',function(e){if(mode)highlight(e.target);},true);
     document.addEventListener('mouseout',function(){if(mode)clear();},true);
-    document.addEventListener('click',function(e){
-      if(!mode)return;
+  document.addEventListener('click',function(e){
+    if(mode){
       e.preventDefault();e.stopPropagation();clear();
       window.parent.postMessage({__forge_click:describe(e.target)},'*');
-    },true);
-  });
+      return;
+    }
+    var link=e.target.closest('a');
+    if(link && link.getAttribute('href') && !link.getAttribute('href').startsWith('http') && !link.getAttribute('href').startsWith('#') && !link.getAttribute('href').startsWith('javascript:')){
+      e.preventDefault();
+      window.parent.postMessage({__forge_nav:link.getAttribute('href')},'*');
+    }
+  },true);
+});
 }());<\/script>`;
 
 function injectInspector(html: string): string {
-  if (html.includes('</head>')) return html.replace('</head>', INSPECTOR_SCRIPT + '</head>');
-  if (html.includes('<body')) return html.replace('<body', INSPECTOR_SCRIPT + '<body');
-  return INSPECTOR_SCRIPT + html;
+  // Also inject no-referrer to handle Google CDN images that trip on CSRF/Referrer checks
+  const meta = `<meta name="referrer" content="no-referrer">`;
+  let withMeta = html;
+  if (html.includes('<head>')) withMeta = html.replace('<head>', '<head>' + meta);
+  else if (html.includes('<html>')) withMeta = html.replace('<html>', '<html><head>' + meta + '</head>');
+  
+  if (withMeta.includes('</head>')) return withMeta.replace('</head>', INSPECTOR_SCRIPT + '</head>');
+  if (withMeta.includes('<body')) return withMeta.replace('<body', INSPECTOR_SCRIPT + '<body');
+  return INSPECTOR_SCRIPT + withMeta;
 }
 
 function EmptyState() {
@@ -142,7 +156,7 @@ function EmptyState() {
   );
 }
 
-export default function PreviewFrame({ html, isStreaming, inspectMode, onElementClick }: Props) {
+export default function PreviewFrame({ html, isStreaming, inspectMode, onElementClick, mode }: Props) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
@@ -182,7 +196,7 @@ export default function PreviewFrame({ html, isStreaming, inspectMode, onElement
           </div>
           <div className="preview-browser-url">
             <div className="preview-browser-url-dot" />
-            {isStreaming ? 'Building…' : 'forge.app / preview'}
+            {isStreaming ? (mode === 'enhance' ? 'Enhancing…' : mode === 'plan' ? 'Planning…' : 'Building…') : 'forge.app / preview'}
           </div>
         </div>
         <div className="preview-browser-content">
@@ -190,7 +204,7 @@ export default function PreviewFrame({ html, isStreaming, inspectMode, onElement
             <div className="stream-overlay">
               <div className="stream-indicator">
                 <span className="generating-dots"><span/><span/><span/></span>
-                <span>Crafting your app…</span>
+                <span>{mode === 'enhance' ? 'Enhancing your app…' : mode === 'plan' ? 'Designing your blueprint…' : 'Crafting your app…'}</span>
               </div>
             </div>
           )}

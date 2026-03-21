@@ -96,6 +96,11 @@
   color: var(--text);
 }
 
+.nav-link.active {
+  color: var(--text);
+  font-weight: 700;
+}
+
 /* ── Legal Content ── */
 .legal-content {
   border-left: 1px solid var(--border);
