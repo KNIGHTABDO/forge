@@ -1,14 +1,40 @@
 'use client';
 
-import type { Metadata } from 'next';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { ThemeToggle } from '@/components/theme-toggle';
 import '../home.css';
 import '../legal.css';
 
 export default function ChangelogPage() {
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark' | 'kinetic'>('light');
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | 'kinetic' | null;
+    const documentTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | 'kinetic' | null;
+    const initialTheme = savedTheme || documentTheme || 'light';
+    
+    setTheme(initialTheme);
+    document.documentElement.setAttribute('data-theme', initialTheme);
+    
+    const handleThemeChange = () => {
+      const newTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | 'kinetic' | null;
+      setTheme(newTheme || 'light');
+    };
+    
+    const observer = new MutationObserver(handleThemeChange);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    
+    setMounted(true);
+    return () => observer.disconnect();
+  }, []);
+
   const isActive = (path: string) => pathname === path;
+
+  if (!mounted) return null;
   const updates = [
     {
       version: 'v2.4',
@@ -85,28 +111,29 @@ export default function ChangelogPage() {
   ];
 
   return (
-    <div className="legal-page">
+    <div className={`legal-page ${theme === 'kinetic' ? 'theme-kinetic' : ''}`}>
       {/* Navigation */}
       <nav className="nav">
-        <Link href="/" className="nav-logo">FORGE</Link>
+        <Link href="/" className="nav-logo">{theme === 'kinetic' ? 'Forge' : 'FORGE'}</Link>
         <div className="nav-links">
           <Link href="/#how" className="nav-link">How it works</Link>
           <Link href="/#gallery" className="nav-link">Gallery</Link>
-          <Link href="/changelog" className={`nav-link ${isActive('/changelog') ? 'active' : ''}`}>Changelog</Link>
+          <Link href="/pricing" className="nav-link">Pricing</Link>
         </div>
-        <div className="nav-right">
+        <div className="nav-right" style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+          <ThemeToggle />
           <Link href="/build" className="nav-cta">Start Forging</Link>
         </div>
       </nav>
 
       {/* Hero */}
       <section className="legal-hero">
-        <span className="legal-eyebrow">Evolution / Protocol</span>
-        <h1 className="legal-title">Change<br />Log</h1>
+        <span className="legal-eyebrow">{theme === 'kinetic' ? 'The Kinetic Archive' : 'Evolution / Protocol'}</span>
+        <h1 className="legal-title">{theme === 'kinetic' ? 'Changelog' : <>Change<br />Log</>}</h1>
         <p className="legal-subtitle">
           Tracing the history of the FORGE protocol from its first spark to the current multi-agent revolution.
         </p>
-        <p className="legal-meta">Protocol Status: Operational v2.4 (Beta)</p>
+        <p className="legal-meta">Protocol Status: {theme === 'kinetic' ? 'Operational v2.4' : 'Operational v2.4 (Beta)'}</p>
       </section>
 
       {/* Body */}

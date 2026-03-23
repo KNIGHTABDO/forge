@@ -1,6 +1,166 @@
 /* ============================================================
-   FORGE Landing Page — Editorial Warm Cream Design
+   KINETIC SPECIFIC — The Eternal Arc
    ============================================================ */
+
+/* Slow Rotate Animation */
+@keyframes slow-rotate {
+  from { transform: rotateX(75deg) rotateZ(0deg); }
+  to { transform: rotateX(75deg) rotateZ(360deg); }
+}
+
+.eternal-arc-container {
+  perspective: 1200px;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.eternal-arc-ring {
+  width: 600px;
+  height: 600px;
+  border: 12px solid rgba(214, 186, 255, 0.1);
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-top: -300px;
+  margin-left: -300px;
+  transform: rotateX(75deg);
+  animation: slow-rotate 20s linear infinite;
+  box-shadow: 
+    0 0 40px rgba(170, 115, 255, 0.4),
+    inset 0 0 40px rgba(170, 115, 255, 0.4);
+  background: transparent;
+}
+
+/* Atmospheric glow */
+.eternal-arc-glow {
+  position: absolute;
+  width: 800px;
+  height: 400px;
+  background: gradient(to b, rgba(255, 255, 255, 0.1), transparent);
+  filter: blur(80px);
+  transform: rotate(-12deg) translateY(-100px);
+  opacity: 0.4;
+}
+
+.eternal-arc-ambient {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 1000px;
+  height: 1000px;
+  background: rgba(170, 115, 255, 0.05);
+  border-radius: 50%;
+  filter: blur(160px);
+}
+
+.font-label { font-family: var(--font-label); }
+.font-headline { font-family: var(--font-headline); }
+.font-body { font-family: var(--font-body); }
+
+/* Kinetic Overrides */
+html[data-theme="kinetic"] .hero-title {
+  text-transform: uppercase;
+  font-style: italic;
+  font-weight: 400;
+  mix-blend-mode: screen;
+}
+
+html[data-theme="kinetic"] .hero-eyebrow {
+  font-family: var(--font-label);
+  color: var(--accent);
+  letter-spacing: 0.3em;
+}
+
+html[data-theme="kinetic"] .btn-primary,
+html[data-theme="kinetic"] .nav-cta,
+html[data-theme="kinetic"] .cta-button,
+html[data-theme="kinetic"] .demo-btn-primary {
+  background: var(--accent) !important;
+  color: #131313 !important;
+  border-radius: 4px;
+  font-weight: 700;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 20px rgba(170, 115, 255, 0.3);
+  border: none;
+}
+
+html[data-theme="kinetic"] .btn-primary:hover,
+html[data-theme="kinetic"] .nav-cta:hover,
+html[data-theme="kinetic"] .cta-button:hover,
+html[data-theme="kinetic"] .demo-btn-primary:hover {
+  background: var(--accent-hv) !important;
+  box-shadow: 0 0 40px rgba(170, 115, 255, 0.6);
+  transform: translateY(-2px);
+}
+
+html[data-theme="kinetic"] .btn-ghost,
+html[data-theme="kinetic"] .demo-btn {
+  border-color: var(--border);
+  color: var(--text);
+  border-radius: 4px;
+  background: transparent;
+}
+
+html[data-theme="kinetic"] .btn-ghost:hover,
+html[data-theme="kinetic"] .demo-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(170, 115, 255, 0.05);
+}
+
+html[data-theme="kinetic"] .nav {
+  background: rgba(19, 19, 19, 0.7);
+  backdrop-filter: blur(24px);
+  border-bottom: none;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.hero-kinetic {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr;
+  align-items: stretch;
+  justify-content: initial;
+  text-align: left;
+  position: relative;
+  min-height: 100vh;
+}
+
+.hero-content-kinetic {
+  align-items: flex-start !important;
+  max-width: none !important;
+  text-align: left !important;
+  padding: 80px 48px !important;
+  z-index: 10;
+  display: flex !important;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.hero-content-kinetic .hero-desc {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.hero-content-kinetic .hero-actions {
+  justify-content: flex-start;
+}
+
+.hero-visual-kinetic {
+  z-index: 5;
+  background: #000 !important;
+}
+
+.eternal-arc-container {
+  z-index: 0;
+}
 
 *, *::before, *::after {
   box-sizing: border-box;
@@ -29,6 +189,19 @@ html[data-theme="dark"] {
   --text-muted: #a1a1aa;
   --text-light: #71717a;
   --border: #333333;
+}
+
+html[data-theme="kinetic"] {
+  --bg: #131313;
+  --bg-alt: #0e0e0e;
+  --bg-dark: #131313;
+  --text: #e5e2e1;
+  --text-muted: #cdc2d7;
+  --text-light: #968da0;
+  --border: #353534;
+  --font-headline: var(--font-headline), 'Newsreader', serif;
+  --font-body: var(--font-sans), 'Inter', system-ui, sans-serif;
+  --font-label: var(--font-label), 'Space Grotesk', system-ui, sans-serif;
 }
 
 /* ── Page ── */

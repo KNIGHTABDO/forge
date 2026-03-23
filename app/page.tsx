@@ -167,7 +167,7 @@ export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [search, setSearch] = useState('');
   const [showSearch, setShowSearch] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [theme, setTheme] = useState<'light' | 'dark' | 'kinetic'>('light');
   const [displayLimit, setDisplayLimit] = useState(4);
   const videoElementRef = useRef<HTMLVideoElement>(null);
   const router = useRouter();
@@ -183,8 +183,8 @@ export default function Home() {
 
   useEffect(() => {
     // Initialize theme from localStorage or document, default to light
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
-    const documentTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | null;
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | 'kinetic' | null;
+    const documentTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | 'kinetic' | null;
     const initialTheme = savedTheme || documentTheme || 'light';
     
     setTheme(initialTheme);
@@ -192,6 +192,7 @@ export default function Home() {
     localStorage.setItem('theme', initialTheme);
     
     // Update video src after hydration to match theme
+    // Both dark and kinetic themes use the dark video
     const newVideoUrl = initialTheme === 'light' ? LIGHT_VIDEO : DARK_VIDEO;
     if (videoElementRef.current && videoElementRef.current.src !== newVideoUrl) {
       videoElementRef.current.src = newVideoUrl;
@@ -199,7 +200,7 @@ export default function Home() {
     
     // Watch for theme changes from toggle button
     const handleThemeChange = () => {
-      const newTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | null;
+      const newTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | 'kinetic' | null;
       const updatedTheme = newTheme || 'light';
       setTheme(updatedTheme);
       
@@ -228,14 +229,15 @@ export default function Home() {
   );
 
   return (
-    <div className="page">
+    <div className={`page ${theme === 'kinetic' ? 'theme-kinetic' : ''}`}>
       {/* Navigation */}
       <nav className="nav">
-        <Link href="/" className="nav-logo">FORGE</Link>
+        <Link href="/" className="nav-logo">{theme === 'kinetic' ? 'Forge' : 'FORGE'}</Link>
         <div className="nav-links">
           <a href="#how" className="nav-link">How it works</a>
           <a href="#gallery" className="nav-link">Gallery</a>
           <Link href="/changelog" className="nav-link">Changelog</Link>
+          <Link href="/pricing" className="nav-link">Pricing</Link>
         </div>
         <div className="nav-right">
           <button className="nav-search" onClick={() => { setShowSearch(!showSearch); document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth' }); }}>Search</button>
@@ -245,14 +247,33 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <section className="hero">
-        <div className={`hero-content ${mounted ? 'visible' : ''}`}>
-          <span className="hero-eyebrow">Autonomous Creation / Protocol</span>
+      <section className={`hero ${theme === 'kinetic' ? 'hero-kinetic' : ''}`}>
+        {theme === 'kinetic' && (
+          <div className="eternal-arc-container">
+            <div className="eternal-arc-ambient" />
+            <div className="eternal-arc-ring" />
+            <div className="eternal-arc-glow" />
+          </div>
+        )}
+        
+        <div className={`hero-content ${mounted ? 'visible' : ''} ${theme === 'kinetic' ? 'hero-content-kinetic' : ''}`}>
+          <span className="hero-eyebrow">{theme === 'kinetic' ? 'The Kinetic Archive' : 'Autonomous Creation / Protocol'}</span>
           <h1 className="hero-title">
-            BUILD<br />
-            APPS<br />
-            <span className="hero-title-outline">WITH ONE</span><br />
-            SENTENCE.
+            {theme === 'kinetic' ? (
+              <>
+                BUILD<br />
+                APPS<br />
+                WITH ONE<br />
+                SENTENCE.
+              </>
+            ) : (
+              <>
+                BUILD<br />
+                APPS<br />
+                <span className="hero-title-outline">WITH ONE</span><br />
+                SENTENCE.
+              </>
+            )}
           </h1>
           <p className="hero-desc">
             Describe your idea. Get a fully working interactive web app instantly. No code required. No limits.
@@ -268,7 +289,7 @@ export default function Home() {
           </div>
         </div>
         
-        <div className={`hero-visual ${mounted ? 'visible' : ''}`}>
+        <div className={`hero-visual ${mounted ? 'visible' : ''} ${theme === 'kinetic' ? 'hero-visual-kinetic' : ''}`}>
           <video 
             ref={videoElementRef}
             className="hero-video"

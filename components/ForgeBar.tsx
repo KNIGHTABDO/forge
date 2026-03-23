@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ThemeToggle } from './theme-toggle';
 
 interface Props {
@@ -23,6 +23,16 @@ export default function ForgeBar({
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(toolName);
   const [copied, setCopied] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark' | 'kinetic'>('light');
+
+  useEffect(() => {
+    setTheme(document.documentElement.getAttribute('data-theme') as any || 'light');
+    const observer = new MutationObserver(() => {
+      setTheme(document.documentElement.getAttribute('data-theme') as any || 'light');
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => observer.disconnect();
+  }, []);
 
   const handleNameBlur = () => {
     setEditingName(false);
@@ -50,7 +60,7 @@ export default function ForgeBar({
       <div className="forge-bar-left">
         <a href="/" className="forge-logo" title="Back to home" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <img src="/logo.png" alt="Forge Logo" style={{ width: 24, height: 24, borderRadius: 4, objectFit: 'cover' }} />
-          <span className="forge-logo-text">FORGE</span>
+          <span className="forge-logo-text">{theme === 'kinetic' ? 'Forge' : 'FORGE'}</span>
         </a>
         <span className="forge-bar-sep">/</span>
         {editingName ? (

@@ -1,33 +1,57 @@
-import type { Metadata } from 'next';
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { ThemeToggle } from '@/components/theme-toggle';
 import '../home.css';
 import '../legal.css';
 
-export const metadata: Metadata = {
-  title: 'Terms of Service — FORGE',
-  description: 'Read the Terms of Service for using FORGE, the AI-powered app builder.',
-};
-
 export default function TermsPage() {
+  const [mounted, setMounted] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark' | 'kinetic'>('light');
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | 'kinetic' | null;
+    const documentTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | 'kinetic' | null;
+    const initialTheme = savedTheme || documentTheme || 'light';
+    
+    setTheme(initialTheme);
+    document.documentElement.setAttribute('data-theme', initialTheme);
+    
+    const handleThemeChange = () => {
+      const newTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | 'kinetic' | null;
+      setTheme(newTheme || 'light');
+    };
+    
+    const observer = new MutationObserver(handleThemeChange);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    
+    setMounted(true);
+    return () => observer.disconnect();
+  }, []);
+
+  if (!mounted) return null;
+
   return (
-    <div className="legal-page">
+    <div className={`legal-page ${theme === 'kinetic' ? 'theme-kinetic' : ''}`}>
       {/* Navigation */}
       <nav className="nav">
-        <Link href="/" className="nav-logo">FORGE</Link>
+        <Link href="/" className="nav-logo">{theme === 'kinetic' ? 'Forge' : 'FORGE'}</Link>
         <div className="nav-links">
           <Link href="/#how" className="nav-link">How it works</Link>
           <Link href="/#gallery" className="nav-link">Gallery</Link>
-          <Link href="/changelog" className="nav-link">Changelog</Link>
+          <Link href="/pricing" className="nav-link">Pricing</Link>
         </div>
-        <div className="nav-right">
+        <div className="nav-right" style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+          <ThemeToggle />
           <Link href="/build" className="nav-cta">Inquire</Link>
         </div>
       </nav>
 
       {/* Hero */}
       <section className="legal-hero">
-        <span className="legal-eyebrow">Legal / Protocol</span>
-        <h1 className="legal-title">Terms of<br />Service</h1>
+        <span className="legal-eyebrow">{theme === 'kinetic' ? 'The Kinetic Archive' : 'Legal / Protocol'}</span>
+        <h1 className="legal-title">{theme === 'kinetic' ? 'Terms of Service' : <>Terms of<br />Service</>}</h1>
         <p className="legal-subtitle">
           By using FORGE, you agree to these terms. Please read them carefully — they are written to be clear and fair.
         </p>

@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from 'next';
-import { Space_Grotesk, Manrope, JetBrains_Mono } from 'next/font/google';
+import { Space_Grotesk, Manrope, JetBrains_Mono, Newsreader, Inter } from 'next/font/google';
 import './globals.css';
 import './home.css';
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
-  variable: '--font-headline',
+  variable: '--font-label',
   display: 'swap',
 });
 
@@ -18,6 +18,19 @@ const manrope = Manrope({
 const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   variable: '--font-mono',
+  display: 'swap',
+});
+
+const newsreader = Newsreader({
+  subsets: ['latin'],
+  style: ['normal', 'italic'],
+  variable: '--font-headline',
+  display: 'swap',
+});
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-sans',
   display: 'swap',
 });
 
@@ -39,7 +52,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-scroll-behavior="smooth" className={`${spaceGrotesk.variable} ${manrope.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" data-scroll-behavior="smooth" className={`${spaceGrotesk.variable} ${manrope.variable} ${jetbrainsMono.variable} ${newsreader.variable} ${inter.variable}`}>
       <body>{children}</body>
     </html>
   );
