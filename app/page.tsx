@@ -393,6 +393,16 @@ export default function Home() {
               <path d="M7 18.5v-13M17 18.5v-13M12 12l5-3M12 12l-5-3M12 12v9"/>
             </svg>
           </div>
+
+          <div className="step">
+            <span className="step-num">G</span>
+            <h3 className="step-title">Gemini API Dev Skill</h3>
+            <p className="step-desc">Forge's Architect and Builder agents carry Google's official gemini-api-dev skill — embedding authoritative knowledge of the latest Gemini 3 models, current SDKs, and best-practice patterns directly into every generation.</p>
+            <svg className="step-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 8v4l3 3"/>
+            </svg>
+          </div>
         </div>
       </section>
 

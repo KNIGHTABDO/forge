@@ -119,7 +119,7 @@ export default function PrivacyPage() {
               We do not sell, trade, or rent your personal information to third parties. We may share data only in the following limited circumstances:
             </p>
             <ul>
-              <li><strong>Service providers:</strong> We use third-party services (such as cloud hosting and AI APIs) to operate FORGE. These providers are bound by strict data processing agreements.</li>
+              <li><strong>Service providers:</strong> We use third-party services (such as cloud hosting and AI APIs) to operate FORGE. These providers are bound by strict data processing agreements. This includes Google's Gemini AI API, which powers generation and the embedded gemini-api-dev agent skill.</li>
               <li><strong>Legal compliance:</strong> We may disclose data if required by law or to respond to valid legal process.</li>
               <li><strong>Safety:</strong> We may share data to protect the rights, property, or safety of FORGE, our users, or the public.</li>
             </ul>

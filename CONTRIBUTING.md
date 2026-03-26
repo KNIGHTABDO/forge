@@ -29,5 +29,11 @@ First off, thank you for considering contributing to FORGE! It's people like you
 - Write clean, documented code.
 - Ensure all new UI components are responsive and follow the FORGE design system.
 
+## Agent Intelligence (gemini-api-dev Skill)
+
+Forge's Architect and Builder agents embed the official **gemini-api-dev** skill as a shared constant (`GEMINI_API_DEV_SKILL`) in `lib/system-prompt.ts`. This constant is appended to both `PLANNER_SYSTEM_PROMPT` and `BUILD_SYSTEM_PROMPT`.
+
+If you need to update the skill's content (e.g. to reflect new Gemini models or SDK changes), edit `GEMINI_API_DEV_SKILL` in `lib/system-prompt.ts`. The change will automatically propagate to both agents. Do not duplicate the skill content inline inside individual prompts.
+
 ## License
 By contributing to FORGE, you agree that your contributions will be licensed under the project's MIT License.

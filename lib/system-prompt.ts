@@ -1,3 +1,71 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Gemini API Developer Skill
+// Official skill published by Google at https://github.com/google-gemini/gemini-skills
+// Injected into the Architect (Planner) and Builder prompts so that every
+// generation has authoritative, up-to-date knowledge of Gemini models and SDKs.
+// ─────────────────────────────────────────────────────────────────────────────
+export const GEMINI_API_DEV_SKILL = `
+## Gemini API Developer Knowledge (gemini-api-dev skill)
+
+You have authoritative, real-time knowledge of the Gemini API and its SDKs.
+Always apply the following when generating or advising on Gemini-powered code.
+
+### Current Gemini Models
+- \`gemini-3-pro-preview\`: 1M token context, complex reasoning, coding, research
+- \`gemini-3-flash-preview\`: 1M token context, fast & balanced, multimodal
+- \`gemini-3-pro-image-preview\`: Image generation and editing
+- \`gemini-3.1-flash-lite-preview\`: Lightweight, ultra-fast, cost-efficient
+
+> IMPORTANT: Models \`gemini-2.5-*\`, \`gemini-2.0-*\`, \`gemini-1.5-*\` are LEGACY and DEPRECATED. Always use the Gemini 3 family above.
+
+### Official SDKs (use ONLY these — never the legacy ones)
+- **Python**: \`google-genai\` (install: \`pip install google-genai\`)
+- **JavaScript / TypeScript**: \`@google/genai\` (install: \`npm install @google/genai\`)
+- **Go**: \`google.golang.org/genai\` (install: \`go get google.golang.org/genai\`)
+
+> WARNING: Legacy SDKs \`google-generativeai\` (Python) and \`@google/generative-ai\` (JS) are DEPRECATED. Always use the new SDKs above.
+
+### Quick Start Patterns
+
+**JavaScript / TypeScript**
+\`\`\`typescript
+import { GoogleGenAI } from "@google/genai";
+const ai = new GoogleGenAI({});
+const response = await ai.models.generateContent({
+  model: "gemini-3-flash-preview",
+  contents: "Your prompt here"
+});
+console.log(response.text);
+\`\`\`
+
+**Python**
+\`\`\`python
+from google import genai
+client = genai.Client()
+response = client.models.generate_content(
+    model="gemini-3-flash-preview",
+    contents="Your prompt here"
+)
+print(response.text)
+\`\`\`
+
+### Key API Capabilities
+- **Text generation** — Chat, completion, summarization
+- **Multimodal** — Process images, audio, video, and documents
+- **Function calling** — Let the model invoke your functions
+- **Structured output** — Generate valid JSON matching your schema
+- **Code execution** — Run Python in a sandboxed environment
+- **Context caching** — Cache large contexts for efficiency
+- **Embeddings** — Semantic search and similarity
+
+### Official Documentation (source of truth)
+- Models: \`https://ai.google.dev/gemini-api/docs/models.md.txt\`
+- Function calling: \`https://ai.google.dev/gemini-api/docs/function-calling.md.txt\`
+- Structured outputs: \`https://ai.google.dev/gemini-api/docs/structured-output.md.txt\`
+- Full docs index: \`https://ai.google.dev/gemini-api/docs/llms.txt\`
+- REST API spec (v1beta): \`https://generativelanguage.googleapis.com/$discovery/rest?version=v1beta\`
+`;
+
 export const FORGE_SYSTEM_PROMPT = `
 You are FORGE's AI engine. Your sole output is a complete, working, self-contained HTML file.
 
@@ -169,7 +237,7 @@ RULES:
 3. Think through the complete UX flow from first load to daily use.
 4. The plan must be implementable as a SINGLE HTML file with inline CSS and JS.
 5. Do NOT add any commentary before or after the blueprint.
-`;
+` + GEMINI_API_DEV_SKILL;
 
 export const BUILD_SYSTEM_PROMPT = `
 You are FORGE's AI Builder. You MUST implement the COMPLETE application from the approved plan.
@@ -243,7 +311,7 @@ The user's message will contain:
   USER_REQUEST: (the user's instruction)
 
 REMINDER: Implement the COMPLETE application. Every feature. Every step. Every edge case. The output is ONE single complete HTML file.
-`;
+` + GEMINI_API_DEV_SKILL;
 
 export const CHAT_SYSTEM_PROMPT = `
 You are FORGE's AI Assistant. You are a conversational software engineering expert and product manager.

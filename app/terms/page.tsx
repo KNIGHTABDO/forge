@@ -103,6 +103,7 @@ export default function TermsPage() {
               <li>Instant preview and iteration on generated apps</li>
               <li>One-click deployment with a unique shareable URL</li>
               <li>Public gallery of community-built applications</li>
+              <li>Enhanced AI capabilities via the embedded <strong>gemini-api-dev skill</strong> — providing agents with authoritative knowledge of the latest Gemini models, official SDKs, and best-practice patterns from Google</li>
             </ul>
             <p>
               We reserve the right to modify, suspend, or discontinue the Service at any time without notice.
