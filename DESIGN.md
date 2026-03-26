@@ -95,3 +95,15 @@ In this design system, depth is achieved through **Tonal Layering** rather than 
 - **Don't use 1px solid white borders.** It breaks the "Nocturne" atmosphere and feels like a standard template.
 - **Don't use drop shadows on text.** Rely on the high-contrast `on-surface` white against the dark background.
 - **Don't round button corners heavily.** Keep buttons sharp (`none` or `sm`) to maintain the "Professional Tool" authority, while keeping cards soft (`xl`) for the "Playground" feel.
+
+---
+
+## 7. Agent Intelligence Layer
+
+The Architect and Builder agents carry the official **gemini-api-dev** skill, embedded as the `GEMINI_API_DEV_SKILL` constant in `lib/system-prompt.ts`. This provides:
+
+- Authoritative knowledge of the latest Gemini 3 model family
+- Current SDK recommendations (`@google/genai` for JS/TS, `google-genai` for Python)
+- Canonical quick-start patterns and API documentation links
+
+This intelligence layer is invisible to end users — they simply receive more accurate, future-proof output whenever they build Gemini-powered applications.

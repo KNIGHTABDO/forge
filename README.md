@@ -25,8 +25,27 @@ Stop building static demos. Forge tools come with built-in **Data Persistence**.
 
 ---
 
+## 🤖 Gemini API Developer Skill
+
+Forge embeds the official **[gemini-api-dev](https://github.com/google-gemini/gemini-skills/blob/main/skills/gemini-api-dev/SKILL.md)** skill — published by Google and used in Gemini CLI — directly into its Architect and Builder agents.
+
+This gives every generation authoritative, up-to-date knowledge of:
+
+- **Latest Gemini 3 models** — `gemini-3-pro-preview`, `gemini-3-flash-preview`, `gemini-3-pro-image-preview`, `gemini-3.1-flash-lite-preview`
+- **Current SDKs** — `@google/genai` (JavaScript/TypeScript) and `google-genai` (Python); never the legacy deprecated packages
+- **Multimodal capabilities** — text, images, audio, video, documents
+- **Advanced features** — function calling, structured outputs, context caching, embeddings, code execution
+- **Official documentation links** — models reference, function-calling guide, structured-output spec, and the full `llms.txt` docs index
+
+The result: dramatically more accurate code when users ask Forge to build **any app that integrates with the Gemini API**, with zero extra steps required from the user. The skill is active in every build mode (Chat, Plan, Build, Enhance) and is completely transparent — users simply get better results.
+
+> Evaluation results: 96.6% correct SDK usage on Gemini 3.1 Pro (source: [Google Developers Blog](https://developers.googleblog.com/closing-the-knowledge-gap-with-agent-skills/))
+
+---
+
 ## ✨ Core Features
 
+- **Gemini API Developer Skill** — Embedded gemini-api-dev skill gives agents authoritative Gemini API knowledge.
 - **Multi-Agent Intelligence** — Architect plans, Builder constructs.
 - **Enhance Mode (Beta)** — Scale your tool into a multi-page app with GitHub Models.
 - **High-Fidelity Inspector** — Point and click to edit any element in real-time.
@@ -45,7 +64,7 @@ Stop building static demos. Forge tools come with built-in **Data Persistence**.
 |-------|-----------|
 | **Core** | [Next.js 16](https://nextjs.org/) (App Router) |
 | **Logic** | TypeScript + React 19 |
-| **AI Engine** | Google Gemini (Multi-Agent Prompting) |
+| **AI Engine** | Google Gemini (Multi-Agent + gemini-api-dev Skill) |
 | **Styling** | Vanilla CSS (Internal) + Tailwind (Generated) |
 | **Persistence** | GitHub JSON Database (Forge BaaS) |
 | **UI Assets** | Lucide Icons · ECharts · Google Fonts |
@@ -76,7 +95,7 @@ Visit `http://localhost:3000` to start forging.
 
 - `app/build/` — The high-performance builder interface.
 - `app/api/db/` — The Forge BaaS endpoint.
-- `lib/system-prompt.ts` — The "Brain" containing the Architect and Builder mandates.
+- `lib/system-prompt.ts` — The "Brain" containing the Architect and Builder mandates, plus the embedded `GEMINI_API_DEV_SKILL` constant.
 - `app/globals.css` — The premium design system tokens.
 
 ---
