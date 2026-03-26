@@ -21,6 +21,16 @@ Forge tools aren't just functional — they are beautiful. The engine is mandate
 ### ☁️ Forge BaaS (Backend-as-a-Service)
 Stop building static demos. Forge tools come with built-in **Data Persistence**. Using `window.forge.db`, your generated apps can save and load data across sessions, effectively turning every "tool" into a real "app".
 
+### ⚡ Flash Navigation
+Flash Navigation makes every generated app behave like a live product with infinite pages — all generated on-demand in real time, in under 5 seconds. Inspired by the Google DeepMind Gemini Flash demo.
+
+- **Zero pre-built pages** — every screen is generated exactly when the user navigates to it.
+- **State preservation** — timers, cart data, user inputs, and all global state survive across every page transition.
+- **Instant overlay** — a subtle "Generating next page…" overlay with a spinner appears during generation, matching the DeepMind demo aesthetic.
+- **Generation badge** — after each page loads, a small badge shows "⚡ Generated in Xs • ~Y tokens".
+- **Imagine any screen** — a floating ✨ button inside the app lets users describe and jump to any screen they imagine.
+- **Design continuity** — the new page perfectly matches the original app's visual system (colors, typography, Tailwind classes, components).
+
 ![Final Tool Result](public/screenshots/build_page_completed_tool_1774007722903.png)
 
 ---
@@ -28,6 +38,7 @@ Stop building static demos. Forge tools come with built-in **Data Persistence**.
 ## ✨ Core Features
 
 - **Multi-Agent Intelligence** — Architect plans, Builder constructs.
+- **⚡ Flash Navigation** — Real-time on-demand page generation with state preservation.
 - **Enhance Mode (Beta)** — Scale your tool into a multi-page app with GitHub Models.
 - **High-Fidelity Inspector** — Point and click to edit any element in real-time.
 - **Stitch Design AI** — Automatically generate mockup variations as visual references.
@@ -72,11 +83,28 @@ Visit `http://localhost:3000` to start forging.
 
 ---
 
+## 🔥 Using Flash Navigation
+
+1. **Build any app** with a single sentence as normal.
+2. After the first page appears, open the **mode dropdown** (bottom-left of the chat panel).
+3. Toggle **⚡ Flash Navigation** ON.
+4. Every subsequent generation (including edits) will embed the Flash Nav runtime into the app.
+5. Click any link, nav item, or button inside the preview — the next page generates live in <5 seconds.
+6. Use the **✨ Imagine any screen** floating button to navigate to any custom screen.
+
+> Flash Navigation is available after the first page is built. It does not appear during the initial build to keep the first-run experience clean and fast.
+
+---
+
 ## 📂 Project Structure
 
 - `app/build/` — The high-performance builder interface.
+- `app/api/generate/` — The main AI code generation endpoint.
+- `app/api/generate-page/` — The Flash Navigation on-demand page generation endpoint.
 - `app/api/db/` — The Forge BaaS endpoint.
-- `lib/system-prompt.ts` — The "Brain" containing the Architect and Builder mandates.
+- `lib/system-prompt.ts` — The "Brain" containing all AI prompts including `FLASH_NAV_PAGE_PROMPT`.
+- `public/flash-nav.js` — The Flash Navigation runtime SDK injected into generated apps.
+- `public/forge.js` — The Forge BaaS SDK injected into generated apps.
 - `app/globals.css` — The premium design system tokens.
 
 ---

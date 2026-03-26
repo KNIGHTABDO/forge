@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { FORGE_SYSTEM_PROMPT, PLANNER_SYSTEM_PROMPT, BUILD_SYSTEM_PROMPT, CHAT_SYSTEM_PROMPT } from '@/lib/system-prompt';
+import { FORGE_SYSTEM_PROMPT, PLANNER_SYSTEM_PROMPT, BUILD_SYSTEM_PROMPT, CHAT_SYSTEM_PROMPT, FLASH_NAV_INJECTION_SNIPPET } from '@/lib/system-prompt';
 import { NextRequest } from 'next/server';
 
 export const runtime = 'nodejs';
@@ -8,22 +8,33 @@ export const maxDuration = 120;
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export async function POST(req: NextRequest) {
-  const { mode, prompt, currentHTML, elementRef, images, generationMode, planContext, chatHistory, stitchDesign } = await req.json();
+  const { mode, prompt, currentHTML, elementRef, images, generationMode, planContext, chatHistory, stitchDesign, flashNavEnabled } = await req.json();
   if (!prompt) return new Response(JSON.stringify({ error: 'prompt required' }), { status: 400 });
 
   // Select system prompt based on generationMode
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
   const logoUrl = `${baseUrl}/logo.png`;
 
+  // Build Flash Nav injection string
+  const flashNavInjection = flashNavEnabled
+    ? FLASH_NAV_INJECTION_SNIPPET + '\n'
+    : '';
+
   let systemInstruction: string;
   if (generationMode === 'plan') {
     systemInstruction = PLANNER_SYSTEM_PROMPT;
   } else if (generationMode === 'build') {
-    systemInstruction = BUILD_SYSTEM_PROMPT.replace(/{{LOGO_URL}}/g, logoUrl).replace(/{{BASE_URL}}/g, baseUrl);
+    systemInstruction = BUILD_SYSTEM_PROMPT
+      .replace(/{{LOGO_URL}}/g, logoUrl)
+      .replace(/{{BASE_URL}}/g, baseUrl)
+      .replace(/{{FLASH_NAV_INJECTION}}/g, flashNavInjection);
   } else if (generationMode === 'chat') {
     systemInstruction = CHAT_SYSTEM_PROMPT;
   } else {
-    systemInstruction = FORGE_SYSTEM_PROMPT.replace(/{{LOGO_URL}}/g, logoUrl).replace(/{{BASE_URL}}/g, baseUrl);
+    systemInstruction = FORGE_SYSTEM_PROMPT
+      .replace(/{{LOGO_URL}}/g, logoUrl)
+      .replace(/{{BASE_URL}}/g, baseUrl)
+      .replace(/{{FLASH_NAV_INJECTION}}/g, flashNavInjection);
   }
 
   // Build user content

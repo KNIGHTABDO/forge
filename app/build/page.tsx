@@ -111,6 +111,7 @@ function BuildPage() {
   const [inspectMode, setInspectMode] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [elementRef, setElementRef] = useState<string | null>(null);
+  const [flashNavEnabled, setFlashNavEnabled] = useState(false);
   
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
   const [isListening, setIsListening] = useState(false);
@@ -157,6 +158,7 @@ function BuildPage() {
           if (data.state.toolName) setToolName(data.state.toolName);
           if (data.state.planApproved) setPlanApproved(data.state.planApproved);
           if (data.state.projectFiles) setProjectFiles(data.state.projectFiles);
+          if (data.state.flashNavEnabled !== undefined) setFlashNavEnabled(data.state.flashNavEnabled);
         }
       } catch (e) { console.error('Failed to load session', e); }
     };
@@ -174,7 +176,7 @@ function BuildPage() {
           body: JSON.stringify({
             action: 'save',
             sessionId,
-            state: { messages, planContent, currentHTML, mode: generationMode, toolName, planApproved, projectFiles }
+            state: { messages, planContent, currentHTML, mode: generationMode, toolName, planApproved, projectFiles, flashNavEnabled }
           })
         });
       } catch (e) {
@@ -182,7 +184,7 @@ function BuildPage() {
       }
     }, 2500); // Increased debounce to stay clear of checkpoint saves
     return () => clearTimeout(t);
-  }, [messages, planContent, currentHTML, generationMode, toolName, sessionId, isGenerating, projectFiles]);
+  }, [messages, planContent, currentHTML, generationMode, toolName, sessionId, isGenerating, projectFiles, flashNavEnabled]);
 
   useEffect(() => {
     const handler = (e: MessageEvent) => {
@@ -376,6 +378,7 @@ function BuildPage() {
         planContext: (shouldSendPlan || activeMode === 'plan' || activeMode === 'chat') ? planContent : undefined,
         chatHistory: messages.map(m => ({ role: m.role, content: m.content })),
         stitchDesign: selectedStitchDesign || undefined,
+        flashNavEnabled: flashNavEnabled || false,
       };
 
       const res = await fetch(apiUrl, {
@@ -512,6 +515,7 @@ function BuildPage() {
           toolName: toolName || (userMsg.charAt(0).toUpperCase() + userMsg.slice(1, 40)),
           planApproved,
           projectFiles,
+          flashNavEnabled,
           sessionId
         };
 
@@ -527,7 +531,7 @@ function BuildPage() {
         }).catch(e => console.error('Failed to save checkpoint', e));
       }
     }
-  }, [isGenerating, elementRef, currentHTML, toolName, pendingImages, generationMode, planContent, planApproved, sessionId, messages, selectedStitchDesign]);
+  }, [isGenerating, elementRef, currentHTML, toolName, pendingImages, generationMode, planContent, planApproved, sessionId, messages, selectedStitchDesign, flashNavEnabled]);
 
   const restoreToCheckpoint = useCallback(async (cpId: string) => {
     if (!sessionId) return;
@@ -546,6 +550,7 @@ function BuildPage() {
         setToolName(data.state.toolName);
         setPlanApproved(data.state.planApproved);
         setProjectFiles(data.state.projectFiles || []);
+        if (data.state.flashNavEnabled !== undefined) setFlashNavEnabled(data.state.flashNavEnabled);
         setInput('');
         
         // Explicitly save the session after restoration to ensure persistence on refresh
@@ -762,6 +767,7 @@ function BuildPage() {
                         type="button"
                       >
                         <span>{generationMode === 'fast' ? 'Fast' : generationMode === 'plan' ? 'Planning' : generationMode === 'chat' ? 'Chat' : generationMode === 'enhance' ? 'Enhance' : 'Build'}</span>
+                        {flashNavEnabled && <span className="flash-nav-dot" title="Flash Navigation ON" />}
                       </button>
                       
                       {isModeMenuOpen && (
@@ -803,6 +809,23 @@ function BuildPage() {
                             <div className="mode-dropdown-item-title">💬 Chat</div>
                             <div className="mode-dropdown-item-desc">Brainstorm and technical Q&A.</div>
                           </button>
+
+                          {currentHTML && (
+                            <div className="mode-dropdown-divider" />
+                          )}
+                          {currentHTML && (
+                            <button
+                              type="button"
+                              className={`mode-dropdown-item flash-nav-toggle-item ${flashNavEnabled ? 'active flash-nav-on' : ''}`}
+                              onClick={() => { setFlashNavEnabled(v => !v); setIsModeMenuOpen(false); }}
+                            >
+                              <div className="mode-dropdown-item-title">
+                                ⚡ Flash Navigation
+                                <span className={`flash-nav-badge ${flashNavEnabled ? 'on' : 'off'}`}>{flashNavEnabled ? 'ON' : 'OFF'}</span>
+                              </div>
+                              <div className="mode-dropdown-item-desc">Real-time page generation on every click.</div>
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -912,6 +935,7 @@ function BuildPage() {
                 setSlug(undefined);
                 setDeployedUrl(undefined);
                 setGenerationMode('fast');
+                setFlashNavEnabled(false);
                 setShowHistory(false);
                 setShowStitchPanel(false);
                 setSelectedStitchDesign(null);
