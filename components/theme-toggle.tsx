@@ -3,14 +3,14 @@
 import { useState, useEffect, useRef } from 'react';
 
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<'light' | 'dark' | 'kinetic'>('light');
+  const [theme, setTheme] = useState<'light' | 'dark' | 'kinetic' | 'liquid'>('light');
   const [mounted, setMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | 'kinetic' | null;
-    const documentTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | 'kinetic' | null;
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | 'kinetic' | 'liquid' | null;
+    const documentTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | 'kinetic' | 'liquid' | null;
     const initialTheme = savedTheme || documentTheme || 'light';
     
     setTheme(initialTheme);
@@ -28,7 +28,7 @@ export function ThemeToggle() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const changeTheme = (newTheme: 'light' | 'dark' | 'kinetic') => {
+  const changeTheme = (newTheme: 'light' | 'dark' | 'kinetic' | 'liquid') => {
     setTheme(newTheme);
     document.documentElement.setAttribute('data-theme', newTheme);
     localStorage.setItem('theme', newTheme);
@@ -45,11 +45,20 @@ export function ThemeToggle() {
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
     </svg>
+  ) : theme === 'liquid' ? (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2C6 8 4 12 4 15a8 8 0 0 0 16 0c0-3-2-7-8-13z"/>
+    </svg>
   ) : (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
     </svg>
   );
+
+  const themeLabel =
+    theme === 'kinetic' ? 'Archive' :
+    theme === 'liquid'  ? 'Liquid'  :
+    theme.charAt(0).toUpperCase() + theme.slice(1);
 
   return (
     <div className="theme-selector-container" ref={menuRef}>
@@ -59,7 +68,7 @@ export function ThemeToggle() {
         aria-label="Selection Tool"
       >
         <span className="theme-btn-icon">{currentIcon}</span>
-        <span className="theme-btn-label">{theme === 'kinetic' ? 'Archive' : theme.charAt(0).toUpperCase() + theme.slice(1)}</span>
+        <span className="theme-btn-label">{themeLabel}</span>
         <svg className={`theme-btn-arrow ${isOpen ? 'open' : ''}`} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="6 9 12 15 18 9"></polyline>
         </svg>
@@ -93,6 +102,15 @@ export function ThemeToggle() {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
             </span>
             Kinetic Archive
+          </button>
+          <button 
+            className={`theme-menu-item ${theme === 'liquid' ? 'active' : ''}`}
+            onClick={() => changeTheme('liquid')}
+          >
+            <span className="menu-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2C6 8 4 12 4 15a8 8 0 0 0 16 0c0-3-2-7-8-13z"/></svg>
+            </span>
+            Liquid Glass
           </button>
         </div>
       )}

@@ -209,6 +209,71 @@ html[data-theme="kinetic"] {
 }
 
 /* =====================================================================
+   LIQUID THEME (data-theme="liquid")
+   Liquid-glass aesthetic: near-black purple-undertone bg, holographic
+   cyan→magenta→violet accents, heavy glassmorphism.
+   ===================================================================== */
+html[data-theme="liquid"] {
+  /* ── Backgrounds ── */
+  --bg-void:        #06040f;
+  --bg-base:        #06040f;
+  --bg-surface:     #0a0714;
+  --bg-elevated:    #0f0a1a;
+  --bg-overlay:     #140e22;
+  --bg-highlight:   #1c1530;
+  --bg-glass:       rgba(10, 7, 20, 0.55);
+
+  /* ── Borders ── */
+  --border-subtle:  rgba(255, 255, 255, 0.04);
+  --border-default: rgba(255, 255, 255, 0.08);
+  --border-strong:  rgba(0, 210, 255, 0.22);
+  --border-glow:    rgba(0, 210, 255, 0.28);
+  --border-cyan:    rgba(0, 210, 255, 0.35);
+
+  /* ── Accent Colors ── */
+  --accent:         #00d2ff;
+  --accent-hv:      #c77dff;
+  --accent-dim:     rgba(0, 210, 255, 0.1);
+  --accent-glow:    rgba(0, 210, 255, 0.18);
+  --accent-glow-lg: rgba(0, 210, 255, 0.06);
+
+  --cyan:           #00d2ff;
+  --cyan-dim:       rgba(0, 210, 255, 0.1);
+  --cyan-glow:      rgba(0, 210, 255, 0.3);
+
+  --violet:         #c77dff;
+  --violet-dim:     rgba(199, 125, 255, 0.12);
+
+  --emerald:        #00ffa3;
+  --emerald-dim:    rgba(0, 255, 163, 0.12);
+  --amber:          #ffd700;
+  --amber-dim:      rgba(255, 215, 0, 0.12);
+  --red:            #ff4d6d;
+  --red-dim:        rgba(255, 77, 109, 0.1);
+
+  /* ── Text ── */
+  --text-primary:   #eef2ff;
+  --text-secondary: #a0b4cc;
+  --text-tertiary:  #5a7090;
+  --text-inverse:   #06040f;
+
+  /* ── Gradients ── */
+  --grad-accent:    linear-gradient(135deg, #00d2ff 0%, #c77dff 50%, #7b2fff 100%);
+  --grad-surface:   #06040f;
+  --grad-shine:     linear-gradient(135deg, rgba(0,210,255,0.07) 0%, rgba(199,125,255,0.04) 60%);
+  --grad-glow:      rgba(0, 210, 255, 0.4);
+  --grad-hero:      linear-gradient(135deg, #00d2ff, #c77dff, #7b2fff);
+
+  /* ── Shadows ── */
+  --shadow-sm:      0 1px 3px rgba(0,0,0,0.7);
+  --shadow-md:      0 4px 16px rgba(0,0,0,0.65);
+  --shadow-lg:      0 20px 60px rgba(0,0,0,0.55);
+  --shadow-glow:    0 0 40px rgba(0,210,255,0.25), 0 0 80px rgba(199,125,255,0.1);
+  --shadow-cyan:    0 0 20px rgba(0,210,255,0.4), 0 0 40px rgba(0,210,255,0.15);
+  --shadow-inset:   inset 0 1px 0 rgba(255,255,255,0.07);
+}
+
+/* =====================================================================
    GLOBAL BASE
    ===================================================================== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }

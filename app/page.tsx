@@ -167,7 +167,7 @@ export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [search, setSearch] = useState('');
   const [showSearch, setShowSearch] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark' | 'kinetic'>('light');
+  const [theme, setTheme] = useState<'light' | 'dark' | 'kinetic' | 'liquid'>('light');
   const [displayLimit, setDisplayLimit] = useState(4);
   const videoElementRef = useRef<HTMLVideoElement>(null);
   const router = useRouter();
@@ -183,8 +183,8 @@ export default function Home() {
 
   useEffect(() => {
     // Initialize theme from localStorage or document, default to light
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | 'kinetic' | null;
-    const documentTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | 'kinetic' | null;
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | 'kinetic' | 'liquid' | null;
+    const documentTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | 'kinetic' | 'liquid' | null;
     const initialTheme = savedTheme || documentTheme || 'light';
     
     setTheme(initialTheme);
@@ -192,7 +192,7 @@ export default function Home() {
     localStorage.setItem('theme', initialTheme);
     
     // Update video src after hydration to match theme
-    // Both dark and kinetic themes use the dark video
+    // Both dark, kinetic, and liquid themes use the dark video
     const newVideoUrl = initialTheme === 'light' ? LIGHT_VIDEO : DARK_VIDEO;
     if (videoElementRef.current && videoElementRef.current.src !== newVideoUrl) {
       videoElementRef.current.src = newVideoUrl;
@@ -200,7 +200,7 @@ export default function Home() {
     
     // Watch for theme changes from toggle button
     const handleThemeChange = () => {
-      const newTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | 'kinetic' | null;
+      const newTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | 'kinetic' | 'liquid' | null;
       const updatedTheme = newTheme || 'light';
       setTheme(updatedTheme);
       
@@ -255,9 +255,18 @@ export default function Home() {
             <div className="eternal-arc-glow" />
           </div>
         )}
+        {theme === 'liquid' && (
+          <div className="liquid-orb-container">
+            <div className="liquid-orb liquid-orb-1" />
+            <div className="liquid-orb liquid-orb-2" />
+            <div className="liquid-orb liquid-orb-3" />
+          </div>
+        )}
         
         <div className={`hero-content ${mounted ? 'visible' : ''} ${theme === 'kinetic' ? 'hero-content-kinetic' : ''}`}>
-          <span className="hero-eyebrow">{theme === 'kinetic' ? 'The Kinetic Archive' : 'Autonomous Creation / Protocol'}</span>
+          <span className="hero-eyebrow">
+            {theme === 'kinetic' ? 'The Kinetic Archive' : theme === 'liquid' ? 'Liquid Glass / Protocol' : 'Autonomous Creation / Protocol'}
+          </span>
           <h1 className="hero-title">
             {theme === 'kinetic' ? (
               <>
@@ -305,6 +314,22 @@ export default function Home() {
           <div className="hero-number">001</div>
         </div>
       </section>
+
+      {/* Marquee brand bar — liquid theme only */}
+      {theme === 'liquid' && (
+        <div className="liquid-marquee-bar">
+          <div className="marquee-track">
+            {[
+              'Liquid Glass', 'Zero Code', 'AI Powered', 'Ship Instantly',
+              'Full Stack', 'One Sentence', 'Production Ready', 'Any Idea',
+              'Liquid Glass', 'Zero Code', 'AI Powered', 'Ship Instantly',
+              'Full Stack', 'One Sentence', 'Production Ready', 'Any Idea',
+            ].map((item, i) => (
+              <span key={i} className="marquee-item">{item}</span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* How it Works */}
       <section className="how" id="how">
