@@ -95,3 +95,25 @@ In this design system, depth is achieved through **Tonal Layering** rather than 
 - **Don't use 1px solid white borders.** It breaks the "Nocturne" atmosphere and feels like a standard template.
 - **Don't use drop shadows on text.** Rely on the high-contrast `on-surface` white against the dark background.
 - **Don't round button corners heavily.** Keep buttons sharp (`none` or `sm`) to maintain the "Professional Tool" authority, while keeping cards soft (`xl`) for the "Playground" feel.
+
+---
+
+## 7. Agent Intelligence Layer
+
+The Architect and Builder agents carry the official **gemini-api-dev** skill, embedded as the `GEMINI_API_DEV_SKILL` constant in `lib/system-prompt.ts`. This provides:
+
+- Authoritative knowledge of the latest Gemini 3 model family
+- Current SDK recommendations (`@google/genai` for JS/TS, `google-genai` for Python)
+- Canonical quick-start patterns and API documentation links
+
+This intelligence layer is invisible to end users — they simply receive more accurate, future-proof output whenever they build Gemini-powered applications.
+
+### Smart Title Generation
+
+After analyzing the user's idea, the Architect outputs a `## 🏷️ Smart Title Suggestions` section at the end of every architectural blueprint. This section proposes exactly 3 short, memorable, brandable project names (2–5 words each, specific to the app's purpose).
+
+- **Fast mode**: The best suggestion (marked ⭐) is automatically applied as the project name before the Builder runs.
+- **Plan mode**: A title picker card surfaces in the chat panel — users can pick a suggestion, dismiss it, or keep their own name.
+- The chosen title propagates to the ForgeBar project name field, the deployed URL slug, gallery metadata, and page titles.
+- CSS classes: `.title-suggestion-card`, `.title-suggestion-btn`, `.title-best-badge` (see `app/globals.css`).
+- Parsing utility: `parseTitleSuggestions(planContent: string): string[]` in `app/build/page.tsx`.

@@ -1,36 +1,42 @@
 import type { Metadata, Viewport } from 'next';
-import { Space_Grotesk, Manrope, JetBrains_Mono, Newsreader, Inter } from 'next/font/google';
+import { Fraunces, Plus_Jakarta_Sans, Space_Grotesk, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import './home.css';
 
+/* Display / editorial serif — optically variable, gorgeous at large sizes */
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  axes: ['SOFT', 'WONK', 'opsz'],
+  style: ['normal', 'italic'],
+  variable: '--font-headline',
+  display: 'swap',
+});
+
+/* Clean geometric sans for body text */
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+});
+
+/* Same font for --font-body alias */
+const plusJakartaSansBody = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  variable: '--font-body',
+  display: 'swap',
+});
+
+/* Geometric sans for UI labels & nav */
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
   variable: '--font-label',
   display: 'swap',
 });
 
-const manrope = Manrope({
-  subsets: ['latin'],
-  variable: '--font-body',
-  display: 'swap',
-});
-
+/* Monospace for code blocks */
 const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   variable: '--font-mono',
-  display: 'swap',
-});
-
-const newsreader = Newsreader({
-  subsets: ['latin'],
-  style: ['normal', 'italic'],
-  variable: '--font-headline',
-  display: 'swap',
-});
-
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-sans',
   display: 'swap',
 });
 
@@ -45,14 +51,14 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#fffcf7',
+  themeColor: '#FAFAF8',
   width: 'device-width',
   initialScale: 1,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-scroll-behavior="smooth" className={`${spaceGrotesk.variable} ${manrope.variable} ${jetbrainsMono.variable} ${newsreader.variable} ${inter.variable}`}>
+    <html lang="en" data-scroll-behavior="smooth" className={`${fraunces.variable} ${plusJakartaSans.variable} ${plusJakartaSansBody.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}>
       <body>{children}</body>
     </html>
   );

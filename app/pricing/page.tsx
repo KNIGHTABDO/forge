@@ -7,18 +7,18 @@ import '@/app/home.css';
 
 export default function PricingPage() {
   const [mounted, setMounted] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark' | 'kinetic'>('light');
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | 'kinetic' | null;
-    const documentTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | 'kinetic' | null;
-    const initialTheme = savedTheme || documentTheme || 'light';
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+    const documentTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | null;
+    const initialTheme: 'light' | 'dark' = (savedTheme === 'light' || savedTheme === 'dark') ? savedTheme : (documentTheme === 'light' || documentTheme === 'dark') ? documentTheme : 'light';
     
     setTheme(initialTheme);
     document.documentElement.setAttribute('data-theme', initialTheme);
     
     const handleThemeChange = () => {
-      const newTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | 'kinetic' | null;
+      const newTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | null;
       setTheme(newTheme || 'light');
     };
     
@@ -32,9 +32,9 @@ export default function PricingPage() {
   if (!mounted) return null;
 
   return (
-    <div className={`page ${theme === 'kinetic' ? 'theme-kinetic' : ''}`}>
+    <div className="page">
       <nav className="nav">
-        <Link href="/" className="nav-logo">{theme === 'kinetic' ? 'Forge' : 'FORGE'}</Link>
+        <Link href="/" className="nav-logo">FORGE</Link>
         <div className="nav-links">
           <Link href="/#how" className="nav-link">How it works</Link>
           <Link href="/#gallery" className="nav-link">Gallery</Link>
@@ -48,13 +48,6 @@ export default function PricingPage() {
       </nav>
 
       <main className="pricing-container">
-        {theme === 'kinetic' && (
-          <div className="eternal-arc-container">
-            <div className="eternal-arc-ambient" />
-            <div className="eternal-arc-ring" style={{ width: '400px', height: '400px' }} />
-          </div>
-        )}
-
         <div className="pricing-content">
           <span className="section-eyebrow">Investment</span>
           <h1 className="section-title">Transparent pricing.</h1>
@@ -184,17 +177,6 @@ export default function PricingPage() {
           color: var(--border);
         }
 
-        .theme-kinetic .pricing-card {
-          background: var(--bg-overlay);
-          border-color: var(--border-default);
-        }
-        .theme-kinetic .amount {
-          font-style: italic;
-          font-weight: 400;
-        }
-        .theme-kinetic .plan-name {
-          color: var(--accent);
-        }
       `}</style>
     </div>
   );

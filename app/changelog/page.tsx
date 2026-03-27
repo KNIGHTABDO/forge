@@ -10,18 +10,18 @@ import '../legal.css';
 export default function ChangelogPage() {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark' | 'kinetic'>('light');
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | 'kinetic' | null;
-    const documentTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | 'kinetic' | null;
-    const initialTheme = savedTheme || documentTheme || 'light';
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+    const documentTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | null;
+    const initialTheme: 'light' | 'dark' = (savedTheme === 'light' || savedTheme === 'dark') ? savedTheme : (documentTheme === 'light' || documentTheme === 'dark') ? documentTheme : 'light';
     
     setTheme(initialTheme);
     document.documentElement.setAttribute('data-theme', initialTheme);
     
     const handleThemeChange = () => {
-      const newTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | 'kinetic' | null;
+      const newTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | null;
       setTheme(newTheme || 'light');
     };
     
@@ -111,10 +111,10 @@ export default function ChangelogPage() {
   ];
 
   return (
-    <div className={`legal-page ${theme === 'kinetic' ? 'theme-kinetic' : ''}`}>
+    <div className="legal-page">
       {/* Navigation */}
       <nav className="nav">
-        <Link href="/" className="nav-logo">{theme === 'kinetic' ? 'Forge' : 'FORGE'}</Link>
+        <Link href="/" className="nav-logo">FORGE</Link>
         <div className="nav-links">
           <Link href="/#how" className="nav-link">How it works</Link>
           <Link href="/#gallery" className="nav-link">Gallery</Link>
@@ -128,12 +128,12 @@ export default function ChangelogPage() {
 
       {/* Hero */}
       <section className="legal-hero">
-        <span className="legal-eyebrow">{theme === 'kinetic' ? 'The Kinetic Archive' : 'Evolution / Protocol'}</span>
-        <h1 className="legal-title">{theme === 'kinetic' ? 'Changelog' : <>Change<br />Log</>}</h1>
+        <span className="legal-eyebrow">Evolution / Protocol</span>
+        <h1 className="legal-title"><>Change<br />Log</></h1>
         <p className="legal-subtitle">
           Tracing the history of the FORGE protocol from its first spark to the current multi-agent revolution.
         </p>
-        <p className="legal-meta">Protocol Status: {theme === 'kinetic' ? 'Operational v2.4' : 'Operational v2.4 (Beta)'}</p>
+        <p className="legal-meta">Protocol Status: Operational v2.4 (Beta)</p>
       </section>
 
       {/* Body */}

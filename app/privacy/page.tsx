@@ -8,18 +8,18 @@ import '../legal.css';
 
 export default function PrivacyPage() {
   const [mounted, setMounted] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark' | 'kinetic'>('light');
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | 'kinetic' | null;
-    const documentTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | 'kinetic' | null;
-    const initialTheme = savedTheme || documentTheme || 'light';
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+    const documentTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | null;
+    const initialTheme: 'light' | 'dark' = (savedTheme === 'light' || savedTheme === 'dark') ? savedTheme : (documentTheme === 'light' || documentTheme === 'dark') ? documentTheme : 'light';
     
     setTheme(initialTheme);
     document.documentElement.setAttribute('data-theme', initialTheme);
     
     const handleThemeChange = () => {
-      const newTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | 'kinetic' | null;
+      const newTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | null;
       setTheme(newTheme || 'light');
     };
     
@@ -32,10 +32,10 @@ export default function PrivacyPage() {
 
   if (!mounted) return null;
   return (
-    <div className={`legal-page ${theme === 'kinetic' ? 'theme-kinetic' : ''}`}>
+    <div className="legal-page">
       {/* Navigation */}
       <nav className="nav">
-        <Link href="/" className="nav-logo">{theme === 'kinetic' ? 'Forge' : 'FORGE'}</Link>
+        <Link href="/" className="nav-logo">FORGE</Link>
         <div className="nav-links">
           <Link href="/#how" className="nav-link">How it works</Link>
           <Link href="/#gallery" className="nav-link">Gallery</Link>
@@ -49,8 +49,8 @@ export default function PrivacyPage() {
 
       {/* Hero */}
       <section className="legal-hero">
-        <span className="legal-eyebrow">{theme === 'kinetic' ? 'The Kinetic Archive' : 'Legal / Protocol'}</span>
-        <h1 className="legal-title">{theme === 'kinetic' ? 'Privacy Policy' : <>Privacy<br />Policy</>}</h1>
+        <span className="legal-eyebrow">Legal / Protocol</span>
+        <h1 className="legal-title"><>Privacy<br />Policy</></h1>
         <p className="legal-subtitle">
           We believe privacy is a right, not a feature. This document explains exactly what we collect, why, and how we protect it.
         </p>
@@ -102,6 +102,7 @@ export default function PrivacyPage() {
             <p>We use the information we collect to:</p>
             <ul>
               <li>Generate and host your web applications</li>
+              <li>Analyze your prompt to suggest short, catchy project names (Smart Title Generation) — this analysis happens server-side via the Gemini API and is not stored separately</li>
               <li>Display your apps in the public gallery (unless you keep them private)</li>
               <li>Improve the quality of AI-generated outputs</li>
               <li>Monitor for abuse, spam, or harmful content</li>
@@ -119,7 +120,7 @@ export default function PrivacyPage() {
               We do not sell, trade, or rent your personal information to third parties. We may share data only in the following limited circumstances:
             </p>
             <ul>
-              <li><strong>Service providers:</strong> We use third-party services (such as cloud hosting and AI APIs) to operate FORGE. These providers are bound by strict data processing agreements.</li>
+              <li><strong>Service providers:</strong> We use third-party services (such as cloud hosting and AI APIs) to operate FORGE. These providers are bound by strict data processing agreements. This includes Google's Gemini AI API, which powers generation and the embedded gemini-api-dev agent skill.</li>
               <li><strong>Legal compliance:</strong> We may disclose data if required by law or to respond to valid legal process.</li>
               <li><strong>Safety:</strong> We may share data to protect the rights, property, or safety of FORGE, our users, or the public.</li>
             </ul>

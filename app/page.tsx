@@ -11,20 +11,9 @@ import './home.css';
 const LIGHT_VIDEO = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/forge-promo-light-fzsAp3fDNiMsZzPANvEfFnZAx0o7Sp.mp4';
 const DARK_VIDEO = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/forge-promo-2uvaCuwY7ICqXFSLctTSVIYQDIpxJC.mp4';
 
-function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return 'just now';
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  const d = Math.floor(h / 24);
-  return `${d}d ago`;
-}
-
-// Interactive Demo - Light themed to match page
+// Interactive Demo
 function InteractiveDemo() {
-  const [phase, setPhase] = useState<'typing' | 'building' | 'complete'>('typing');
+  const [phase, setPhase] = useState<'typing' | 'building' | 'naming' | 'complete'>('typing');
   const [typedText, setTypedText] = useState('');
   const [timerValue, setTimerValue] = useState(25 * 60);
   const [isRunning, setIsRunning] = useState(false);
@@ -45,7 +34,13 @@ function InteractiveDemo() {
 
   useEffect(() => {
     if (phase !== 'building') return;
-    const timeout = setTimeout(() => setPhase('complete'), 1500);
+    const timeout = setTimeout(() => setPhase('naming'), 1500);
+    return () => clearTimeout(timeout);
+  }, [phase]);
+
+  useEffect(() => {
+    if (phase !== 'naming') return;
+    const timeout = setTimeout(() => setPhase('complete'), 1200);
     return () => clearTimeout(timeout);
   }, [phase]);
 
@@ -89,9 +84,17 @@ function InteractiveDemo() {
           </div>
         )}
 
+        {phase === 'naming' && (
+          <div className="demo-building">
+            <div className="demo-spinner" />
+            <span>✨ Naming your project...</span>
+          </div>
+        )}
+
         {phase === 'complete' && (
           <div className="demo-app">
-            <div className="demo-app-header">Pomodoro Timer</div>
+            <div className="demo-app-title-badge">⭐ FocusPulse</div>
+            <div className="demo-app-header">FocusPulse</div>
             <div className="demo-timer-display">{formatTime(timerValue)}</div>
             <div className="demo-timer-progress">
               <div className="demo-timer-bar" style={{ width: `${(timerValue / (25 * 60)) * 100}%` }} />
@@ -167,13 +170,12 @@ export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [search, setSearch] = useState('');
   const [showSearch, setShowSearch] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark' | 'kinetic' | 'liquid'>('light');
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [displayLimit, setDisplayLimit] = useState(4);
   const videoElementRef = useRef<HTMLVideoElement>(null);
   const router = useRouter();
 
   // Always render light video URL initially to avoid hydration mismatch
-  // Will be updated dynamically after mount
   const videoUrl = LIGHT_VIDEO;
 
   const startNewSession = () => {
@@ -183,16 +185,17 @@ export default function Home() {
 
   useEffect(() => {
     // Initialize theme from localStorage or document, default to light
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | 'kinetic' | 'liquid' | null;
-    const documentTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | 'kinetic' | 'liquid' | null;
-    const initialTheme = savedTheme || documentTheme || 'light';
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+    const documentTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | null;
+    const initialTheme: 'light' | 'dark' =
+      (savedTheme === 'light' || savedTheme === 'dark') ? savedTheme :
+      (documentTheme === 'light' || documentTheme === 'dark') ? documentTheme : 'light';
     
     setTheme(initialTheme);
     document.documentElement.setAttribute('data-theme', initialTheme);
     localStorage.setItem('theme', initialTheme);
     
     // Update video src after hydration to match theme
-    // Both dark, kinetic, and liquid themes use the dark video
     const newVideoUrl = initialTheme === 'light' ? LIGHT_VIDEO : DARK_VIDEO;
     if (videoElementRef.current && videoElementRef.current.src !== newVideoUrl) {
       videoElementRef.current.src = newVideoUrl;
@@ -200,14 +203,14 @@ export default function Home() {
     
     // Watch for theme changes from toggle button
     const handleThemeChange = () => {
-      const newTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | 'kinetic' | 'liquid' | null;
-      const updatedTheme = newTheme || 'light';
+      const newTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | null;
+      const updatedTheme: 'light' | 'dark' = (newTheme === 'light' || newTheme === 'dark') ? newTheme : 'light';
       setTheme(updatedTheme);
       
       const newVideoUrl = updatedTheme === 'light' ? LIGHT_VIDEO : DARK_VIDEO;
       if (videoElementRef.current && videoElementRef.current.src !== newVideoUrl) {
         videoElementRef.current.src = newVideoUrl;
-        videoElementRef.current.play().catch(() => {}); // Resume playback if paused
+        videoElementRef.current.play().catch(() => {});
       }
     };
     
@@ -229,10 +232,10 @@ export default function Home() {
   );
 
   return (
-    <div className={`page ${theme === 'kinetic' ? 'theme-kinetic' : ''}`}>
+    <div className="page">
       {/* Navigation */}
       <nav className="nav">
-        <Link href="/" className="nav-logo">{theme === 'kinetic' ? 'Forge' : 'FORGE'}</Link>
+        <Link href="/" className="nav-logo">FORGE</Link>
         <div className="nav-links">
           <a href="#how" className="nav-link">How it works</a>
           <a href="#gallery" className="nav-link">Gallery</a>
@@ -247,42 +250,14 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <section className={`hero ${theme === 'kinetic' ? 'hero-kinetic' : ''}`}>
-        {theme === 'kinetic' && (
-          <div className="eternal-arc-container">
-            <div className="eternal-arc-ambient" />
-            <div className="eternal-arc-ring" />
-            <div className="eternal-arc-glow" />
-          </div>
-        )}
-        {theme === 'liquid' && (
-          <div className="liquid-orb-container">
-            <div className="liquid-orb liquid-orb-1" />
-            <div className="liquid-orb liquid-orb-2" />
-            <div className="liquid-orb liquid-orb-3" />
-          </div>
-        )}
-        
-        <div className={`hero-content ${mounted ? 'visible' : ''} ${theme === 'kinetic' ? 'hero-content-kinetic' : ''}`}>
-          <span className="hero-eyebrow">
-            {theme === 'kinetic' ? 'The Kinetic Archive' : theme === 'liquid' ? 'Liquid Glass / Protocol' : 'Autonomous Creation / Protocol'}
-          </span>
+      <section className="hero">
+        <div className={`hero-content ${mounted ? 'visible' : ''}`}>
+          <span className="hero-eyebrow">Autonomous Creation / Protocol</span>
           <h1 className="hero-title">
-            {theme === 'kinetic' ? (
-              <>
-                BUILD<br />
-                APPS<br />
-                WITH ONE<br />
-                SENTENCE.
-              </>
-            ) : (
-              <>
-                BUILD<br />
-                APPS<br />
-                <span className="hero-title-outline">WITH ONE</span><br />
-                SENTENCE.
-              </>
-            )}
+            BUILD<br />
+            APPS<br />
+            <span className="hero-title-outline">WITH ONE</span><br />
+            SENTENCE.
           </h1>
           <p className="hero-desc">
             Describe your idea. Get a fully working interactive web app instantly. No code required. No limits.
@@ -298,7 +273,7 @@ export default function Home() {
           </div>
         </div>
         
-        <div className={`hero-visual ${mounted ? 'visible' : ''} ${theme === 'kinetic' ? 'hero-visual-kinetic' : ''}`}>
+        <div className={`hero-visual ${mounted ? 'visible' : ''}`}>
           <video 
             ref={videoElementRef}
             className="hero-video"
@@ -314,22 +289,6 @@ export default function Home() {
           <div className="hero-number">001</div>
         </div>
       </section>
-
-      {/* Marquee brand bar — liquid theme only */}
-      {theme === 'liquid' && (
-        <div className="liquid-marquee-bar">
-          <div className="marquee-track">
-            {[
-              'Liquid Glass', 'Zero Code', 'AI Powered', 'Ship Instantly',
-              'Full Stack', 'One Sentence', 'Production Ready', 'Any Idea',
-              'Liquid Glass', 'Zero Code', 'AI Powered', 'Ship Instantly',
-              'Full Stack', 'One Sentence', 'Production Ready', 'Any Idea',
-            ].map((item, i) => (
-              <span key={i} className="marquee-item">{item}</span>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* How it Works */}
       <section className="how" id="how">
@@ -393,6 +352,25 @@ export default function Home() {
               <path d="M7 18.5v-13M17 18.5v-13M12 12l5-3M12 12l-5-3M12 12v9"/>
             </svg>
           </div>
+
+          <div className="step">
+            <span className="step-num">G</span>
+            <h3 className="step-title">Gemini API Dev Skill</h3>
+            <p className="step-desc">Forge's Architect and Builder agents carry Google's official gemini-api-dev skill — embedding authoritative knowledge of the latest Gemini 3 models, current SDKs, and best-practice patterns directly into every generation.</p>
+            <svg className="step-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 8v4l3 3"/>
+            </svg>
+          </div>
+
+          <div className="step">
+            <span className="step-num">✦</span>
+            <h3 className="step-title">Smart Title Generation</h3>
+            <p className="step-desc">After analyzing your idea, the Architect automatically suggests 3 short, catchy, and brandable project names. Pick the best one, edit it, or skip — your chosen title becomes the official name everywhere: URL slug, gallery, and metadata.</p>
+            <svg className="step-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+          </div>
         </div>
       </section>
 
@@ -437,7 +415,7 @@ export default function Home() {
         ) : filteredTools.length === 0 ? (
           <div className="exhibit-empty">
             {search ? (
-              <p>No apps match "{search}"</p>
+              <p>No apps match &quot;{search}&quot;</p>
             ) : (
               <>
                 <p>No apps yet. Be the first to create something.</p>

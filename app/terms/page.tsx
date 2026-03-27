@@ -8,18 +8,18 @@ import '../legal.css';
 
 export default function TermsPage() {
   const [mounted, setMounted] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark' | 'kinetic'>('light');
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | 'kinetic' | null;
-    const documentTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | 'kinetic' | null;
-    const initialTheme = savedTheme || documentTheme || 'light';
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+    const documentTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | null;
+    const initialTheme: 'light' | 'dark' = (savedTheme === 'light' || savedTheme === 'dark') ? savedTheme : (documentTheme === 'light' || documentTheme === 'dark') ? documentTheme : 'light';
     
     setTheme(initialTheme);
     document.documentElement.setAttribute('data-theme', initialTheme);
     
     const handleThemeChange = () => {
-      const newTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | 'kinetic' | null;
+      const newTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | null;
       setTheme(newTheme || 'light');
     };
     
@@ -33,10 +33,10 @@ export default function TermsPage() {
   if (!mounted) return null;
 
   return (
-    <div className={`legal-page ${theme === 'kinetic' ? 'theme-kinetic' : ''}`}>
+    <div className="legal-page">
       {/* Navigation */}
       <nav className="nav">
-        <Link href="/" className="nav-logo">{theme === 'kinetic' ? 'Forge' : 'FORGE'}</Link>
+        <Link href="/" className="nav-logo">FORGE</Link>
         <div className="nav-links">
           <Link href="/#how" className="nav-link">How it works</Link>
           <Link href="/#gallery" className="nav-link">Gallery</Link>
@@ -50,8 +50,8 @@ export default function TermsPage() {
 
       {/* Hero */}
       <section className="legal-hero">
-        <span className="legal-eyebrow">{theme === 'kinetic' ? 'The Kinetic Archive' : 'Legal / Protocol'}</span>
-        <h1 className="legal-title">{theme === 'kinetic' ? 'Terms of Service' : <>Terms of<br />Service</>}</h1>
+        <span className="legal-eyebrow">Legal / Protocol</span>
+        <h1 className="legal-title"><>Terms of<br />Service</></h1>
         <p className="legal-subtitle">
           By using FORGE, you agree to these terms. Please read them carefully — they are written to be clear and fair.
         </p>
@@ -98,11 +98,13 @@ export default function TermsPage() {
             </p>
             <ul>
               <li>Multi-Agent generation (Architectural Planning + Build phase)</li>
+              <li>Smart Project Title Generation — automatic short, catchy, and brandable name suggestions per project</li>
               <li>Multi-page app generation (Enhance Mode / Beta)</li>
               <li>Forge BaaS for cloud-synced application data persistence</li>
               <li>Instant preview and iteration on generated apps</li>
               <li>One-click deployment with a unique shareable URL</li>
               <li>Public gallery of community-built applications</li>
+              <li>Enhanced AI capabilities via the embedded <strong>gemini-api-dev skill</strong> — providing agents with authoritative knowledge of the latest Gemini models, official SDKs, and best-practice patterns from Google</li>
             </ul>
             <p>
               We reserve the right to modify, suspend, or discontinue the Service at any time without notice.
