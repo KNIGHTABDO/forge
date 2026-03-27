@@ -107,3 +107,13 @@ The Architect and Builder agents carry the official **gemini-api-dev** skill, em
 - Canonical quick-start patterns and API documentation links
 
 This intelligence layer is invisible to end users — they simply receive more accurate, future-proof output whenever they build Gemini-powered applications.
+
+### Smart Title Generation
+
+After analyzing the user's idea, the Architect outputs a `## 🏷️ Smart Title Suggestions` section at the end of every architectural blueprint. This section proposes exactly 3 short, memorable, brandable project names (2–5 words each, specific to the app's purpose).
+
+- **Fast mode**: The best suggestion (marked ⭐) is automatically applied as the project name before the Builder runs.
+- **Plan mode**: A title picker card surfaces in the chat panel — users can pick a suggestion, dismiss it, or keep their own name.
+- The chosen title propagates to the ForgeBar project name field, the deployed URL slug, gallery metadata, and page titles.
+- CSS classes: `.title-suggestion-card`, `.title-suggestion-btn`, `.title-best-badge` (see `app/globals.css`).
+- Parsing utility: `parseTitleSuggestions(planContent: string): string[]` in `app/build/page.tsx`.

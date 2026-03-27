@@ -121,6 +121,10 @@ function BuildPage() {
   const [planContent, setPlanContent] = useState('');
   const [planApproved, setPlanApproved] = useState(false);
   const [sessionId, setSessionId] = useState<string>('');
+
+  // Smart Title Generation state
+  const [titleSuggestions, setTitleSuggestions] = useState<string[]>([]);
+  const [titlePickerVisible, setTitlePickerVisible] = useState(false);
   const [mobileTab, setMobileTab] = useState<'chat' | 'preview'>('chat');
 
   // Stitch Design AI
@@ -303,6 +307,22 @@ function BuildPage() {
     inputRef.current?.focus();
   }, []);
 
+  // Parse Smart Title Suggestions from architect plan content.
+  // Extracts up to 3 titles from the "## 🏷️ Smart Title Suggestions" section.
+  const parseTitleSuggestions = (content: string): string[] => {
+    const sectionMatch = content.match(/##\s*🏷️\s*Smart Title Suggestions([\s\S]*?)(?:\n##|\nRULES:|$)/);
+    if (!sectionMatch) return [];
+    const section = sectionMatch[1];
+    const titles: string[] = [];
+    const regex = /-\s*(?:⭐\s*)?\*\*([^*]+)\*\*/g;
+    let match: RegExpExecArray | null;
+    while ((match = regex.exec(section)) !== null) {
+      const title = match[1].trim();
+      if (title) titles.push(title);
+    }
+    return titles.slice(0, 3);
+  };
+
   const generate = useCallback(async (userMsg: string, overrideMode?: 'fast' | 'plan' | 'build' | 'chat' | 'enhance') => {
     if ((!userMsg.trim() && pendingImages.length === 0) || isGenerating) return;
 
@@ -440,11 +460,23 @@ function BuildPage() {
         if (activeMode === 'plan') {
           setPlanContent(finalContent);
           setPlanApproved(false);
+          // Smart Title Generation: extract suggestions and show picker
+          const suggestions = parseTitleSuggestions(finalContent);
+          if (suggestions.length > 0) {
+            setTitleSuggestions(suggestions);
+            if (!toolName) setTitlePickerVisible(true);
+          }
         } else if (activeMode === 'fast' && !isEdit) {
            // This was an automatic plan phase for Fast mode
            setPlanContent(finalContent);
            setPlanApproved(true);
            nextPhase = true;
+           // Smart Title Generation: auto-pick the best (first/⭐) suggestion for Fast mode
+           const suggestions = parseTitleSuggestions(finalContent);
+           if (suggestions.length > 0 && !toolName) {
+             setToolName(suggestions[0]);
+             setTitleSuggestions(suggestions);
+           }
         } else if (activeMode === 'enhance') {
           // Handled above in multi-file parsing
           // We don't want to overwrite currentHTML with the raw tagged string
@@ -707,6 +739,34 @@ function BuildPage() {
             <div ref={chatBottomRef} />
           </div>
 
+          {/* ─── Smart Title Suggestion Card ─── */}
+          {titlePickerVisible && titleSuggestions.length > 0 && !isGenerating && (
+            <div className="title-suggestion-card">
+              <div className="title-suggestion-header">
+                <span className="title-suggestion-icon">✨</span>
+                <div>
+                  <h4 className="title-suggestion-title">Smart Title Suggestions</h4>
+                  <p className="title-suggestion-desc">The Architect generated names for your project. Pick one or keep going.</p>
+                </div>
+              </div>
+              <div className="title-suggestion-options">
+                {titleSuggestions.map((title, i) => (
+                  <button
+                    key={title}
+                    className={`title-suggestion-btn${i === 0 ? ' title-suggestion-btn-best' : ''}`}
+                    onClick={() => { setToolName(title); setTitlePickerVisible(false); }}
+                  >
+                    {i === 0 && <span className="title-best-badge">⭐ Best pick</span>}
+                    <span className="title-suggestion-name">{title}</span>
+                  </button>
+                ))}
+              </div>
+              <button className="title-suggestion-dismiss" onClick={() => setTitlePickerVisible(false)}>
+                Skip — keep current name
+              </button>
+            </div>
+          )}
+
           {elementRef && (
             <div className="element-ref-indicator">
               <span>◎ Editing: {elementRef}</span>
@@ -915,6 +975,8 @@ function BuildPage() {
                 setShowHistory(false);
                 setShowStitchPanel(false);
                 setSelectedStitchDesign(null);
+                setTitleSuggestions([]);
+                setTitlePickerVisible(false);
                 // Clear Stitch from backend as well
                 fetch('/api/stitch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'clear' }) }).catch(console.error);
               }}

@@ -98,6 +98,7 @@ export default function TermsPage() {
             </p>
             <ul>
               <li>Multi-Agent generation (Architectural Planning + Build phase)</li>
+              <li>Smart Project Title Generation — automatic short, catchy, and brandable name suggestions per project</li>
               <li>Multi-page app generation (Enhance Mode / Beta)</li>
               <li>Forge BaaS for cloud-synced application data persistence</li>
               <li>Instant preview and iteration on generated apps</li>

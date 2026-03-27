@@ -724,6 +724,22 @@ html[data-theme="dark"] .demo-btn-primary:hover {
   letter-spacing: 0.2em;
 }
 
+/* Smart Title badge in demo — shown during the titling phase */
+.demo-app-title-badge {
+  font-family: var(--font-label);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-light);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 10px;
+  margin-bottom: 14px;
+  animation: fadeIn 0.3s;
+}
+
 /* ── Exhibition / Gallery ── */
 .exhibition {
   padding: 120px 48px;

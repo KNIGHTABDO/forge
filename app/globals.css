@@ -1508,6 +1508,118 @@ html[data-theme="light"] .inspect-hud {
   border-color: var(--text-primary);
 }
 
+/* ─── Smart Title Suggestion Card ─── */
+.title-suggestion-card {
+  margin: 8px 12px 8px;
+  padding: 14px 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-md);
+  animation: fade-up 0.25s var(--ease-smooth) both;
+}
+
+.title-suggestion-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.title-suggestion-icon {
+  font-size: 18px;
+  line-height: 1;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+.title-suggestion-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 2px;
+}
+
+.title-suggestion-desc {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin: 0;
+}
+
+.title-suggestion-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.title-suggestion-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-sm);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--t-base) var(--ease-smooth);
+}
+
+.title-suggestion-btn:hover {
+  background: var(--bg-highlight);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.title-suggestion-btn-best {
+  border-color: var(--border-strong);
+  background: var(--bg-overlay);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.title-suggestion-btn-best:hover {
+  background: var(--bg-highlight);
+}
+
+.title-best-badge {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  background: var(--bg-void);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  padding: 1px 5px;
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.title-suggestion-name {
+  flex: 1;
+  font-weight: 600;
+}
+
+.title-suggestion-dismiss {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color var(--t-base);
+}
+
+.title-suggestion-dismiss:hover {
+  color: var(--text-secondary);
+}
+
 
 .chat-msg-actions {
   position: absolute;

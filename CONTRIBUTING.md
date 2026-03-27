@@ -35,5 +35,17 @@ Forge's Architect and Builder agents embed the official **gemini-api-dev** skill
 
 If you need to update the skill's content (e.g. to reflect new Gemini models or SDK changes), edit `GEMINI_API_DEV_SKILL` in `lib/system-prompt.ts`. The change will automatically propagate to both agents. Do not duplicate the skill content inline inside individual prompts.
 
+## Smart Title Generation
+
+Forge's Architect agent automatically proposes 3 short, catchy, brandable project names at the end of every architectural blueprint, inside a `## 🏷️ Smart Title Suggestions` section.
+
+- **Prompt instructions**: see `PLANNER_SYSTEM_PROMPT` rule 6 in `lib/system-prompt.ts`.
+- **Parsing**: `parseTitleSuggestions(content)` in `app/build/page.tsx` extracts the three titles from the plan markdown.
+- **UI**: `.title-suggestion-card` and related classes are defined in `app/globals.css`.
+- **Fast mode**: best title auto-applied (no user action needed).
+- **Plan mode**: title picker card shown in the chat panel before the user approves the plan.
+
+When updating title generation behavior, keep the parseable list format (`- ⭐ **TitleName** — rationale`) intact so the regex stays accurate.
+
 ## License
 By contributing to FORGE, you agree that your contributions will be licensed under the project's MIT License.

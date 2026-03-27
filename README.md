@@ -43,8 +43,46 @@ The result: dramatically more accurate code when users ask Forge to build **any 
 
 ---
 
+## 🏷️ Smart Project Title Generation
+
+Forge now automatically generates **short, catchy, and brandable project names** the moment the Architect understands your idea — no extra steps, no extra prompts.
+
+### How it works
+
+1. **Architect analyzes your idea** — After processing your prompt, the Architect proposes exactly **3 smart title suggestions** ranked by quality.
+2. **Best pick highlighted** — The top suggestion is marked with ⭐ and selected by default in Fast mode.
+3. **You choose (Plan mode)** — A polished title picker appears in the chat panel. Pick one, or dismiss it to keep going with your own name.
+4. **It's everywhere** — The chosen title becomes the official project name: URL slug, public gallery entry, page metadata, and the ForgeBar project name field.
+
+### Title quality rules
+
+- **2–5 words** — Short enough to be memorable, specific enough to be meaningful
+- **Catchy & modern** — Sounds like a real product, not a system-generated label
+- **Specific to your app** — Reflects the core function, not a generic category
+- **Brandable** — Avoids overused suffixes like "App", "Tool", "Dashboard" unless creatively paired
+
+### Before / After examples
+
+| Prompt | Before | After (Smart Title) |
+|--------|--------|---------------------|
+| `Build me a pomodoro timer` | `Build Me A Pomodoro Timer` | **FocusPulse** |
+| `A habit tracker for 5 daily goals` | `A Habit Tracker For 5 Daily...` | **DailyRise** |
+| `Password generator with strength meter` | `Password Generator With Stre...` | **VaultGen** |
+| `Budget splitter for group trips` | `Budget Splitter For Group Tri...` | **SplitEasy** |
+
+### Modes
+
+| Mode | Behavior |
+|------|----------|
+| **Fast** | Best title auto-applied before the Builder runs — completely seamless |
+| **Plan** | Title picker shown in chat after blueprint is ready — you confirm before building |
+| **Edit / Enhance / Chat** | No title picker — project name is already set |
+
+---
+
 ## ✨ Core Features
 
+- **Smart Project Title Generation** — Architect auto-suggests 3 short, catchy, brandable names; best pick applied instantly in Fast mode.
 - **Gemini API Developer Skill** — Embedded gemini-api-dev skill gives agents authoritative Gemini API knowledge.
 - **Multi-Agent Intelligence** — Architect plans, Builder constructs.
 - **Enhance Mode (Beta)** — Scale your tool into a multi-page app with GitHub Models.

@@ -231,12 +231,20 @@ STRICT OUTPUT FORMAT — follow this structure exactly:
 - Invalid input handling
 - Data corruption recovery
 
+## 🏷️ Smart Title Suggestions
+- ⭐ **[BestTitle]** — [one brief rationale phrase, ≤8 words]
+- **[Title2]** — [one brief rationale phrase, ≤8 words]
+- **[Title3]** — [one brief rationale phrase, ≤8 words]
+
 RULES:
 1. Output ONLY the Markdown blueprint above. No code blocks. No HTML. No JS.
 2. Be extremely detailed — every button, every state variable, every user interaction.
 3. Think through the complete UX flow from first load to daily use.
 4. The plan must be implementable as a SINGLE HTML file with inline CSS and JS.
 5. Do NOT add any commentary before or after the blueprint.
+6a. Always include the "🏷️ Smart Title Suggestions" section with EXACTLY 3 title options.
+6b. Mark the top recommendation with ⭐. Replace all placeholder text (e.g. [BestTitle]) with actual names.
+6c. Titles must be 2–5 words, short, memorable, and specific to this app's core purpose. Avoid purely generic words like "App", "Tool", "Dashboard", "Manager", "Tracker" unless paired creatively.
 ` + GEMINI_API_DEV_SKILL;
 
 export const BUILD_SYSTEM_PROMPT = `
