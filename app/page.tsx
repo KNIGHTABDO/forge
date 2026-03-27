@@ -13,7 +13,7 @@ const DARK_VIDEO = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/forg
 
 // Interactive Demo
 function InteractiveDemo() {
-  const [phase, setPhase] = useState<'typing' | 'building' | 'complete'>('typing');
+  const [phase, setPhase] = useState<'typing' | 'building' | 'naming' | 'complete'>('typing');
   const [typedText, setTypedText] = useState('');
   const [timerValue, setTimerValue] = useState(25 * 60);
   const [isRunning, setIsRunning] = useState(false);
@@ -34,7 +34,13 @@ function InteractiveDemo() {
 
   useEffect(() => {
     if (phase !== 'building') return;
-    const timeout = setTimeout(() => setPhase('complete'), 1500);
+    const timeout = setTimeout(() => setPhase('naming'), 1500);
+    return () => clearTimeout(timeout);
+  }, [phase]);
+
+  useEffect(() => {
+    if (phase !== 'naming') return;
+    const timeout = setTimeout(() => setPhase('complete'), 1200);
     return () => clearTimeout(timeout);
   }, [phase]);
 
@@ -78,9 +84,17 @@ function InteractiveDemo() {
           </div>
         )}
 
+        {phase === 'naming' && (
+          <div className="demo-building">
+            <div className="demo-spinner" />
+            <span>✨ Naming your project...</span>
+          </div>
+        )}
+
         {phase === 'complete' && (
           <div className="demo-app">
-            <div className="demo-app-header">Pomodoro Timer</div>
+            <div className="demo-app-title-badge">⭐ FocusPulse</div>
+            <div className="demo-app-header">FocusPulse</div>
             <div className="demo-timer-display">{formatTime(timerValue)}</div>
             <div className="demo-timer-progress">
               <div className="demo-timer-bar" style={{ width: `${(timerValue / (25 * 60)) * 100}%` }} />
@@ -346,6 +360,15 @@ export default function Home() {
             <svg className="step-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <circle cx="12" cy="12" r="10"/>
               <path d="M12 8v4l3 3"/>
+            </svg>
+          </div>
+
+          <div className="step">
+            <span className="step-num">✦</span>
+            <h3 className="step-title">Smart Title Generation</h3>
+            <p className="step-desc">After analyzing your idea, the Architect automatically suggests 3 short, catchy, and brandable project names. Pick the best one, edit it, or skip — your chosen title becomes the official name everywhere: URL slug, gallery, and metadata.</p>
+            <svg className="step-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
             </svg>
           </div>
         </div>

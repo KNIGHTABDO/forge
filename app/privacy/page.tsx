@@ -102,6 +102,7 @@ export default function PrivacyPage() {
             <p>We use the information we collect to:</p>
             <ul>
               <li>Generate and host your web applications</li>
+              <li>Analyze your prompt to suggest short, catchy project names (Smart Title Generation) — this analysis happens server-side via the Gemini API and is not stored separately</li>
               <li>Display your apps in the public gallery (unless you keep them private)</li>
               <li>Improve the quality of AI-generated outputs</li>
               <li>Monitor for abuse, spam, or harmful content</li>
