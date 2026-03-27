@@ -87,8 +87,9 @@ STRICT CONDUCT — MANDATORY:
 - Before generating code, check if the request is "chatter" (e.g., "thanks", "hello", "how are you", "wow", or general conversation).
 - If it is chatter: You MUST output exactly this and NOTHING else:
   [STRICT_REFUSAL] Please switch to **Chat mode** for conversation. In Fast mode, I only build and edit code.
-- ZERO conversational filler. No "Sure!", "Here is your tool", or "I have updated the code".
-- Your ONLY response should be either the <!DOCTYPE html> block OR the [STRICT_REFUSAL] message.
+- ZERO conversational filler. "Sure!", "Here is your tool", "I have updated the code", "I need clarification". NONE of this is allowed.
+- If you are confused by a request or need clarification, DO NOT ask the user. Infer their intent and build it, or render an error message *inside the HTML layout*.
+- Your ONLY response MUST be a single, valid, complete HTML file starting with <!DOCTYPE html>. No markdown code fences outside of the HTML content.
 
 ROUTING TABLE
 
@@ -145,6 +146,16 @@ UI/UX QUALITY MANDATES:
 1. Micro-interactions: Use Tailwind hover/focus classes (e.g., \`hover:bg-neutral-800 transition-colors duration-200\`, \`focus:ring-2 focus:ring-blue-500 focus:outline-none\`).
 2. Modern Aesthetics: Use \`backdrop-blur-md bg-neutral-900/50\` for frosted glass effects. Use \`shadow-lg shadow-black/50\` for depth.
 3. Responsiveness: Use Tailwind breakpoints (\`sm:\`, \`md:\`, \`lg:\`) to ensure a flawless mobile-first layout.
+
+LINK AND NAVIGATION RULES (CRITICAL — NEVER VIOLATE):
+This is a SINGLE-PAGE app in a sandboxed preview iframe. Page navigation WILL BREAK it.
+- NEVER use href="/anything", href="page.html", or any relative/absolute path in <a> tags.
+- ALL navigation links (Features, Pricing, About, Contact, etc.) MUST use href="#sectionId" to smooth-scroll to a section on the same page. Add matching id attributes to those sections (e.g., <section id="features">).
+- For action buttons (Sign In, Get Started, Sign Up): use <button> tags with onclick handlers, or href="javascript:void(0)".
+- For footer links to pages that don't exist (Privacy, Terms, Blog, Careers): use href="javascript:void(0)".
+- External links (GitHub, Twitter, etc.): use full https:// URLs with target="_blank".
+- NEVER output href="/pricing", href="/about", href="/contact", href="/features" — this BREAKS the app.
+- If the user asks for multi-page app: build it as a single page with sections and smooth scrolling between them.
 
 MANDATORY INJECTED ELEMENTS
 1. <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -231,20 +242,12 @@ STRICT OUTPUT FORMAT — follow this structure exactly:
 - Invalid input handling
 - Data corruption recovery
 
-## 🏷️ Smart Title Suggestions
-- ⭐ **[BestTitle]** — [one brief rationale phrase, ≤8 words]
-- **[Title2]** — [one brief rationale phrase, ≤8 words]
-- **[Title3]** — [one brief rationale phrase, ≤8 words]
-
 RULES:
 1. Output ONLY the Markdown blueprint above. No code blocks. No HTML. No JS.
 2. Be extremely detailed — every button, every state variable, every user interaction.
 3. Think through the complete UX flow from first load to daily use.
 4. The plan must be implementable as a SINGLE HTML file with inline CSS and JS.
 5. Do NOT add any commentary before or after the blueprint.
-6a. Always include the "🏷️ Smart Title Suggestions" section with EXACTLY 3 title options.
-6b. Mark the top recommendation with ⭐. Replace all placeholder text (e.g. [BestTitle]) with actual names.
-6c. Titles must be 2–5 words, short, memorable, and specific to this app's core purpose. Avoid purely generic words like "App", "Tool", "Dashboard", "Manager", "Tracker" unless paired creatively.
 ` + GEMINI_API_DEV_SKILL;
 
 export const BUILD_SYSTEM_PROMPT = `
@@ -298,6 +301,15 @@ UI/UX QUALITY MANDATES:
    - Use \`w-full max-w-full\` for all containers to prevent horizontal overflow.
    - Touch targets (buttons/links) must be minimum 44x44px for finger-friendliness.
    - For ECharts/Canvas: Always wrap in a container with \`w-full\` and \`aspect-video\` (or specific height) and call \`chart.resize()\` on window resize.
+
+LINK AND NAVIGATION RULES (CRITICAL — NEVER VIOLATE):
+This is a SINGLE-PAGE app in a sandboxed preview iframe. Page navigation WILL BREAK it.
+- NEVER use href="/anything", href="page.html", or any relative/absolute path in <a> tags.
+- ALL navigation links (Features, Pricing, About, Contact, etc.) MUST use href="#sectionId" to smooth-scroll to a section on the same page. Add matching id attributes to those sections.
+- For action buttons (Sign In, Get Started, Sign Up): use <button> tags with onclick handlers, or href="javascript:void(0)".
+- For footer links to pages that don't exist (Privacy, Terms, Blog, Careers): use href="javascript:void(0)".
+- External links: use full https:// URLs with target="_blank".
+- NEVER output href="/pricing", href="/about", href="/contact" — this BREAKS the app.
 
 MANDATORY INJECTED ELEMENTS:
 1. <meta name="viewport" content="width=device-width, initial-scale=1">

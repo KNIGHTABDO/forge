@@ -54,7 +54,7 @@ export default function PrivacyPage() {
         <p className="legal-subtitle">
           We believe privacy is a right, not a feature. This document explains exactly what we collect, why, and how we protect it.
         </p>
-        <p className="legal-meta">Last updated: March 2026</p>
+        <p className="legal-meta">Last updated: March 27, 2026</p>
       </section>
 
       {/* Body */}
@@ -102,7 +102,8 @@ export default function PrivacyPage() {
             <p>We use the information we collect to:</p>
             <ul>
               <li>Generate and host your web applications</li>
-              <li>Analyze your prompt to suggest short, catchy project names (Smart Title Generation) — this analysis happens server-side via the Gemini API and is not stored separately</li>
+              <li>Analyze your prompt to suggest short, catchy project names (Smart Title Generation) — this analysis uses a multi-layered fallback system (Google Gemini API / GitHub Claude 4.5) to ensure high-quality suggestions even during high load</li>
+              <li>Flash Navigation (Turbo-All): Dynamically generate new app sections in real-time as users interact with the preview</li>
               <li>Display your apps in the public gallery (unless you keep them private)</li>
               <li>Improve the quality of AI-generated outputs</li>
               <li>Monitor for abuse, spam, or harmful content</li>

@@ -92,10 +92,11 @@ Forge now automatically generates **short, catchy, and brandable project names**
 
 ## ✨ Core Features
 
-- **Smart Project Title Generation** — Architect auto-suggests 3 short, catchy, brandable names; best pick applied instantly in Fast mode.
+- **Smart Title Generation v2** — Automated fallback system (Gemini → Claude 4.5) ensures high-quality branding even during peak loads.
+- **⚡ Flash Navigation (Turbo-All)** — Real-time on-demand page generation triggered by any link or button, now with robust interception.
+- **Preview Hardening** — Multi-layered iframe sandboxing and HTML sanitization to prevent frame navigation breakouts.
 - **Gemini API Developer Skill** — Embedded gemini-api-dev skill gives agents authoritative Gemini API knowledge.
 - **Multi-Agent Intelligence** — Architect plans, Builder constructs.
-- **⚡ Flash Navigation** — Real-time on-demand page generation with state preservation.
 - **Enhance Mode (Beta)** — Scale your tool into a multi-page app with GitHub Models.
 - **High-Fidelity Inspector** — Point and click to edit any element in real-time.
 - **Stitch Design AI** — Automatically generate mockup variations as visual references.

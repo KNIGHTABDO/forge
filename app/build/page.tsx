@@ -109,6 +109,7 @@ function BuildPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isDeploying, setIsDeploying] = useState(false);
   const [inspectMode, setInspectMode] = useState(false);
+  const [navBlockToast, setNavBlockToast] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [elementRef, setElementRef] = useState<string | null>(null);
   const [flashNavEnabled, setFlashNavEnabled] = useState(false);
@@ -124,8 +125,10 @@ function BuildPage() {
   const [sessionId, setSessionId] = useState<string>('');
 
   // Smart Title Generation state
-  const [titleSuggestions, setTitleSuggestions] = useState<string[]>([]);
+  const [titleSuggestions, setTitleSuggestions] = useState<{title: string; reason: string}[]>([]);
   const [titlePickerVisible, setTitlePickerVisible] = useState(false);
+  const [titleGenerating, setTitleGenerating] = useState(false);
+  const [titleToast, setTitleToast] = useState<string | null>(null);
   const [mobileTab, setMobileTab] = useState<'chat' | 'preview'>('chat');
 
   // Stitch Design AI
@@ -137,6 +140,9 @@ function BuildPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const streamBufferRef = useRef('');
+  const flashNavRef = useRef(flashNavEnabled);
+  flashNavRef.current = flashNavEnabled;
+  const generateRef = useRef<any>(null);
 
   useEffect(() => {
     if (loadSlug) return;
@@ -202,6 +208,30 @@ function BuildPage() {
         });
         if (file) {
           setCurrentHTML(file.content);
+        }
+      }
+      // Intercept blocked navigation from buttons/forms in the preview 
+      if (e.data?.__forge_nav_blocked) {
+        if (flashNavRef.current && generateRef.current) {
+          let navData = e.data.__forge_nav_blocked;
+          // Fallback if old string format comes through
+          if (typeof navData === 'string') {
+            const h = navData.replace('link: ', '');
+            navData = { href: h, text: '', tag: 'element' };
+          }
+          const labelText = navData.text ? `labeled "${navData.text}"` : '';
+          const hrefText = (navData.href && !navData.href.startsWith('javascript:')) ? `pointing to "${navData.href}"` : '';
+          const targetSummary = `${navData.tag} ${labelText} ${hrefText}`.replace(/\s+/g, ' ').trim() || 'navigation element';
+          
+          setNavBlockToast(null);
+          setGenerationMode('fast');
+          generateRef.current(
+            `[FLASH NAVIGATION AUTO-REQUEST]\n\nThe user clicked on a ${targetSummary}.\n\nYOUR TASK: Automatically construct the corresponding functional section, page, or modal for this content and integrate it seamlessly into the existing layout.\n\nCRITICAL MUST-DO:\n1. If this was a disabled footer/nav link, invent the content for it (e.g. build a typical 'Pricing', 'About', or 'Feature' section) and display it.\n2. Ensure smooth navigation (anchor scroll or state toggle) works to view the new content.\n3. DO NOT ASK FOR CLARIFICATION.\n4. DO NOT OUTPUT ANY CONVERSATIONAL TEXT.\n5. OUTPUT ONLY THE COMPLETE, VALID HTML CODE STARTING WITH <!DOCTYPE html>.`,
+            'fast'
+          );
+        } else {
+          setNavBlockToast('blocked');
+          setTimeout(() => setNavBlockToast(null), 5000);
         }
       }
     };
@@ -309,20 +339,40 @@ function BuildPage() {
     inputRef.current?.focus();
   }, []);
 
-  // Parse Smart Title Suggestions from architect plan content.
-  // Extracts up to 3 titles from the "## 🏷️ Smart Title Suggestions" section.
-  const parseTitleSuggestions = (content: string): string[] => {
-    const sectionMatch = content.match(/##\s*🏷️\s*Smart Title Suggestions([\s\S]*?)(?:\n##|\nRULES:|$)/);
-    if (!sectionMatch) return [];
-    const section = sectionMatch[1];
-    const titles: string[] = [];
-    const regex = /-\s*(?:⭐\s*)?\*\*([^*]+)\*\*/g;
-    let match: RegExpExecArray | null;
-    while ((match = regex.exec(section)) !== null) {
-      const title = match[1].trim();
-      if (title) titles.push(title);
+  // Smart Title Generation: calls the dedicated /api/generate-title endpoint
+  const generateSmartTitle = useCallback(async (userPrompt: string, autoApply: boolean = false) => {
+    if (titleGenerating) return;
+    setTitleGenerating(true);
+    try {
+      const res = await fetch('/api/generate-title', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: userPrompt }),
+      });
+      const data = await res.json();
+      if (data.titles && data.titles.length > 0) {
+        setTitleSuggestions(data.titles);
+        if (autoApply) {
+          // Fast mode: auto-apply the best suggestion and show toast
+          const bestTitle = data.titles[0].title;
+          setToolName(bestTitle);
+          setTitleToast(bestTitle);
+          setTimeout(() => setTitleToast(null), 4000);
+        } else {
+          // Plan mode: show the picker for user choice
+          setTitlePickerVisible(true);
+        }
+      }
+    } catch (err) {
+      console.error('[Smart Title] Generation failed:', err);
+    } finally {
+      setTitleGenerating(false);
     }
-    return titles.slice(0, 3);
+  }, [titleGenerating]);
+
+  // Strip the Smart Title Suggestions section from plan content for display
+  const stripTitleSection = (content: string): string => {
+    return content.replace(/##\s*🏷️\s*Smart Title Suggestions[\s\S]*?(?=\n##|\nRULES:|$)/g, '').trim();
   };
 
   const generate = useCallback(async (userMsg: string, overrideMode?: 'fast' | 'plan' | 'build' | 'chat' | 'enhance') => {
@@ -394,7 +444,7 @@ function BuildPage() {
         currentHTML: (isEdit || activeMode === 'chat') ? currentHTML : undefined,
         elementRef: isEdit ? (elementRef || null) : undefined,
         images: snapshotImages.map(img => ({ data: img.data, mimeType: img.mimeType })),
-        generationMode: shouldSendPlan ? 'build' : (activeMode === 'fast' && !isEdit ? 'plan' : activeMode),
+        generationMode: shouldSendPlan ? 'build' : activeMode,
         planContext: (shouldSendPlan || activeMode === 'plan' || activeMode === 'chat') ? planContent : undefined,
         chatHistory: messages.map(m => ({ role: m.role, content: m.content })),
         stitchDesign: selectedStitchDesign || undefined,
@@ -407,7 +457,10 @@ function BuildPage() {
         body: JSON.stringify(fetchBody),
       });
 
-      if (!res.ok) throw new Error('API Error: ' + res.statusText);
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || ('API Error: ' + res.statusText));
+      }
 
       const reader = res.body?.getReader();
       const decoder = new TextDecoder();
@@ -435,7 +488,12 @@ function BuildPage() {
         // Continue — we'll use whatever content we received so far
       }
 
-      const finalContent = streamBufferRef.current.trim();
+      // Clean AI output: strip markdown code fences, trailing commas, etc.
+      let finalContent = streamBufferRef.current.trim();
+      // Remove ```html at start and ``` at end (AI sometimes wraps in code fences)
+      finalContent = finalContent.replace(/^```(?:html|htm)?\s*\n?/i, '').replace(/\n?```\s*$/g, '').trim();
+      // Remove trailing commas
+      finalContent = finalContent.replace(/,{2,}$/g, '').trim();
       if (!finalContent) throw new Error('Empty response from AI — check GEMINI_API_KEY.');
 
       // PARSE MULTI-FILE OUTPUT if in Enhance mode
@@ -457,34 +515,25 @@ function BuildPage() {
       }
 
       const isRefusal = finalContent.includes('[STRICT_REFUSAL]');
-      let nextPhase = false;
 
       if (!isRefusal) {
         if (activeMode === 'plan') {
-          setPlanContent(finalContent);
+          // Strip title section from plan before storing/displaying
+          const cleanPlan = stripTitleSection(finalContent);
+          setPlanContent(cleanPlan);
           setPlanApproved(false);
-          // Smart Title Generation: extract suggestions and show picker
-          const suggestions = parseTitleSuggestions(finalContent);
-          if (suggestions.length > 0) {
-            setTitleSuggestions(suggestions);
-            if (!toolName) setTitlePickerVisible(true);
+          // Trigger smart title generation via dedicated API
+          if (!toolName) {
+            generateSmartTitle(userMsg, false);
           }
-        } else if (activeMode === 'fast' && !isEdit) {
-           // This was an automatic plan phase for Fast mode
-           setPlanContent(finalContent);
-           setPlanApproved(true);
-           nextPhase = true;
-           // Smart Title Generation: auto-pick the best (first/⭐) suggestion for Fast mode
-           const suggestions = parseTitleSuggestions(finalContent);
-           if (suggestions.length > 0 && !toolName) {
-             setToolName(suggestions[0]);
-             setTitleSuggestions(suggestions);
-           }
         } else if (activeMode === 'enhance') {
           // Handled above in multi-file parsing
-          // We don't want to overwrite currentHTML with the raw tagged string
         } else if (activeMode !== 'chat') {
           setCurrentHTML(finalContent);
+          // In Fast mode, auto-generate a smart title for new builds
+          if (activeMode === 'fast' && !isEdit && !toolName) {
+            generateSmartTitle(userMsg, true);
+          }
         }
       }
 
@@ -496,20 +545,11 @@ function BuildPage() {
           finalMessage = (finalContent.replace('[STRICT_REFUSAL]', '').trim()) + suffix;
         } else if (activeMode === 'plan') {
           finalMessage = `✓ Plan created! Review it on the right and approve to continue.${suffix}`;
-        } else if (activeMode === 'fast' && !isEdit) {
-          finalMessage = `✓ Tech Blueprint ready. Now building your app...${suffix}`;
         } else {
           finalMessage = isEdit ? `✓ Updated${suffix}` : `✓ Tool built${suffix}`;
         }
         return { ...m, isGenerating: false, content: finalMessage, charCount: undefined };
       }));
-
-      // AUTO-CONTINUE to build phase if we just finished automatic planning
-      if (nextPhase && !isRefusal) {
-        setTimeout(() => {
-           generate(userMsg, 'build');
-        }, 800);
-      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unknown error';
       setMessages(prev => prev.map((m, i) =>
@@ -564,6 +604,10 @@ function BuildPage() {
       }
     }
   }, [isGenerating, elementRef, currentHTML, toolName, pendingImages, generationMode, planContent, planApproved, sessionId, messages, selectedStitchDesign, flashNavEnabled]);
+
+  useEffect(() => {
+    generateRef.current = generate;
+  }, [generate]);
 
   const restoreToCheckpoint = useCallback(async (cpId: string) => {
     if (!sessionId) return;
@@ -750,25 +794,41 @@ function BuildPage() {
               <div className="title-suggestion-header">
                 <span className="title-suggestion-icon">✨</span>
                 <div>
-                  <h4 className="title-suggestion-title">Smart Title Suggestions</h4>
-                  <p className="title-suggestion-desc">The Architect generated names for your project. Pick one or keep going.</p>
+                  <h4 className="title-suggestion-title">Name Your Project</h4>
+                  <p className="title-suggestion-desc">AI-generated brand names based on your idea. Pick one, or skip to keep your own.</p>
                 </div>
               </div>
               <div className="title-suggestion-options">
-                {titleSuggestions.map((title, i) => (
+                {titleSuggestions.map((suggestion, i) => (
                   <button
-                    key={title}
+                    key={suggestion.title}
                     className={`title-suggestion-btn${i === 0 ? ' title-suggestion-btn-best' : ''}`}
-                    onClick={() => { setToolName(title); setTitlePickerVisible(false); }}
+                    onClick={() => { setToolName(suggestion.title); setTitlePickerVisible(false); }}
                   >
                     {i === 0 && <span className="title-best-badge">⭐ Best pick</span>}
-                    <span className="title-suggestion-name">{title}</span>
+                    <span className="title-suggestion-name">{suggestion.title}</span>
+                    {suggestion.reason && <span className="title-suggestion-reason">{suggestion.reason}</span>}
                   </button>
                 ))}
               </div>
               <button className="title-suggestion-dismiss" onClick={() => setTitlePickerVisible(false)}>
                 Skip — keep current name
               </button>
+            </div>
+          )}
+
+          {titleToast && (
+            <div className="title-toast">
+              <span className="title-toast-icon">✨</span>
+              <span>Named your project <strong>{titleToast}</strong></span>
+              <button className="title-toast-close" onClick={() => setTitleToast(null)}>✕</button>
+            </div>
+          )}
+
+          {titleGenerating && (
+            <div className="title-generating-indicator">
+              <div className="gen-card-spinner" style={{ width: 14, height: 14 }} />
+              <span>Generating smart name...</span>
             </div>
           )}
 
@@ -953,6 +1013,26 @@ function BuildPage() {
                   <span className="inspect-hud-icon">🎯</span>
                   <span className="inspect-hud-text"><strong>Inspect</strong> &mdash; click any element to edit it</span>
                   <button className="inspect-hud-exit" onClick={() => setInspectMode(false)}>Exit</button>
+                </div>
+              )}
+              {navBlockToast && !inspectMode && (
+                <div className="nav-block-toast">
+                  <span className="nav-block-icon">🚫</span>
+                  <div className="nav-block-text">
+                    <span>Navigation Blocked</span>
+                    <span className="nav-block-subtext">Editing? Use <strong>Inspect</strong>. Interacting? Enable <strong>Flash Nav</strong>.</span>
+                  </div>
+                  <div className="nav-block-actions">
+                    <button className="nav-block-action shadow-btn" onClick={() => { setInspectMode(true); setNavBlockToast(null); }}>
+                      🎯 Inspect
+                    </button>
+                    {!flashNavEnabled && (
+                      <button className="nav-block-action primary-btn" onClick={() => { setFlashNavEnabled(true); setNavBlockToast(null); }}>
+                        ⚡ Flash Nav
+                      </button>
+                    )}
+                  </div>
+                  <button className="nav-block-close" onClick={() => setNavBlockToast(null)}>✕</button>
                 </div>
               )}
               <PreviewFrame

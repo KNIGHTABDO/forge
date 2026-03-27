@@ -1,11 +1,11 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { FORGE_SYSTEM_PROMPT, PLANNER_SYSTEM_PROMPT, BUILD_SYSTEM_PROMPT, CHAT_SYSTEM_PROMPT, FLASH_NAV_INJECTION_SNIPPET } from '@/lib/system-prompt';
 import { NextRequest } from 'next/server';
+import { getSmartGeminiKey, reportKeyFailure, reportKeySuccess, KEYS_COUNT } from '@/lib/ai-keys';
+import { getCopilotToken, getCopilotBaseURL } from '@/lib/copilot-token';
 
 export const runtime = 'nodejs';
 export const maxDuration = 120;
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export async function POST(req: NextRequest) {
   const { mode, prompt, currentHTML, elementRef, images, generationMode, planContext, chatHistory, stitchDesign, flashNavEnabled } = await req.json();
@@ -101,18 +101,116 @@ export async function POST(req: NextRequest) {
 
   const maxTokens = generationMode === 'build' ? 65536 : 32768;
 
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-3.1-flash-lite-preview',
-    systemInstruction,
-    generationConfig: { temperature: 1.0, maxOutputTokens: maxTokens },
-  });
-
   let streamResult;
-  try {
-    streamResult = await model.generateContentStream(userContent);
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return new Response(JSON.stringify({ error: msg }), { status: 500 });
+  let attempts = 0;
+  const MAX_ATTEMPTS = Math.max(KEYS_COUNT, 5);
+  let lastError: any = null;
+
+  while (attempts < MAX_ATTEMPTS) {
+    const currentKey = getSmartGeminiKey();
+    const genAI = new GoogleGenerativeAI(currentKey);
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-3.1-flash-lite-preview',
+      systemInstruction,
+      generationConfig: { temperature: 1.0, maxOutputTokens: maxTokens },
+    });
+
+    try {
+      console.log(`[API] Attempt ${attempts + 1} using key ${currentKey.substring(0, 10)}... (Mode: ${generationMode})`);
+      streamResult = await model.generateContentStream(userContent);
+      reportKeySuccess(currentKey);
+      break;
+    } catch (err: any) {
+      lastError = err;
+      const errMsg = (err.message || String(err)).toLowerCase();
+      
+      // If it's a prompt error (400), don't bother retrying with other keys
+      if (errMsg.includes('invalid') || errMsg.includes('format') || errMsg.includes('400')) {
+        return new Response(JSON.stringify({ error: err.message || String(err) }), { status: 400 });
+      }
+
+      console.warn(`[API] Attempt ${attempts + 1} failed: ${errMsg}`);
+      reportKeyFailure(currentKey);
+      attempts++;
+      
+    }
+  }
+
+  // SECONDARY FALLBACK: GitHub Copilot (Claude Haiku 4.5)
+  if (!streamResult) {
+    console.warn('[API] All Google keys exhausted. Triggering secondary fallback to GitHub Copilot (claude-haiku-4.5)');
+    try {
+      const token = await getCopilotToken();
+      const baseURL = getCopilotBaseURL(token);
+      const copilotRes = await fetch(`${baseURL}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'editor-version': 'vscode/1.98.0',
+          'editor-plugin-version': 'GitHub.copilot/1.276.0',
+          'copilot-integration-id': 'vscode-chat',
+          'user-agent': 'GithubCopilot/1.276.0',
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4.5',
+          messages: [
+            { role: 'system', content: systemInstruction },
+            { role: 'user', content: typeof userContent === 'string' ? userContent : JSON.stringify(userContent) }
+          ],
+          stream: true,
+          temperature: 1.0,
+          max_tokens: Math.min(maxTokens, 8192), // Copilot/Claude usually Max 8k
+        })
+      });
+
+      if (!copilotRes.ok) {
+        throw new Error(`Copilot Fallback API Error: ${copilotRes.status} ${await copilotRes.text()}`);
+      }
+
+      // Transform OpenAI SSE to plain text stream
+      const encoder = new TextEncoder();
+      const decoder = new TextDecoder();
+      const reader = copilotRes.body?.getReader();
+      
+      const readable = new ReadableStream({
+        async start(controller) {
+          if (!reader) { controller.close(); return; }
+          let buffer = '';
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (trimmed.startsWith('data: ')) {
+                const data = trimmed.slice(6);
+                if (data === '[DONE]') continue;
+                try {
+                  const json = JSON.parse(data);
+                  const content = json.choices[0]?.delta?.content;
+                  if (content) controller.enqueue(encoder.encode(content));
+                } catch (e) { /* ignore parse errors for partial chunks */ }
+              }
+            }
+          }
+          controller.close();
+        }
+      });
+
+      return new Response(readable, {
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Cache-Control': 'no-cache, no-store',
+          'X-Content-Type-Options': 'nosniff',
+        },
+      });
+    } catch (fallbackErr: any) {
+      console.error('[API] Copilot Fallback failed:', fallbackErr);
+      return new Response(JSON.stringify({ error: `All sources failed. Google: ${lastError?.message}. Copilot: ${fallbackErr.message}` }), { status: 500 });
+    }
   }
 
   const encoder = new TextEncoder();

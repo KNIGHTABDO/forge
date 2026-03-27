@@ -37,6 +37,19 @@ export default function ChangelogPage() {
   if (!mounted) return null;
   const updates = [
     {
+      version: 'v2.5',
+      date: 'March 2026',
+      title: 'Flash Navigation & Preview Hardening',
+      description: 'A major reliability update focused on interactive stability and smart generation. We introduced a multi-layered sandbox to prevent preview frames from breaking out and a robust "Flash Navigation" system for real-time app expansion.',
+      items: [
+        'Flash Navigation (Turbo-All) for real-time section generation',
+        'Multi-layered iframe sandboxing and HTML sanitization',
+        'Smart Title system with two-tier fallback (Gemini → Claude 4.5)',
+        'Enhanced text selection branding (Premium gold/violet selection)',
+        'Blocked navigation interception with one-click resolution'
+      ]
+    },
+    {
       version: 'v2.4',
       date: 'March 2026',
       title: 'Enhance Mode (Beta)',
@@ -133,7 +146,7 @@ export default function ChangelogPage() {
         <p className="legal-subtitle">
           Tracing the history of the FORGE protocol from its first spark to the current multi-agent revolution.
         </p>
-        <p className="legal-meta">Protocol Status: Operational v2.4 (Beta)</p>
+        <p className="legal-meta">Protocol Status: Operational v2.5 (Flash Nav)</p>
       </section>
 
       {/* Body */}
