@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import ReactMarkdown from 'react-markdown';
@@ -28,7 +28,7 @@ const SUGGESTIONS = [
   'A password generator with strength meter',
 ];
 
-export default function BuildPage() {
+function BuildPageContent() {
   const searchParams = useSearchParams();
   const loadSlug = searchParams.get('tool');
 
@@ -387,5 +387,21 @@ export default function BuildPage() {
         lastPrompt={input}
       />
     </div>
+  );
+}
+
+export default function BuildPage() {
+  return (
+    <Suspense fallback={
+      <div className="build-root flex items-center justify-center bg-[#0a0a0a] text-white/50" style={{ height: '100vh', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div style={{ width: '2rem', height: '2rem', border: '2px solid rgba(255,255,255,0.1)', borderTopColor: 'rgba(255,255,255,0.8)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+        <span style={{ fontSize: '0.875rem', fontWeight: 500, letterSpacing: '-0.02em' }}>Initializing Protocol...</span>
+        <style dangerouslySetInnerHTML={{ __html: `
+          @keyframes spin { to { transform: rotate(360deg); } }
+        `}} />
+      </div>
+    }>
+      <BuildPageContent />
+    </Suspense>
   );
 }
