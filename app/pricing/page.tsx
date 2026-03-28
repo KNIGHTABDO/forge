@@ -65,8 +65,9 @@ export default function PricingPage() {
               </div>
               <ul className="plan-features">
                 <li>Unlimited App Generations</li>
+                <li>Persistent Developer Sessions</li>
+                <li>Modular React Architecture</li>
                 <li>Stitch Design AI Access</li>
-                <li>Enhance Mode (Beta)</li>
                 <li>Custom Domain Deployment</li>
                 <li>Global Edge Network</li>
                 <li>Priority 24/7 Support</li>

@@ -54,7 +54,7 @@ export default function PrivacyPage() {
         <p className="legal-subtitle">
           We believe privacy is a right, not a feature. This document explains exactly what we collect, why, and how we protect it.
         </p>
-        <p className="legal-meta">Last updated: March 27, 2026</p>
+        <p className="legal-meta">Last updated: March 28, 2026</p>
       </section>
 
       {/* Body */}
@@ -83,10 +83,10 @@ export default function PrivacyPage() {
               FORGE is designed to be privacy-first. We collect only the minimum data necessary to operate the service effectively.
             </p>
             <p>
-              <strong>Information you provide:</strong> When you use FORGE to build an app, we store the prompts you submit and the generated HTML output (including multi-file projects generated in Enhance Mode). This allows us to host your deployed apps and show them in the public gallery.
+              <strong>Information you provide:</strong> When you use FORGE to build an app, we store your prompts, conversation history, and the generated React project structure (multi-file projects). This data is synchronized in real-time to a private GitHub-backed session store.
             </p>
             <p>
-              <strong>Automatically collected information:</strong> When you visit FORGE, we may collect standard server logs including your IP address, browser type, referring URL, and pages visited. This data is used solely for security and performance monitoring.
+              <strong>Automatically collected information:</strong> We collect standard server logs including IP address, browser type, and performance metrics to monitor the stability of the high-speed Sandpack bundling engine.
             </p>
             <p>
               <strong>Session data:</strong> We use a session identifier stored in your browser's local storage and reflected in our GitHub-backed session store to associate your builds. No email signup is required.
@@ -99,15 +99,14 @@ export default function PrivacyPage() {
           <div className="legal-section" id="how-we-use">
             <span className="legal-section-num">02</span>
             <h2 className="legal-section-title">How We Use Information</h2>
-            <p>We use the information we collect to:</p>
             <ul>
-              <li>Generate and host your web applications</li>
-              <li>Analyze your prompt to suggest short, catchy project names (Smart Title Generation) — this analysis uses a multi-layered fallback system (Google Gemini API / GitHub Claude 4.5) to ensure high-quality suggestions even during high load</li>
-              <li>Flash Navigation (Turbo-All): Dynamically generate new app sections in real-time as users interact with the preview</li>
-              <li>Display your apps in the public gallery (unless you keep them private)</li>
-              <li>Improve the quality of AI-generated outputs</li>
-              <li>Monitor for abuse, spam, or harmful content</li>
-              <li>Maintain the security and integrity of our platform</li>
+              <li>Unified React Orchestration (Conversational Chat + Building)</li>
+              <li>📦 Sandpack V3 Engine for high-speed React bundling in-browser</li>
+              <li>🔄 Continuous background session syncing (Auto-Save/Restore)</li>
+              <li>Smart Title Branding with AI analysis</li>
+              <li>Multi-page React state-based routing</li>
+              <li>Atomic Multi-file Deployments for zero corruption</li>
+              <li>Forge BaaS for cloud-synced application data persistence</li>
             </ul>
             <p>
               We do not use your data for advertising purposes, and we do not sell your personal information to third parties under any circumstances.
@@ -134,11 +133,11 @@ export default function PrivacyPage() {
               FORGE uses minimal cookies and browser storage. Specifically, we use:
             </p>
             <ul>
-              <li><strong>Local storage:</strong> To save your session ID and current work in progress, so you don&apos;t lose your session if you reload the page.</li>
-              <li><strong>Functional cookies:</strong> Strictly necessary cookies that enable core site functionality.</li>
+              <li><strong>Local storage:</strong> To save your persistent session ID and current development state, enabling "refresh-proof" builds that recover instantly if you reload the page.</li>
+              <li><strong>Functional cookies:</strong> Strictly necessary cookies that enable core site functionality and bundle authentication.</li>
             </ul>
             <p>
-              We do not use tracking cookies, advertising cookies, or any third-party analytics that track you across the web. You can clear your browser&apos;s local storage at any time to reset your session. Note that this will disconnect you from any Forge BaaS data associated with that session ID.
+              We do not use tracking cookies or third-party advertising trackers. You can clear your browser&apos;s local storage at any time to reset your session.
             </p>
           </div>
 

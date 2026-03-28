@@ -55,7 +55,7 @@ export default function TermsPage() {
         <p className="legal-subtitle">
           By using FORGE, you agree to these terms. Please read them carefully — they are written to be clear and fair.
         </p>
-        <p className="legal-meta">Last updated: March 27, 2026 — Effective immediately</p>
+        <p className="legal-meta">Last updated: March 28, 2026 — Effective immediately</p>
       </section>
 
       {/* Body */}
@@ -97,14 +97,13 @@ export default function TermsPage() {
               FORGE is an AI-powered web application builder that allows users to describe an idea in plain English and receive a fully functional interactive web app. Features include:
             </p>
             <ul>
-              <li>Multi-Agent generation (Architectural Planning + Build phase)</li>
-              <li>Smart Project Title Generation — automatic short, catchy name suggestions via a two-tier key fallback (Gemini → Claude 4.5)</li>
-              <li>Flash Navigation (Turbo-All) — real-time, click-triggered app expansion with state preservation</li>
-              <li>Preview Hardening — multi-layered sandboxing and HTML sanitization to prevent frame breakouts</li>
-              <li>Multi-page app generation (Enhance Mode / Beta)</li>
-              <li>Forge BaaS for cloud-synced application data persistence</li>
-              <li>Public gallery of community-built applications</li>
-              <li>Enhanced AI capabilities via the embedded <strong>gemini-api-dev skill</strong> — authoritative Gemini API knowledge patterns</li>
+              <li>Unified React Orchestration (Conversational Chat + Building)</li>
+              <li>📦 Sandpack V3 Build Engine for browser-based React development</li>
+              <li>🔄 Continuous background session syncing to GitHub (Auto-Save)</li>
+              <li>Delta-Sync: Incremental multi-file updates to your project</li>
+              <li>Automated branding with "Smart Title" analysis</li>
+              <li>Forge BaaS for cloud-synced micro-SaaS data persistence</li>
+              <li>Public gallery and remix capabilities for community projects</li>
             </ul>
             <p>
               We reserve the right to modify, suspend, or discontinue the Service at any time without notice.

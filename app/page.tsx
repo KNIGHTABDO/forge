@@ -118,7 +118,7 @@ function ToolCard({ tool, index }: { tool: GalleryEntry; index: number }) {
   const [hasError, setHasError] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const toolUrl = `/api/preview/${tool.slug}`;
+  const toolUrl = `/preview/${tool.slug}`;
 
   useEffect(() => {
     const el = ref.current;
@@ -330,7 +330,7 @@ export default function Home() {
       {/* Advanced Evolution Section */}
       <section className="how" style={{ borderTop: 'none', background: 'var(--bg-alt)' }}>
         <span className="section-eyebrow">Advanced Evolution</span>
-        <h2 className="section-title">Superior Aesthetics & Multi-Page Scale</h2>
+        <h2 className="section-title">Headless React & Unified Orchestration</h2>
         <p className="section-desc">Forge doesn't just build snippets. It engineers complete experiences.</p>
         
         <div className="steps-2-col">
@@ -345,8 +345,8 @@ export default function Home() {
           
           <div className="step">
             <span className="step-num">∞</span>
-            <h3 className="step-title">Enhance Mode (Beta)</h3>
-            <p className="step-desc">Break the single-page barrier. Scale your ideas into full-fledged multi-page applications with automated routing and shared state, powered by GitHub Models.</p>
+            <h3 className="step-title">Unified Orchestration</h3>
+            <p className="step-desc">No more modes. Our V3 Orchestrator handles conversation and implementation in a single workflow. Build complex, multi-file React apps with modular components and state-based routing instantly.</p>
             <svg className="step-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
               <path d="M7 18.5v-13M17 18.5v-13M12 12l5-3M12 12l-5-3M12 12v9"/>
@@ -365,8 +365,8 @@ export default function Home() {
 
           <div className="step">
             <span className="step-num">✦</span>
-            <h3 className="step-title">Smart Title Generation</h3>
-            <p className="step-desc">After analyzing your idea, the Architect automatically suggests 3 short, catchy, and brandable project names. Pick the best one, edit it, or skip — your chosen title becomes the official name everywhere: URL slug, gallery, and metadata.</p>
+            <h3 className="step-title">Automated Smart Branding</h3>
+            <p className="step-desc">Our V3 engine automatically analyzes your project's intent and generates a short, professional, and brandable name instantly. This title is automatically applied as the project's permanent identity across your private build session and the public gallery.</p>
             <svg className="step-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
             </svg>

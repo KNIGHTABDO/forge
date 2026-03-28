@@ -91,14 +91,69 @@ export async function deployTool(slug: string, html: string, meta: ForgeMeta): P
 }
 
 export async function deployProjectFiles(slug: string, files: { path: string, content: string }[], meta: ForgeMeta): Promise<void> {
-  const commitMsg = `[${slug}] Multi-page enhancement`;
-  for (const file of files) {
-    // Ensure path is relative to the tool directory if it's not already
-    const fullPath = file.path.startsWith(`tools/${slug}/`) ? file.path : `tools/${slug}/${file.path.replace(/^\//, '')}`;
-    await writeFile(fullPath, file.content, commitMsg);
+  const commitMsg = `[${slug}] ${meta.title} update`;
+  
+  try {
+    // 1. Get base tree (current main branch head)
+    const { data: refData } = await octokit.git.getRef({ owner: OWNER, repo: REPO, ref: `heads/${BRANCH}` });
+    const baseCommitSha = refData.object.sha;
+    const { data: baseCommitData } = await octokit.git.getCommit({ owner: OWNER, repo: REPO, commit_sha: baseCommitSha });
+    const baseTreeSha = baseCommitData.tree.sha;
+
+    // 2. Build new tree items
+    const treeItems = files.map(file => {
+      const fullPath = file.path.startsWith(`tools/${slug}/`) ? file.path : `tools/${slug}/${file.path.replace(/^\//, '')}`;
+      return {
+        path: fullPath,
+        mode: '100644' as const,
+        type: 'blob' as const,
+        content: file.content
+      };
+    });
+
+    // Add meta file as well
+    treeItems.push({
+      path: `tools/${slug}/forge.json`,
+      mode: '100644' as const,
+      type: 'blob' as const,
+      content: JSON.stringify(meta, null, 2)
+    });
+
+    // 3. Create new tree
+    const { data: newTreeData } = await octokit.git.createTree({
+      owner: OWNER, repo: REPO,
+      base_tree: baseTreeSha,
+      tree: treeItems
+    });
+
+    // 4. Create new commit
+    const { data: newCommitData } = await octokit.git.createCommit({
+      owner: OWNER, repo: REPO,
+      message: commitMsg,
+      tree: newTreeData.sha,
+      parents: [baseCommitSha]
+    });
+
+    // 5. Update ref
+    await octokit.git.updateRef({
+      owner: OWNER, repo: REPO,
+      ref: `heads/${BRANCH}`,
+      sha: newCommitData.sha
+    });
+
+    // 6. Update gallery index
+    await updateGalleryIndex(slug, meta);
+
+  } catch (err) {
+    console.error('[github] Multi-file commit failed, falling back to sequential writes:', err);
+    // Best effort sequential fallback if tree API fails for some reason
+    for (const file of files) {
+      const fullPath = file.path.startsWith(`tools/${slug}/`) ? file.path : `tools/${slug}/${file.path.replace(/^\//, '')}`;
+      await writeFile(fullPath, file.content, commitMsg);
+    }
+    await writeFile(`tools/${slug}/forge.json`, JSON.stringify(meta, null, 2), `meta: ${slug}`);
+    await updateGalleryIndex(slug, meta);
   }
-  await writeFile(`tools/${slug}/forge.json`, JSON.stringify(meta, null, 2), `meta: ${slug}`);
-  await updateGalleryIndex(slug, meta);
 }
 
 export async function getToolFiles(slug: string): Promise<{ path: string, content: string }[]> {

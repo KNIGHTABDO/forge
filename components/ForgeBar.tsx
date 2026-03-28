@@ -6,19 +6,15 @@ import { ThemeToggle } from './theme-toggle';
 interface Props {
   toolName: string;
   onToolNameChange: (name: string) => void;
-  currentHTML: string;
+  currentHTML?: string;
   slug?: string;
   deployedUrl?: string;
   isDeploying: boolean;
-  inspectMode: boolean;
-  onInspectToggle: () => void;
   onDeploy: () => void;
-  onHistoryToggle: () => void;
 }
 
 export default function ForgeBar({
-  toolName, onToolNameChange, currentHTML, slug, deployedUrl,
-  isDeploying, inspectMode, onInspectToggle, onDeploy, onHistoryToggle
+  toolName, onToolNameChange, slug, deployedUrl, isDeploying, onDeploy
 }: Props) {
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(toolName);
@@ -29,26 +25,47 @@ export default function ForgeBar({
     if (nameInput.trim()) onToolNameChange(nameInput.trim());
     else setNameInput(toolName);
   };
-  const handleCopyUrl = () => {
+
+  const handleCopyUrl = async () => {
     if (!deployedUrl) return;
-    navigator.clipboard.writeText(deployedUrl);
+    
+    try {
+      // Primary: Modern Async Clipboard API
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(deployedUrl);
+      } else {
+        throw new Error('Clipboard API unavailable');
+      }
+    } catch (err) {
+      // Fallback: execCommand('copy') via hidden textarea
+      try {
+        const textArea = document.createElement("textarea");
+        textArea.value = deployedUrl;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px";
+        textArea.style.top = "0";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textArea);
+        if (!successful) throw new Error('execCommand failed');
+      } catch (fallbackErr) {
+        console.error('[clipboard] Both copy methods failed:', fallbackErr);
+        // Last resort: manually prompt the user to copy
+        window.prompt("Copy to clipboard: Ctrl+C, Enter", deployedUrl);
+      }
+    }
+
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-  const handleDownload = () => {
-    if (!currentHTML) return;
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([currentHTML], { type: 'text/html' }));
-    a.download = `${slug || 'my-tool'}.html`;
-    a.click();
-    URL.revokeObjectURL(a.href);
   };
 
   return (
     <div className="forge-bar">
       {/* Left: Logo + Tool name */}
       <div className="forge-bar-left">
-        <a href="/" className="forge-logo" title="Back to home" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <a href="/" className="forge-logo" title="Back to home">
           <img src="/logo.png" alt="Forge Logo" style={{ width: 24, height: 24, borderRadius: 4, objectFit: 'cover' }} />
           <span className="forge-logo-text">FORGE</span>
         </a>
@@ -81,32 +98,6 @@ export default function ForgeBar({
 
       {/* Right: Action buttons */}
       <div className="forge-bar-right">
-        <button
-          className="forge-bar-btn"
-          onClick={onHistoryToggle}
-          title="Prompt history"
-        >
-          <span>🕐</span>
-          <span className="forge-bar-btn-label">History</span>
-        </button>
-        <button
-          className={`forge-bar-btn${inspectMode ? ' active' : ''}`}
-          onClick={onInspectToggle}
-          disabled={!currentHTML}
-          title="Click any element to edit it"
-        >
-          <span>👁</span>
-          <span className="forge-bar-btn-label">{inspectMode ? 'Inspecting' : 'Inspect'}</span>
-        </button>
-        <button
-          className="forge-bar-btn"
-          onClick={handleDownload}
-          disabled={!currentHTML}
-          title="Download as .html"
-        >
-          <span>↓</span>
-          <span className="forge-bar-btn-label">Download</span>
-        </button>
         {deployedUrl && (
           <button
             className="forge-bar-btn"
@@ -121,7 +112,7 @@ export default function ForgeBar({
         <button
           className={`forge-bar-deploy${isDeploying ? ' loading' : ''}`}
           onClick={onDeploy}
-          disabled={!currentHTML || isDeploying}
+          disabled={isDeploying}
         >
           {isDeploying ? '⟳ Deploying…' : deployedUrl ? '↑ Update' : '⚡ Deploy'}
         </button>

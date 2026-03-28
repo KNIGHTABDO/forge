@@ -1368,7 +1368,32 @@ html[data-theme="dark"] .preview-browser-chrome {
 .preview-browser-content {
   flex: 1;
   min-height: 0;
+  height: 100%;
   position: relative;
+  overflow: hidden;
+}
+/* Sandpack: only target the wrapper stack and iframe, NOT loading overlays */
+.preview-browser-content iframe {
+  width: 100% !important;
+  height: 100% !important;
+  border: none !important;
+}
+.preview-browser-content .sp-wrapper,
+.preview-browser-content .sp-layout,
+.preview-browser-content .sp-stack,
+.preview-browser-content .sp-preview,
+.preview-browser-content .sp-preview-container {
+  width: 100% !important;
+  height: 100% !important;
+  border: none !important;
+  border-radius: 0 !important;
+}
+/* Hide Sandpack internal loading/error overlays - we use our own stream overlay */
+.preview-browser-content .sp-overlay,
+.preview-browser-content .sp-loading,
+.preview-browser-content .sp-cube-wrapper,
+.preview-browser-content .sp-error-overlay {
+  display: none !important;
 }
 
 /* Stream Overlay */
@@ -2648,4 +2673,40 @@ html[data-theme="light"] .nav-block-toast {
 html[data-theme="light"] .nav-block-toast {
   background: rgba(255, 252, 247, 0.95);
   box-shadow: var(--shadow-md);
+}
+
+/* =====================================================================
+   SANDPACK HEADLESS PREVIEW
+   ===================================================================== */
+.sp-forge-wrapper {
+  width: 100% !important;
+  height: 100% !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+.sp-forge-layout {
+  width: 100% !important;
+  height: 100% !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+.sp-forge-preview {
+  width: 100% !important;
+  height: 100% !important;
+}
+.sp-forge-iframe {
+  width: 100% !important;
+  height: 100% !important;
+  border: none !important;
+}
+.preview-browser-content .sp-stack {
+  height: 100% !important;
+}
+.preview-browser-content [class*="sp-preview-container"] {
+  height: 100% !important;
+}
+.preview-browser-content .sp-overlay {
+  display: none !important;
 }

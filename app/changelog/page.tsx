@@ -35,97 +35,60 @@ export default function ChangelogPage() {
   const isActive = (path: string) => pathname === path;
 
   if (!mounted) return null;
+
   const updates = [
+    {
+      version: 'v3.0',
+      date: 'March 2026',
+      title: 'Unified React Orchestration (V3 Launch)',
+      description: 'A major structural overhaul. We’ve removed the complexity of "Modes" (Plan, Build, Fast) in favor of a unified conversational builder. Forge now intelligently decides when to chat and when to implement your ideas, building modular React projects in real-time.',
+      items: [
+        'Unified Orchestrator (Conversation and Code in one workflow)',
+        'Delta-Sync: Incremental multi-file project architecture',
+        'Automatic Background Session Saving & Restore via GitHub',
+        '📦 Sandpack V3 Engine: Hot-reloading React environment',
+        'Native State-Based Multi-Page Routing',
+        'Atomic Git-Tree Deployments for multi-file projects',
+        'Legacy V1 HTML Compatibility Proxy'
+      ]
+    },
     {
       version: 'v2.5',
       date: 'March 2026',
-      title: 'Flash Navigation & Preview Hardening',
-      description: 'A major reliability update focused on interactive stability and smart generation. We introduced a multi-layered sandbox to prevent preview frames from breaking out and a robust "Flash Navigation" system for real-time app expansion.',
+      title: 'Stitch AI & Design Context',
+      description: 'Integrated Google Stitch AI to generate high-fidelity UI mockups as visual references for the builder engine.',
       items: [
-        'Flash Navigation (Turbo-All) for real-time section generation',
-        'Multi-layered iframe sandboxing and HTML sanitization',
-        'Smart Title system with two-tier fallback (Gemini → Claude 4.5)',
-        'Enhanced text selection branding (Premium gold/violet selection)',
-        'Blocked navigation interception with one-click resolution'
-      ]
-    },
-    {
-      version: 'v2.4',
-      date: 'March 2026',
-      title: 'Enhance Mode (Beta)',
-      description: 'The most anticipated update: multi-page generation. FORGE can now reason about complex application structures and generate multiple linked files simultaneously using GitHub Models integration.',
-      items: [
-        'Multi-file generation capabilities',
-        'Automatic routing between generated pages',
-        'Shared state management across views',
-        'Beta badge implementation for early testing'
-      ]
-    },
-    {
-      version: 'v2.3',
-      date: 'March 2026',
-      title: 'Stitch Design AI',
-      description: 'Integrated Google Stitch AI to generate high-fidelity UI mockups. Users can now generate design variations and use them as instant visual anchors for the Forge builder.',
-      items: [
-        'Google Stitch AI (MCP) integration',
         'Visual design reference system',
-        'Asynchronous mockup generation',
-        'Improved visual coherence in layouts'
-      ]
-    },
-    {
-      version: 'v2.2',
-      date: 'March 2026',
-      title: 'Admin Protocol & Chat Mode',
-      description: 'Introduced a secure administrative interface and a conversational "Chat Mode" for architectural brainstorming before entering the planning phase.',
-      items: [
-        'Secure password-protected Admin page',
-        'Session and project management tools',
-        'Conversational AI for early-stage ideation',
-        'Strict refusal mechanism for off-topic requests'
-      ]
-    },
-    {
-      version: 'v2.1',
-      date: 'March 2026',
-      title: 'Multi-Agent Evolution',
-      description: 'Divided the generation process into specialized roles: The Architect (Plan) and The Builder (Execution). This ensures high-fidelity results and predictable implementation.',
-      items: [
-        'Separate Planning and Building phases',
-        'Interactive Technical Blueprints',
-        'Real-time thinking cards with progress steps',
-        'Deterministic execution logic'
+        'Improved visual coherence in layout generation',
+        'Tailwind CSS dynamic injection layer'
       ]
     },
     {
       version: 'v2.0',
-      date: 'March 2026',
-      title: 'Forge BaaS (Persistence)',
-      description: 'Turned static demos into real apps with persistent data storage. Every tool built by FORGE now has access to a cloud-synced database layer.',
+      date: 'Feb 2026',
+      title: 'Data Persistence (BaaS)',
+      description: 'Introduction of the Forge BaaS protocol for cloud-synced application data.',
       items: [
         'Integration of window.forge.db',
         'GitHub-backed JSON persistence',
-        'Cross-session data loading',
-        'Session state checkpoints and restoration'
+        'Cross-session data loading'
       ]
     },
     {
       version: 'v1.0',
-      date: 'Feb 2026',
+      date: 'Jan 2026',
       title: 'Project Genesis',
-      description: 'The birth of the FORGE protocol. A minimalist editor capable of turning a single sentence into a Tailwind-styled HTML application instantly.',
+      description: 'The birth of the FORGE protocol for single-file HTML/CSS applications.',
       items: [
-        'One-shot HTML/CSS generation',
+        'One-shot application generation',
         'Instant live preview',
-        'Basic deployment engine',
-        'Warm cream editorial design system'
+        'Basic deployment engine'
       ]
     }
   ];
 
   return (
     <div className="legal-page">
-      {/* Navigation */}
       <nav className="nav">
         <Link href="/" className="nav-logo">FORGE</Link>
         <div className="nav-links">
@@ -139,19 +102,16 @@ export default function ChangelogPage() {
         </div>
       </nav>
 
-      {/* Hero */}
       <section className="legal-hero">
         <span className="legal-eyebrow">Evolution / Protocol</span>
         <h1 className="legal-title"><>Change<br />Log</></h1>
         <p className="legal-subtitle">
-          Tracing the history of the FORGE protocol from its first spark to the current multi-agent revolution.
+          Tracing the history of the FORGE protocol as it reaches its ultimate conversational form in V3. 
         </p>
-        <p className="legal-meta">Protocol Status: Operational v2.5 (Flash Nav)</p>
+        <p className="legal-meta">Current Protocol Status: Operational v3.0 (Unified Orchestrator)</p>
       </section>
 
-      {/* Body */}
       <div className="legal-body">
-        {/* Table of Contents */}
         <aside className="legal-toc">
           <p className="legal-toc-title">Timeline</p>
           <ul className="legal-toc-list">
@@ -163,7 +123,6 @@ export default function ChangelogPage() {
           </ul>
         </aside>
 
-        {/* Content */}
         <main className="legal-content">
           {updates.map((up, i) => (
             <div className="legal-section" id={up.version} key={up.version}>
@@ -181,8 +140,7 @@ export default function ChangelogPage() {
         </main>
       </div>
 
-      {/* Footer */}
-      <footer className="footer" style={{ borderTop: '1px solid var(--border)', padding: '48px' }}>
+      <footer className="footer">
         <p className="footer-copy">© 2026 FORGE DIGITAL. ALL RIGHTS RESERVED.</p>
         <div className="footer-links">
           <Link href="/privacy" className="footer-link">Privacy</Link>

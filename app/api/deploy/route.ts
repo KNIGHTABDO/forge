@@ -9,7 +9,28 @@ export async function POST(req: NextRequest) {
   try {
     const slug = existingSlug ?? (await findAvailableSlug(title));
     const now = new Date().toISOString();
-    const meta: ForgeMeta = { title, description: description || '', tags: tags || [], created: now, updated: now, promptHistory: promptHistory || [] };
+    
+    // Try to preserve existing meta if it exists
+    let created = now;
+    let existingMeta: any = null;
+    if (existingSlug) {
+      try {
+        const { getToolMeta } = await import('@/lib/github');
+        existingMeta = await getToolMeta(existingSlug);
+        if (existingMeta?.created) created = existingMeta.created;
+      } catch (err) {
+         console.warn('[deploy] Could not fetch existing meta, using defaults');
+      }
+    }
+
+    const meta: ForgeMeta = { 
+      title, 
+      description: description || existingMeta?.description || '', 
+      tags: tags || existingMeta?.tags || ['react', 'sandpack'], 
+      created, 
+      updated: now, 
+      promptHistory: promptHistory || existingMeta?.promptHistory || [] 
+    };
     
     if (files && Array.isArray(files) && files.length > 0) {
       await deployProjectFiles(slug, files, meta);

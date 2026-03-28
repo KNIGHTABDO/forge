@@ -495,8 +495,8 @@ html[data-theme="light"] .hero-number {
 
 /* ── Demo Section ── */
 .demo-section {
-  padding: 0 48px 120px;
-  max-width: 900px;
+  padding: 80px 48px 120px;
+  max-width: 960px;
   margin: 0 auto;
 }
 
@@ -505,7 +505,8 @@ html[data-theme="light"] .hero-number {
   border: 1px solid var(--border);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 40px 80px -20px rgba(23,19,14,0.15);
+  box-shadow: 0 50px 100px -20px rgba(23,19,14,0.12), 0 20px 40px -10px rgba(23,19,14,0.08);
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 html[data-theme="dark"] .demo-browser {
