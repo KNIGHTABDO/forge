@@ -337,21 +337,21 @@ export default function Home() {
         <div className="research-preview-header">
           <span className="section-eyebrow">New Protocol</span>
           <h2 className="section-title">Deep Research Agent (Beta)</h2>
-          <p className="section-desc">A standalone route with transparent progress, live source tracking, and citable long-form reports.</p>
+          <p className="section-desc">A standalone conversational research route with live thinking updates, source transparency, and citable long-form reports.</p>
         </div>
 
         <div className="research-preview-grid">
           <div className="research-preview-card">
-            <h3>Animated live feed</h3>
-            <p>Watch every phase in real time: planning, query fan-out, iterative source analysis, and synthesis.</p>
+            <h3>Conversation-first flow</h3>
+            <p>Start with a focused prompt, then watch the composer dock into a live chat-style research feed.</p>
           </div>
           <div className="research-preview-card">
-            <h3>Depth-first sourcing</h3>
-            <p>The agent iteratively expands coverage up to hundreds of sources, closes evidence gaps, and tracks depth score.</p>
+            <h3>Live deep analysis</h3>
+            <p>Track query generation, domain-by-domain analysis, learned insights, and evolving depth metrics in real time.</p>
           </div>
           <div className="research-preview-card">
-            <h3>Transparent output</h3>
-            <p>Get a clean report with inline citations, source appendix, markdown export, and print-ready PDF flow.</p>
+            <h3>Structured cited reports</h3>
+            <p>Get sectioned synthesis with inline citations, source appendix, markdown export, PDF export, and follow-up turns.</p>
           </div>
         </div>
 
@@ -409,7 +409,7 @@ export default function Home() {
           <div className="step">
             <span className="step-num">β</span>
             <h3 className="step-title">Deep Research Agent</h3>
-            <p className="step-desc">Run a dedicated long-form research agent on a separate route with live stats, timeline transparency, browse-state controls, and citable synthesis designed for serious analysis.</p>
+            <p className="step-desc">Run a dedicated long-form research agent in a full conversational interface with animated thinking, inline plan editing, live source tracking, and citable synthesis.</p>
             <svg className="step-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path d="M12 3v18M3 12h18"/>
               <circle cx="12" cy="12" r="8"/>

@@ -100,7 +100,7 @@ export default function TermsPage() {
               <li>Unified React Orchestration (Conversational Chat + Building)</li>
               <li>📦 Sandpack V3 Build Engine for browser-based React development</li>
               <li>🔄 Continuous background session syncing to GitHub (Auto-Save)</li>
-              <li>Deep Research Agent (Beta) on a dedicated standalone workflow route</li>
+              <li>Deep Research Agent (Beta) on a dedicated standalone conversational workflow route</li>
               <li>Delta-Sync: Incremental multi-file updates to your project</li>
               <li>Automated branding with "Smart Title" analysis</li>
               <li>Forge BaaS for cloud-synced micro-SaaS data persistence</li>

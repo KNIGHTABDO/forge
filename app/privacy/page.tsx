@@ -103,7 +103,7 @@ export default function PrivacyPage() {
               <li>Unified React Orchestration (Conversational Chat + Building)</li>
               <li>📦 Sandpack V3 Engine for high-speed React bundling in-browser</li>
               <li>🔄 Continuous background session syncing (Auto-Save/Restore)</li>
-              <li>Deep Research Agent (Beta) for iterative web source analysis and cited reports</li>
+              <li>Deep Research Agent (Beta) for conversational iterative web source analysis and cited reports</li>
               <li>Smart Title Branding with AI analysis</li>
               <li>Multi-page React state-based routing</li>
               <li>Atomic Multi-file Deployments for zero corruption</li>
