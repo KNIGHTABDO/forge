@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     if (!sessionId) return NextResponse.json({ error: 'Missing sessionId' }, { status: 400 });
 
     const state = await createResearchState({ id, sessionId, query });
-    await saveResearchState(state);
+    await saveResearchState(state, true);
 
     return NextResponse.json({
       id: state.id,

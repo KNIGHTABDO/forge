@@ -29,7 +29,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
           if (nextState.phase === 'complete' || nextState.phase === 'stopped' || nextState.phase === 'error') break;
         }
         if (changed) {
-          await saveResearchState(nextState);
+          await saveResearchState(nextState, true);
         }
       }
     }

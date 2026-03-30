@@ -44,7 +44,7 @@ Instructions: Answer the question exhaustively using ONLY the context provided i
     state.chat.push({ role: 'user', content: question });
     state.chat.push({ role: 'agent', content: answer });
 
-    await saveResearchState(state);
+    await saveResearchState(state, true);
     return NextResponse.json({ success: true, chat: state.chat });
 
   } catch (err: any) {

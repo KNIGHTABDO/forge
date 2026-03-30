@@ -67,7 +67,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
       return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     }
 
-    await saveResearchState(state);
+    await saveResearchState(state, true);
     return NextResponse.json({ success: true });
   } catch (err: any) {
     const raw = String(err?.message || 'Failed to control research job');
