@@ -55,7 +55,7 @@ export default function TermsPage() {
         <p className="legal-subtitle">
           By using FORGE, you agree to these terms. Please read them carefully — they are written to be clear and fair.
         </p>
-        <p className="legal-meta">Last updated: March 28, 2026 — Effective immediately</p>
+        <p className="legal-meta">Last updated: March 30, 2026 — Effective immediately</p>
       </section>
 
       {/* Body */}
@@ -100,6 +100,7 @@ export default function TermsPage() {
               <li>Unified React Orchestration (Conversational Chat + Building)</li>
               <li>📦 Sandpack V3 Build Engine for browser-based React development</li>
               <li>🔄 Continuous background session syncing to GitHub (Auto-Save)</li>
+              <li>Deep Research Agent (Beta) on a dedicated standalone workflow route</li>
               <li>Delta-Sync: Incremental multi-file updates to your project</li>
               <li>Automated branding with "Smart Title" analysis</li>
               <li>Forge BaaS for cloud-synced micro-SaaS data persistence</li>

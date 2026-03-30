@@ -402,6 +402,69 @@ html[data-theme="light"] .hero-number {
   border-top: 1px solid var(--border);
 }
 
+.research-preview {
+  padding: 96px 48px 110px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-alt);
+}
+
+.research-preview-header {
+  max-width: 760px;
+  margin-bottom: 42px;
+}
+
+.research-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  border: 1px solid var(--border);
+}
+
+.research-preview-card {
+  padding: 34px 30px;
+  border-right: 1px solid var(--border);
+  background: var(--bg);
+  transition: background var(--t-base) var(--ease-smooth), transform var(--t-fast) var(--ease-spring);
+}
+
+.research-preview-card:last-child {
+  border-right: none;
+}
+
+.research-preview-card h3 {
+  font-family: var(--font-label);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 14px;
+}
+
+.research-preview-card p {
+  color: var(--text-muted);
+  line-height: 1.8;
+  font-size: 14px;
+}
+
+.research-preview-card:hover {
+  background: var(--bg-alt);
+  transform: translateY(-2px);
+}
+
+.research-preview-actions {
+  margin-top: 30px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.research-preview-note {
+  font-family: var(--font-label);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-light);
+}
+
 .section-eyebrow {
   display: block;
   font-family: var(--font-label);
@@ -1037,6 +1100,16 @@ html[data-theme="dark"] .exhibit-skeleton {
   transition: all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+.cta-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cta-secondary {
+  min-height: 56px;
+}
+
 .cta-button:hover {
   transform: translateY(-4px);
   box-shadow: 0 16px 40px rgba(23,19,14,0.2);
@@ -1145,6 +1218,19 @@ html[data-theme="dark"] .cta-button:hover {
   .exhibit-grid {
     grid-template-columns: 1fr;
   }
+
+  .research-preview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .research-preview-card {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .research-preview-card:last-child {
+    border-bottom: none;
+  }
 }
 
 @media (max-width: 768px) {
@@ -1193,6 +1279,7 @@ html[data-theme="dark"] .cta-button:hover {
   }
 
   .how,
+  .research-preview,
   .exhibition,
   .demo-section {
     padding: 64px 20px;
@@ -1245,6 +1332,12 @@ html[data-theme="dark"] .cta-button:hover {
 
   .cta {
     padding: 80px 20px;
+  }
+
+  .cta-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
   }
 
   .cta-title {

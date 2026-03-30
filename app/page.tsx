@@ -183,6 +183,10 @@ export default function Home() {
     router.push('/build');
   };
 
+  const startDeepResearch = () => {
+    router.push('/research/new');
+  };
+
   useEffect(() => {
     // Initialize theme from localStorage or document, default to light
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
@@ -239,6 +243,7 @@ export default function Home() {
         <div className="nav-links">
           <a href="#how" className="nav-link">How it works</a>
           <a href="#gallery" className="nav-link">Gallery</a>
+          <Link href="/research/new" className="nav-link">Deep Research</Link>
           <Link href="/changelog" className="nav-link">Changelog</Link>
           <Link href="/pricing" className="nav-link">Pricing</Link>
         </div>
@@ -264,6 +269,7 @@ export default function Home() {
           </p>
           <div className="hero-actions">
             <button onClick={startNewSession} className="btn-primary">Start Forging</button>
+            <button onClick={startDeepResearch} className="btn-ghost">Deep Research (Beta)</button>
             <a href="#gallery" className="btn-ghost">
               Explore Gallery
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -294,7 +300,7 @@ export default function Home() {
       <section className="how" id="how">
         <span className="section-eyebrow">Workflow</span>
         <h2 className="section-title">How it works</h2>
-        <p className="section-desc">Three steps from idea to deployed app.</p>
+        <p className="section-desc">Choose instant app generation or a fully dedicated deep research run.</p>
         
         <div className="steps">
           <div className="step">
@@ -324,6 +330,34 @@ export default function Home() {
               <path d="M5 12l5 5L20 7"/>
             </svg>
           </div>
+        </div>
+      </section>
+
+      <section className="research-preview">
+        <div className="research-preview-header">
+          <span className="section-eyebrow">New Protocol</span>
+          <h2 className="section-title">Deep Research Agent (Beta)</h2>
+          <p className="section-desc">A standalone route with transparent progress, live source tracking, and citable long-form reports.</p>
+        </div>
+
+        <div className="research-preview-grid">
+          <div className="research-preview-card">
+            <h3>Animated live feed</h3>
+            <p>Watch every phase in real time: planning, query fan-out, iterative source analysis, and synthesis.</p>
+          </div>
+          <div className="research-preview-card">
+            <h3>Depth-first sourcing</h3>
+            <p>The agent iteratively expands coverage up to hundreds of sources, closes evidence gaps, and tracks depth score.</p>
+          </div>
+          <div className="research-preview-card">
+            <h3>Transparent output</h3>
+            <p>Get a clean report with inline citations, source appendix, markdown export, and print-ready PDF flow.</p>
+          </div>
+        </div>
+
+        <div className="research-preview-actions">
+          <button onClick={startDeepResearch} className="btn-primary">Launch Deep Research (Beta)</button>
+          <p className="research-preview-note">Completely separate from the build workflow at /build.</p>
         </div>
       </section>
       
@@ -369,6 +403,16 @@ export default function Home() {
             <p className="step-desc">Our V3 engine automatically analyzes your project's intent and generates a short, professional, and brandable name instantly. This title is automatically applied as the project's permanent identity across your private build session and the public gallery.</p>
             <svg className="step-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+          </div>
+
+          <div className="step">
+            <span className="step-num">β</span>
+            <h3 className="step-title">Deep Research Agent</h3>
+            <p className="step-desc">Run a dedicated long-form research agent on a separate route with live stats, timeline transparency, browse-state controls, and citable synthesis designed for serious analysis.</p>
+            <svg className="step-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M12 3v18M3 12h18"/>
+              <circle cx="12" cy="12" r="8"/>
             </svg>
           </div>
         </div>
@@ -448,7 +492,10 @@ export default function Home() {
       <section className="cta">
         <h2 className="cta-title">Ready to build?</h2>
         <p className="cta-desc">Turn your ideas into working apps in seconds.</p>
-        <button onClick={startNewSession} className="cta-button">Start Forging</button>
+        <div className="cta-actions">
+          <button onClick={startNewSession} className="cta-button">Start Forging</button>
+          <button onClick={startDeepResearch} className="btn-ghost cta-secondary">Deep Research (Beta)</button>
+        </div>
         <p className="cta-tagline">FORGE: Build anything. Ship instantly.</p>
         <div className="cta-watermark">FORGE</div>
       </section>

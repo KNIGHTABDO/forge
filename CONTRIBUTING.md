@@ -47,5 +47,19 @@ Forge's Architect agent automatically proposes 3 short, catchy, brandable projec
 
 When updating title generation behavior, keep the parseable list format (`- ⭐ **TitleName** — rationale`) intact so the regex stays accurate.
 
+## Deep Research Agent (Beta)
+
+Forge includes a dedicated Deep Research capability on a standalone route (`/research/[id]`).
+
+- Keep this workflow fully separate from `/build` and the one-sentence app creation flow.
+- Use research-specific APIs under `app/api/research/` and session-backed persistence.
+- Maintain Beta labeling and progressive disclosure in UI copy.
+
+### Research UI Animation Patterns
+
+- Prefer existing Forge timing/easing tokens and subtle motion (pulse, fade-in, progress fill, smooth state transitions).
+- Keep animations informative (phase changes, status transitions, loading indicators), not decorative noise.
+- Respect responsive behavior and avoid introducing visual styles outside the current premium minimal design system.
+
 ## License
 By contributing to FORGE, you agree that your contributions will be licensed under the project's MIT License.

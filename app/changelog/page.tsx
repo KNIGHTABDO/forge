@@ -38,6 +38,21 @@ export default function ChangelogPage() {
 
   const updates = [
     {
+      version: 'v3.1',
+      date: 'March 2026',
+      title: 'Deep Research Agent (Beta)',
+      description: 'Forge now ships a fully dedicated Deep Research workflow, separate from the build experience. It delivers transparent long-form analysis with live timeline updates, source-level visibility, and citable report synthesis.',
+      items: [
+        'Standalone route: /research/[id] with shareable, session-backed state',
+        'Live phase timeline with real-time stats and ETA tracking',
+        'Website-by-website analysis feed with favicon/domain/status visibility',
+        'Pause / Resume / Stop controls for long-running research cycles',
+        'Inline-cited final reports with source appendix',
+        'Markdown export + print-to-PDF export path',
+        'No coupling to /build app-creation flow (strict isolation)'
+      ]
+    },
+    {
       version: 'v3.0',
       date: 'March 2026',
       title: 'Unified React Orchestration (V3 Launch)',
@@ -108,7 +123,7 @@ export default function ChangelogPage() {
         <p className="legal-subtitle">
           Tracing the history of the FORGE protocol as it reaches its ultimate conversational form in V3. 
         </p>
-        <p className="legal-meta">Current Protocol Status: Operational v3.0 (Unified Orchestrator)</p>
+        <p className="legal-meta">Current Protocol Status: Operational v3.1 (Deep Research Agent Beta)</p>
       </section>
 
       <div className="legal-body">
