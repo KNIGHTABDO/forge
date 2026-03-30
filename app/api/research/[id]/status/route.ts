@@ -14,21 +14,24 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
     if (!state) return NextResponse.json({ error: 'Research session not found' }, { status: 404 });
 
     let nextState = state;
+    const isFinished = state.phase === 'complete' || state.phase === 'stopped' || state.phase === 'error';
 
-    if (shouldAdvance) {
+    if (shouldAdvance && !isFinished) {
       const last = new Date(state.lastAdvancedAt || state.updatedAt).getTime();
       const elapsedMs = Number.isFinite(last) ? Math.max(0, Date.now() - last) : 0;
-
-      // Catch-up slices simulate fire-and-forget background continuity after tab close.
-      const slices = Math.max(1, Math.min(24, Math.floor(elapsedMs / 2500) || 1));
-      for (let i = 0; i < slices; i += 1) {
-        nextState = await advanceResearchState(nextState);
-        if (nextState.phase === 'complete' || nextState.phase === 'stopped' || nextState.phase === 'error') break;
+      if (!isFinished) {
+        // Catch-up slices simulate fire-and-forget background continuity after tab close.
+        const slices = Math.max(1, Math.min(6, Math.floor(elapsedMs / 2500) || 1));
+        let changed = false;
+        for (let i = 0; i < slices; i += 1) {
+          nextState = await advanceResearchState(nextState);
+          changed = true;
+          if (nextState.phase === 'complete' || nextState.phase === 'stopped' || nextState.phase === 'error') break;
+        }
+        if (changed) {
+          await saveResearchState(nextState);
+        }
       }
-    }
-
-    if (shouldAdvance) {
-      await saveResearchState(nextState);
     }
 
     return NextResponse.json({
@@ -45,6 +48,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
       websites: nextState.websites.slice(0, 60),
       learnedSoFar: nextState.learnedSoFar,
       events: nextState.events.slice(0, 80),
+      chat: nextState.chat || [],
       hasReport: Boolean(nextState.report),
       completedAt: nextState.completedAt,
       error: nextState.error,

@@ -257,6 +257,13 @@ export default function Home() {
       {/* Hero Section */}
       <section className="hero">
         <div className={`hero-content ${mounted ? 'visible' : ''}`}>
+          <Link href="/research/new" className="hero-announcement">
+            <span className="hero-announcement-badge">New</span>
+            <span className="hero-announcement-text">Introducing Deep Research Agent (Beta)</span>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M1 7h12M8 2l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </Link>
           <span className="hero-eyebrow">Autonomous Creation / Protocol</span>
           <h1 className="hero-title">
             BUILD<br />

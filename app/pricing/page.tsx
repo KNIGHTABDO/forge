@@ -38,6 +38,7 @@ export default function PricingPage() {
         <div className="nav-links">
           <Link href="/#how" className="nav-link">How it works</Link>
           <Link href="/#gallery" className="nav-link">Gallery</Link>
+          <Link href="/research/new" className="nav-link">Deep Research</Link>
           <Link href="/changelog" className="nav-link">Changelog</Link>
           <Link href="/pricing" className="nav-link active">Pricing</Link>
         </div>

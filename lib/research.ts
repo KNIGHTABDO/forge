@@ -98,11 +98,14 @@ export interface ResearchState {
   stats: ResearchStats;
   control: ResearchControl;
   report?: ResearchReport;
+  chat?: { role: 'user' | 'agent'; content: string }[];
   error?: string;
 }
 
 const TARGET_SOURCES = 300;
 const LOCAL_STORE_ROOT = '/tmp/forge-research-store';
+let _githubSaveLock = false;
+let _githubSaveIteration = 0;
 
 function nowISO() {
   return new Date().toISOString();
@@ -171,8 +174,15 @@ function extractDescription(html: string) {
 function safeJsonParse<T>(raw: string | null): T | null {
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as T;
+    const clean = raw.replace(/^```[a-z]*\s*/i, '').replace(/\s*```$/i, '').trim();
+    return JSON.parse(clean) as T;
   } catch {
+    try {
+      const match = raw.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+      if (match) return JSON.parse(match[1]) as T;
+    } catch {
+      return null;
+    }
     return null;
   }
 }
@@ -192,27 +202,22 @@ async function readLocal(path: string): Promise<string | null> {
 
 async function searchDuckDuckGo(query: string): Promise<string[]> {
   try {
-    const res = await fetch(`https://duckduckgo.com/html/?q=${encodeURIComponent(query)}`, {
+    const res = await fetch('https://html.duckduckgo.com/html/', {
+      method: 'POST',
       headers: {
-        'user-agent': 'Mozilla/5.0 (compatible; ForgeResearchBot/1.0; +https://forge.app)',
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        'content-type': 'application/x-www-form-urlencoded',
+        'accept': 'text/html',
+        'referer': 'https://html.duckduckgo.com/',
       },
-      signal: AbortSignal.timeout(10000),
+      body: `q=${encodeURIComponent(query)}`,
+      signal: AbortSignal.timeout(12000),
     });
-    if (!res.ok) return [];
+    if (!res.ok && res.status !== 202) return [];
     const html = await res.text();
-    const links = [...html.matchAll(/<a[^>]+class=["'][^"']*result__a[^"']*["'][^>]+href=["']([^"']+)["']/gi)]
+
+    const links = [...html.matchAll(/class="result__a"[^>]*href="([^"]+)"/gi)]
       .map((m) => decodeEntities(m[1]))
-      .map((href) => {
-        try {
-          if (href.startsWith('/l/?')) {
-            const u = new URL(`https://duckduckgo.com${href}`);
-            return u.searchParams.get('uddg') || '';
-          }
-          return href;
-        } catch {
-          return '';
-        }
-      })
       .filter((url) => /^https?:\/\//i.test(url));
 
     return Array.from(new Set(links)).slice(0, 12);
@@ -221,7 +226,158 @@ async function searchDuckDuckGo(query: string): Promise<string[]> {
   }
 }
 
+async function searchBing(query: string): Promise<string[]> {
+  try {
+    const res = await fetch(`https://www.bing.com/search?q=${encodeURIComponent(query)}&count=10`, {
+      headers: {
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        'accept': 'text/html,application/xhtml+xml',
+        'accept-language': 'en-US,en;q=0.9',
+      },
+      signal: AbortSignal.timeout(12000),
+    });
+    if (!res.ok) return [];
+    const html = await res.text();
+
+    const decoded = [...html.matchAll(/u=a1([A-Za-z0-9_-]+)/g)].map((m) => {
+      try {
+        const b64 = m[1].replace(/-/g, '+').replace(/_/g, '/');
+        const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
+        return Buffer.from(padded, 'base64').toString('utf-8');
+      } catch {
+        return '';
+      }
+    }).filter((u) => u.startsWith('http'));
+
+    return Array.from(new Set(decoded)).slice(0, 12);
+  } catch {
+    return [];
+  }
+}
+
+async function searchTavily(query: string): Promise<string[]> {
+  const key = process.env.TAVILY_API_KEY;
+  if (!key) return [];
+  try {
+    const res = await fetch('https://api.tavily.com/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ api_key: key, query, search_depth: 'advanced', include_images: false }),
+      signal: AbortSignal.timeout(12000),
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.results || []).map((r: any) => r.url).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+async function searchGoogle(query: string): Promise<string[]> {
+  const key = process.env.GOOGLE_SEARCH_API_KEY;
+  const cx = process.env.GOOGLE_SEARCH_CX;
+  if (!key || !cx) return [];
+  try {
+    const res = await fetch(`https://www.googleapis.com/customsearch/v1?key=${key}&cx=${cx}&q=${encodeURIComponent(query)}&num=10`, {
+      signal: AbortSignal.timeout(12000),
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.items || []).map((i: any) => i.link).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+async function searchWikipedia(query: string): Promise<string[]> {
+  try {
+    const res = await fetch(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&utf8=&format=json&srlimit=10`, {
+      signal: AbortSignal.timeout(12000),
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.query?.search || []).map((s: any) => `https://en.wikipedia.org/wiki/${encodeURIComponent(s.title.replace(/ /g, '_'))}`);
+  } catch {
+    return [];
+  }
+}
+
+async function searchYahoo(query: string): Promise<string[]> {
+  try {
+    const res = await fetch(`https://search.yahoo.com/search?p=${encodeURIComponent(query)}`, {
+      headers: { 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36' },
+      signal: AbortSignal.timeout(12000),
+    });
+    if (!res.ok) return [];
+    const html = await res.text();
+    const links = [...html.matchAll(/href="(https:\/\/[^"]+)"/g)]
+      .map((m) => decodeEntities(m[1]))
+      .filter((u) => !u.includes('yahoo.com') && !u.includes('yimg.com'));
+    return Array.from(new Set(links)).slice(0, 10);
+  } catch {
+    return [];
+  }
+}
+
+async function searchAOL(query: string): Promise<string[]> {
+  try {
+    const res = await fetch(`https://search.aol.com/aol/search?q=${encodeURIComponent(query)}`, {
+      headers: { 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36' },
+      signal: AbortSignal.timeout(12000),
+    });
+    if (!res.ok) return [];
+    const html = await res.text();
+    const links = [...html.matchAll(/href="(https:\/\/[^"]+)"/g)]
+      .map((m) => decodeEntities(m[1]))
+      .filter((u) => !u.includes('aol.com') && !u.includes('yahoo.com'));
+    return Array.from(new Set(links)).slice(0, 10);
+  } catch {
+    return [];
+  }
+}
+
+async function searchAsk(query: string): Promise<string[]> {
+  try {
+    const res = await fetch(`https://www.ask.com/web?q=${encodeURIComponent(query)}`, {
+      headers: { 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36' },
+      signal: AbortSignal.timeout(12000),
+    });
+    if (!res.ok) return [];
+    const html = await res.text();
+    const links = [...html.matchAll(/href="(https:\/\/[^"]+)"/g)]
+      .map((m) => decodeEntities(m[1]))
+      .filter((u) => !u.includes('ask.com'));
+    return Array.from(new Set(links)).slice(0, 10);
+  } catch {
+    return [];
+  }
+}
+
+async function multiSearch(query: string): Promise<string[]> {
+  const settled = await Promise.allSettled([
+    searchTavily(query),
+    searchGoogle(query),
+    searchDuckDuckGo(query),
+    searchBing(query),
+    searchWikipedia(query),
+    searchYahoo(query),
+    searchAOL(query),
+    searchAsk(query),
+  ]);
+
+  const allUrls: string[] = [];
+  for (const result of settled) {
+    if (result.status === 'fulfilled' && result.value.length > 0) {
+      allUrls.push(...result.value);
+    }
+  }
+
+  const filtered = allUrls.filter(u => u.startsWith('http') && !u.includes('google.com/aclk') && !u.includes('doubleclick.net'));
+  return Array.from(new Set(filtered)).slice(0, 50);
+}
+
 async function fetchWebsiteSnapshot(url: string): Promise<{ title: string; snippet: string } | null> {
+  if (url.toLowerCase().endsWith('.pdf')) return null;
   try {
     const res = await fetch(url, {
       headers: {
@@ -230,6 +386,9 @@ async function fetchWebsiteSnapshot(url: string): Promise<{ title: string; snipp
       signal: AbortSignal.timeout(10000),
     });
     if (!res.ok) return null;
+    const contentType = res.headers.get('content-type') || '';
+    if (contentType.includes('application/pdf')) return null;
+    
     const html = (await res.text()).slice(0, 80_000);
     const title = extractTitle(html) || domainFor(url);
     const description = extractDescription(html);
@@ -241,31 +400,73 @@ async function fetchWebsiteSnapshot(url: string): Promise<{ title: string; snipp
   }
 }
 
-function buildPlan(query: string) {
-  return [
+async function buildPlan(query: string): Promise<string> {
+  const fallback = [
     `1. Scope and constraints for: ${query}`,
     '2. Generate broad search fan-out and hypothesis matrix.',
     '3. Analyze primary and secondary sources iteratively.',
     '4. Identify evidence gaps and run follow-up searches.',
     '5. Produce a citable report with confidence and limitations.',
   ].join('\n');
+
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) return fallback;
+
+  try {
+    const genAI = new GoogleGenerativeAI(key);
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.1-flash-lite-preview' });
+    const prompt = `You are an expert AI research agent. Create a precise, numbered 5-step research plan for thoroughly investigating this query: "${query}".\n\nDo not output markdown code blocks. Just output plain text numbered 1 through 5 with your actionable steps focusing on scope, search fan-out, analysis, evidence gaps, and synthesis. Keep it professional and strictly relevant.`;
+
+    const result = await model.generateContent(prompt);
+    const text = result.response.text().trim();
+    if (text) return text;
+  } catch (err) {
+    console.warn('[research] failed to build plan with AI, using fallback:', err);
+  }
+
+  return fallback;
 }
 
-function buildQueryFanout(query: string): string[] {
+async function buildQueryFanout(state: ResearchState): Promise<string[]> {
   const seeds = [
-    query,
-    `${query} official documentation`,
-    `${query} latest research paper`,
-    `${query} industry analysis 2025 2026`,
-    `${query} benchmark comparison`,
-    `${query} limitations and risks`,
-    `${query} case study`,
-    `${query} expert interview`,
-    `${query} economics and costs`,
-    `${query} timeline and adoption`,
-    `${query} open source tools`,
-    `${query} enterprise usage`,
+    state.query,
+    `${state.query} official documentation`,
+    `${state.query} latest research paper`,
+    `${state.query} industry analysis 2025 2026`,
+    `${state.query} benchmark comparison`,
+    `${state.query} limitations and risks`,
+    `${state.query} case study`,
+    `${state.query} expert interview`,
+    `${state.query} economics and costs`,
+    `${state.query} timeline and adoption`,
+    `${state.query} open source tools`,
+    `${state.query} enterprise usage`,
   ];
+
+  const key = process.env.GEMINI_API_KEY;
+  if (key && state.learnedSoFar.length > 0) {
+    try {
+      const genAI = new GoogleGenerativeAI(key);
+      const model = genAI.getGenerativeModel({ model: 'gemini-3.1-flash-lite-preview' });
+      const prompt = `Research query: "${state.query}"\nLearned so far:\n${state.learnedSoFar.slice(0, 10).join('\n')}\n\nGenerate 20 highly specific, deep-dive search queries to uncover completely new angles, case studies, or missing evidence that was not covered yet. Return ONLY a plain text list separated by newlines, no numbers, no bullets.`;
+
+      const result = await model.generateContent(prompt);
+      const text = result.response.text();
+      const generated = text.split('\n').map((q) => q.trim().replace(/^[-.*0-9]+\s*/, '')).filter(Boolean);
+      seeds.push(...generated);
+    } catch (err) {
+      console.warn('[research] failed to build fanout with AI:', err);
+    }
+  }
+
+  // Multiply by modifiers to ensure massive dynamic fanout (hundreds of queries available)
+  const modifiers = ['', ' "case study"', ' metrics', ' review', ' "pdf"', ' site:edu', ' site:gov', ' "analysis"', ' opinion'];
+  const baseSeeds = [...seeds];
+  for (const seed of baseSeeds.slice(0, 15)) {
+    for (const mod of modifiers) {
+      if (mod) seeds.push(`${seed}${mod}`);
+    }
+  }
 
   return Array.from(new Set(seeds));
 }
@@ -302,19 +503,26 @@ function buildProgress(state: ResearchState): number {
   return Math.min(98, Math.round(base + sourceProgress + synth));
 }
 
-export async function saveResearchState(state: ResearchState): Promise<void> {
+export async function saveResearchState(state: ResearchState, forceGithub = false): Promise<void> {
   const updated = { ...state, updatedAt: nowISO() };
 
   // Always persist locally as resilient fallback.
   await writeLocal(localStatePath(state.sessionId, state.id), JSON.stringify(updated, null, 2));
   await writeLocal(localIndexPath(state.id), JSON.stringify({ sessionId: state.sessionId }, null, 2));
 
-  // Best-effort GitHub persistence; do not fail user flow if it is unavailable.
+  // Throttle GitHub writes: only every 3rd iteration or on force (complete/stop/plan actions)
+  _githubSaveIteration++;
+  const shouldSyncGithub = forceGithub || _githubSaveIteration % 3 === 0 || state.phase === 'complete' || state.phase === 'stopped';
+  if (!shouldSyncGithub || _githubSaveLock) return;
+
+  _githubSaveLock = true;
   try {
     await githubWriteFile(researchStatePath(state.sessionId, state.id), JSON.stringify(updated, null, 2), `Save research ${state.id}`);
     await githubWriteFile(researchIndexPath(state.id), JSON.stringify({ sessionId: state.sessionId }, null, 2), `Index research ${state.id}`);
   } catch (err) {
     console.warn('[research] GitHub persistence unavailable, continuing with local fallback.');
+  } finally {
+    _githubSaveLock = false;
   }
 }
 
@@ -346,7 +554,7 @@ export async function loadResearchStateById(researchId: string, sessionId?: stri
   return safeJsonParse<ResearchState>(raw);
 }
 
-export function createResearchState(args: { id: string; sessionId: string; query: string }): ResearchState {
+export async function createResearchState(args: { id: string; sessionId: string; query: string }): Promise<ResearchState> {
   const createdAt = nowISO();
   return {
     id: args.id,
@@ -358,7 +566,7 @@ export function createResearchState(args: { id: string; sessionId: string; query
     phase: 'awaiting_plan',
     progress: 2,
     etaMinutes: 45,
-    planDraft: buildPlan(args.query),
+    planDraft: await buildPlan(args.query),
     planApproved: false,
     pendingQueries: [],
     processedQueries: [],
@@ -455,8 +663,11 @@ async function synthesizeReport(state: ResearchState): Promise<ResearchReport> {
 
   try {
     const genAI = new GoogleGenerativeAI(key);
-    const model = genAI.getGenerativeModel({ model: 'gemini-3.1-flash-lite-preview' });
-    const prompt = `${RESEARCHER_SYSTEM_PROMPT}\n\nCreate a structured, concise but deep final report for this query: "${state.query}".\n\nReturn JSON only with this shape:\n{\n  "title": string,\n  "summary": string,\n  "sections": [{"id": string, "title": string, "body": string}]\n}\n\nUse inline citation marks like [12] in section bodies. Use only citations present in provided source list.\n\nCITATIONS:\n${citationsText}\n\nNOTES:\n${notesText}`;
+    const model = genAI.getGenerativeModel({ 
+      model: 'gemini-3.1-flash-lite-preview',
+      generationConfig: { maxOutputTokens: 8192 }
+    });
+    const prompt = `${RESEARCHER_SYSTEM_PROMPT}\n\nThe user requests an EXTREMELY detailed, comprehensive, and exhaustive final report on the query: "${state.query}". The report MUST be at least 1500 words or 500 lines long. You have access to hundreds of analyzed sources. DO NOT summarize briefly. Provide extreme details, deep analysis, extensive data points, contradictions, case studies, and exact figures from the provided notes. The output must be huge, comprehensive, and exhaustive.\n\nReturn JSON only with this shape:\n{\n  "title": string,\n  "summary": "A 3-4 paragraph deep executive summary",\n  "sections": [{"id": string, "title": string, "body": "AT LEAST 400 WORDS OF EXHAUSTIVE, DETAILED TEXT PER SECTION"}]\n}\n\nUse inline citation marks like [12] in section bodies extensively. Use only citations present in provided source list.\n\nCITATIONS:\n${citationsText}\n\nNOTES:\n${notesText}`;
 
     const result = await model.generateContent(prompt);
     const text = result.response.text();
@@ -510,7 +721,7 @@ export async function advanceResearchState(state: ResearchState): Promise<Resear
 
   if (state.pendingQueries.length === 0 && state.phase !== 'synthesizing') {
     state.phase = 'query_fanout';
-    const fanout = buildQueryFanout(state.query)
+    const fanout = (await buildQueryFanout(state))
       .filter((q) => !state.processedQueries.includes(q))
       .slice(0, 24);
 
@@ -531,14 +742,24 @@ export async function advanceResearchState(state: ResearchState): Promise<Resear
       state.stats.iterations += 1;
       state.events.unshift(event('analyzing', `Running query: ${query}`));
 
-      const urls = await searchDuckDuckGo(query);
-      const candidateUrls = compact(urls).slice(0, 8);
+      const urls = await multiSearch(query);
+      const candidateUrls = compact(urls).slice(0, 30);
       let analyzedInSlice = 0;
+
+      const failedDomains = new Set(
+        state.websites.filter(w => w.status === 'failed').map(w => w.domain)
+      );
 
       for (const url of candidateUrls) {
         if (state.stats.sourcesAnalyzed >= TARGET_SOURCES) break;
-        const existing = state.websites.find((w) => w.url === url && w.status === 'analyzed');
+        
+        // Skip if we already attempted this exact URL
+        const existing = state.websites.find((w) => w.url === url);
         if (existing) continue;
+
+        // Skip if this domain previously failed scraping completely
+        const domain = domainFor(url);
+        if (failedDomains.has(domain)) continue;
 
         const queued: ResearchWebsite = {
           id: `site_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
@@ -555,6 +776,7 @@ export async function advanceResearchState(state: ResearchState): Promise<Resear
           queued.status = 'failed';
           queued.checkedAt = nowISO();
           upsertWebsite(state, queued);
+          failedDomains.add(domain);
           continue;
         }
 

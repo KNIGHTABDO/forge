@@ -3,9 +3,12 @@
 import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { ThemeToggle } from '@/components/theme-toggle';
-import '../../home.css';
+import '../research.css';
 
+/* ─── Types ─── */
 interface ResearchStats {
   sourcesAnalyzed: number;
   tokensUsedEstimate: number;
@@ -64,17 +67,93 @@ const defaultStats: ResearchStats = {
   uniqueDomains: 0,
 };
 
-const phaseLabel = (phase: string) => phase.replace(/_/g, ' ');
+const phaseLabels: Record<string, string> = {
+  awaiting_plan: 'Awaiting your approval',
+  query_fanout: 'Generating search queries',
+  analyzing: 'Searching the web',
+  synthesizing: 'Writing final report',
+  complete: 'Research complete',
+  paused: 'Paused',
+  stopped: 'Stopped',
+  error: 'Error occurred',
+};
 
-function StatPill({ label, value }: { label: string; value: number }) {
+const friendlyPhase = (phase: string) => phaseLabels[phase] || phase.replace(/_/g, ' ');
+
+const statusLabel: Record<string, string> = {
+  queued: 'Queued',
+  fetching: 'Reading',
+  analyzed: 'Done',
+  failed: 'Failed',
+};
+
+/* ─── Animated counter ─── */
+function AnimVal({ value }: { value: number }) {
+  const [display, setDisplay] = useState(value);
+  useEffect(() => {
+    if (display === value) return;
+    const start = display;
+    const t0 = performance.now();
+    const dur = 400;
+    let raf = 0;
+    const tick = (t: number) => {
+      const p = Math.min((t - t0) / dur, 1);
+      setDisplay(Math.round(start + (value - start) * (1 - Math.pow(1 - p, 3))));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [display, value]);
+  return <>{display.toLocaleString()}</>;
+}
+
+/* ─── Skeleton Loader ─── */
+function Skeleton() {
   return (
-    <li className="dr-pill">
-      <span>{label}</span>
-      <strong>{value.toLocaleString()}</strong>
-    </li>
+    <div className="dr-card dr-msg dr-msg-agent">
+      <div className="dr-skeleton">
+        <div className="dr-skeleton-line" style={{ width: '60%' }} />
+        <div className="dr-skeleton-line" style={{ width: '85%' }} />
+        <div className="dr-skeleton-line" style={{ width: '72%' }} />
+        <div className="dr-skeleton-line" style={{ width: '90%' }} />
+        <div className="dr-skeleton-line" style={{ width: '55%' }} />
+      </div>
+    </div>
   );
 }
 
+/* ─── Thinking Indicator ─── */
+function ThinkingOrb({ title, description }: { title: string; description: string }) {
+  return (
+    <div className="dr-card dr-msg dr-msg-agent">
+      <div className="dr-thinking">
+        <div className="dr-thinking-orb">
+          <span className="dr-thinking-orb-core" />
+          <span className="dr-thinking-orb-ring" />
+          <span className="dr-thinking-orb-spark" />
+          <span className="dr-thinking-orb-spark" />
+        </div>
+        <div className="dr-thinking-content">
+          <p className="dr-thinking-title">{title}</p>
+          <p className="dr-thinking-desc">{description}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Send Arrow Icon ─── */
+function ArrowIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   Main Page Component
+   ═══════════════════════════════════════════════════ */
 export default function ResearchPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
@@ -90,15 +169,17 @@ export default function ResearchPage() {
   const [liveEvents, setLiveEvents] = useState<ResearchEvent[]>([]);
   const [liveWebsites, setLiveWebsites] = useState<ResearchWebsite[]>([]);
   const [liveLearned, setLiveLearned] = useState<string[]>([]);
-  const [showThinking, setShowThinking] = useState(true);
-  const [showLearned, setShowLearned] = useState(true);
-  const [showWebsites, setShowWebsites] = useState(true);
+  const [chat, setChat] = useState<{ role: 'user' | 'agent'; content: string }[]>([]);
+  const [chatLoading, setChatLoading] = useState(false);
   const [composerValue, setComposerValue] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [showAllSources, setShowAllSources] = useState(false);
 
   const isNew = id === 'new';
   const isComplete = status?.phase === 'complete';
+  const isRunning = status && !['complete', 'stopped', 'error', 'awaiting_plan'].includes(status.phase);
 
   const sessionId = useMemo(() => {
     const fromUrl = searchParams.get('session');
@@ -116,6 +197,7 @@ export default function ResearchPage() {
     return `/api/research/${id}/status?session=${encodeURIComponent(sessionId)}`;
   }, [id, sessionId]);
 
+  /* ─── Polling ─── */
   const pullStatus = async (advance = true) => {
     if (!statusEndpoint) return;
     const res = await fetch(`${statusEndpoint}&advance=${advance ? '1' : '0'}`, { cache: 'no-store' });
@@ -124,19 +206,19 @@ export default function ResearchPage() {
     setStatus(data);
     setPlan(data.planFinal || data.planDraft || '');
     setPlanEdit(!data.planApproved);
+    if (data.chat) {
+      setChat((prev) => (data.chat.length >= prev.length ? data.chat : prev));
+    }
 
     if (data.hasReport) {
       const reportRes = await fetch(`/api/research/${id}/report?session=${encodeURIComponent(sessionId)}`, { cache: 'no-store' });
-      if (reportRes.ok) {
-        setReport(await reportRes.json());
-      }
+      if (reportRes.ok) setReport(await reportRes.json());
     }
   };
 
   useEffect(() => {
     if (!statusEndpoint) return;
     let active = true;
-
     const tick = async () => {
       try {
         if (active) await pullStatus(true);
@@ -144,19 +226,14 @@ export default function ResearchPage() {
         if (active) setError(e.message || 'Status polling failed');
       }
     };
-
     tick();
-    const interval = setInterval(tick, 2500);
-    return () => {
-      active = false;
-      clearInterval(interval);
-    };
+    const interval = setInterval(tick, 3000);
+    return () => { active = false; clearInterval(interval); };
   }, [statusEndpoint]);
 
   useEffect(() => {
     if (!id || id === 'new') return;
     let active = true;
-
     const fetchEvents = async () => {
       try {
         const res = await fetch(`/api/research/${id}/events?session=${encodeURIComponent(sessionId)}&limit=80`, { cache: 'no-store' });
@@ -165,62 +242,45 @@ export default function ResearchPage() {
         setLiveEvents(data.events || []);
         setLiveWebsites(data.websites || []);
         setLiveLearned(data.learnedSoFar || []);
-      } catch {
-        // Keep status route as source of truth.
-      }
+      } catch { /* status polling is source of truth */ }
     };
-
     fetchEvents();
-    const interval = setInterval(fetchEvents, 2500);
-    return () => {
-      active = false;
-      clearInterval(interval);
-    };
+    const interval = setInterval(fetchEvents, 3000);
+    return () => { active = false; clearInterval(interval); };
   }, [id, sessionId]);
+
+  useEffect(() => {
+    if (isRunning && !showSidebar) setShowSidebar(true);
+  }, [isRunning]);
 
   useEffect(() => {
     if (isNew) return;
     const feed = feedRef.current;
     if (!feed) return;
     feed.scrollTo({ top: feed.scrollHeight, behavior: 'smooth' });
-  }, [isNew, status?.phase, status?.progress, liveEvents.length, liveWebsites.length, liveLearned.length, report?.title, error]);
+  }, [isNew, status?.phase, liveEvents.length, liveWebsites.length, report?.title, error, chat.length, chatLoading]);
 
+  /* ─── Actions ─── */
   const startResearch = async () => {
     if (!query.trim()) return;
     setLoading(true);
     setError(null);
     try {
-      const requestBody = JSON.stringify({ query, sessionId, id: id === 'new' ? undefined : id });
-      let res = await fetch('/api/research/start', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: requestBody,
-      });
-
+      const body = JSON.stringify({ query, sessionId, id: id === 'new' ? undefined : id });
+      let res = await fetch('/api/research/start', { method: 'POST', headers: { 'content-type': 'application/json' }, body });
       if (!res.ok) {
-        await new Promise((resolve) => setTimeout(resolve, 450));
-        res = await fetch('/api/research/start', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: requestBody,
-        });
+        await new Promise(r => setTimeout(r, 500));
+        res = await fetch('/api/research/start', { method: 'POST', headers: { 'content-type': 'application/json' }, body });
       }
-
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Unable to launch deep research right now.');
-
+      if (!res.ok) throw new Error(data.error || 'Unable to launch deep research.');
       localStorage.setItem('forge-research-session', data.sessionId);
       router.replace(`/research/${data.id}?session=${encodeURIComponent(data.sessionId)}`);
     } catch (e: any) {
-      setError(e.message || 'Unable to launch deep research right now.');
+      setError(e.message || 'Unable to launch deep research.');
     } finally {
       setLoading(false);
     }
-  };
-
-  const submitStart = async (e: FormEvent) => {
-    e.preventDefault();
-    await startResearch();
   };
 
   const control = async (action: 'pause' | 'resume' | 'stop' | 'approve-plan' | 'update-plan') => {
@@ -229,7 +289,6 @@ export default function ResearchPage() {
     try {
       const payload: Record<string, string> = { action, sessionId };
       if (action === 'approve-plan' || action === 'update-plan') payload.plan = plan;
-
       const res = await fetch(`/api/research/${id}/control`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -245,22 +304,36 @@ export default function ResearchPage() {
 
   const submitFollowUp = async (e: FormEvent) => {
     e.preventDefault();
-    if (!composerValue.trim() || !isComplete || !id || id === 'new') return;
+    const q = composerValue.trim();
+    if (!q || !isComplete || !id || id === 'new') return;
     setError(null);
-
+    setComposerValue('');
+    setChat(prev => [...prev, { role: 'user', content: q }]);
+    setChatLoading(true);
     try {
-      const res = await fetch(`/api/research/${id}/control`, {
+      const res = await fetch(`/api/research/${id}/chat`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ action: 'follow-up', sessionId, question: composerValue }),
+        body: JSON.stringify({ sessionId, question: q }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Control request failed');
-      setComposerValue('');
+      if (!res.ok) throw new Error(data.error || 'Chat request failed');
+      if (data.chat) setChat(data.chat);
       await pullStatus(false);
     } catch (e: any) {
-      setError(e.message || 'Control request failed');
+      setError(e.message || 'Chat request failed');
+    } finally {
+      setChatLoading(false);
     }
+  };
+
+  const parseCitations = (text: string) => {
+    return text.replace(/\[([\d, ]+)\]/g, (match, digits) => {
+      return '[' + digits.split(',').map((d: string) => {
+        const num = d.trim();
+        return `[${num}](#citation-${num})`;
+      }).join(', ') + ']';
+    });
   };
 
   const exportMarkdown = async () => {
@@ -277,847 +350,346 @@ export default function ResearchPage() {
     URL.revokeObjectURL(url);
   };
 
-  const printPdf = () => window.print();
-
+  /* ─── Derived Data ─── */
   const websites = liveWebsites.length > 0 ? liveWebsites : status?.websites || [];
   const learned = liveLearned.length > 0 ? liveLearned : status?.learnedSoFar || [];
   const events = liveEvents.length > 0 ? liveEvents : status?.events || [];
   const stats = status?.stats || defaultStats;
 
+  /* ═══ Render ═══ */
   return (
-    <div className="page dr-page">
-      <nav className="nav">
-        <Link href="/" className="nav-logo">FORGE</Link>
-        <div className="nav-links">
-          <Link href="/#how" className="nav-link">How it works</Link>
-          <Link href="/#gallery" className="nav-link">Gallery</Link>
-          <Link href="/changelog" className="nav-link">Changelog</Link>
-          <Link href="/pricing" className="nav-link">Pricing</Link>
-        </div>
-        <div className="nav-right">
-          <ThemeToggle />
-          <Link href="/build" className="nav-cta">Inquire</Link>
-        </div>
-      </nav>
+    <div className="dr-shell">
+      {/* Ambient orbs */}
+      <div className="dr-ambient" aria-hidden="true">
+        <div className="dr-ambient-orb" />
+        <div className="dr-ambient-orb" />
+        <div className="dr-ambient-orb" />
+      </div>
 
+      {/* Top bar */}
       <header className="dr-topbar">
-        <Link href="/" className="dr-back">Back</Link>
-        <p className="dr-title">Deep Research (Beta)</p>
-        <div className="dr-controls">
+        <div className="dr-topbar-left">
+          <Link href="/" className="dr-logo">FORGE</Link>
+          <span className="dr-topbar-sep">/</span>
+          <span className="dr-topbar-label">
+            <span className="dr-beta-dot" />
+            <span>Deep Research</span>
+          </span>
+          <nav className="dr-topbar-nav" style={{ marginLeft: 32, display: 'flex', gap: 24, fontSize: 13, fontWeight: 500 }}>
+            <Link href="/#how" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>How it works</Link>
+            <Link href="/changelog" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Changelog</Link>
+            <Link href="/pricing" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Pricing</Link>
+          </nav>
+        </div>
+        <div className="dr-topbar-right">
           {!isNew && (
             <>
-              <button className="dr-control" onClick={() => control('pause')}>Pause</button>
-              <button className="dr-control" onClick={() => control('resume')}>Resume</button>
-              <button className="dr-control" onClick={() => control('stop')}>Stop</button>
+              {isRunning && (
+                <>
+                  <button className="dr-topbar-btn" onClick={() => control('pause')}>Pause</button>
+                  <button className="dr-topbar-btn dr-topbar-btn--danger" onClick={() => control('stop')}>Stop</button>
+                </>
+              )}
+              {status?.phase === 'paused' && (
+                <button className="dr-topbar-btn" onClick={() => control('resume')}>Resume</button>
+              )}
+              {!isNew && (
+                <button
+                  className="dr-topbar-btn"
+                  onClick={() => setShowSidebar(v => !v)}
+                  title="Toggle activity panel"
+                >
+                  {showSidebar ? '✕' : '☰'}
+                </button>
+              )}
             </>
           )}
+          <ThemeToggle />
         </div>
       </header>
 
-      {isNew ? (
-        <main className="dr-initial">
-          <form className="dr-input-shell" onSubmit={submitStart}>
-            <textarea
-              className="dr-input"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  void startResearch();
-                }
-              }}
-              placeholder="What do you want to research deeply today?"
-            />
-            <button className="dr-send" type="submit" disabled={!query.trim() || loading} aria-label="Send research query">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M5 12h14M13 4l8 8-8 8" />
-              </svg>
-            </button>
-          </form>
-          {error && <p className="dr-error">{error}</p>}
-        </main>
-      ) : (
-        <main className="dr-chat">
-          <section className="dr-feed" ref={feedRef}>
-            {status?.query && (
-              <article className="dr-bubble dr-user">
-                <p>{status.query}</p>
-              </article>
-            )}
+      {/* Main area */}
+      <div className={`dr-main ${showSidebar && !isNew ? 'has-sidebar' : ''}`}>
+        <div className="dr-chat-col">
+          {isNew ? (
+            /* ─── Start Screen ─── */
+            <div className="dr-start">
+              <div className="dr-start-icon">🔬</div>
+              <h1 className="dr-start-title">Deep Research</h1>
+              <p className="dr-start-desc">
+                Ask anything. The agent will search the web, analyze dozens of sources,
+                and produce a comprehensive cited report.
+              </p>
+              <div className="dr-composer dr-composer--start">
+                <form className="dr-composer-inner" onSubmit={(e) => { e.preventDefault(); startResearch(); }}>
+                  <textarea
+                    className="dr-composer-input"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); startResearch(); } }}
+                    placeholder="What do you want to research deeply?"
+                    autoFocus
+                  />
+                  <button className="dr-composer-send" type="submit" disabled={!query.trim() || loading} aria-label="Start research">
+                    <ArrowIcon />
+                  </button>
+                </form>
+              </div>
+              {error && <p className="dr-error">{error}</p>}
+            </div>
+          ) : (
+            /* ─── Chat Feed ─── */
+            <>
+              <div className="dr-feed" ref={feedRef}>
+                {/* User query bubble */}
+                {status?.query && (
+                  <div className="dr-msg dr-msg-user">{status.query}</div>
+                )}
 
-            {!status?.planApproved && (
-              <article className="dr-bubble dr-agent">
-                <div className="dr-head">
-                  <h2>Research Plan</h2>
-                  <span className="dr-chip">Editable</span>
-                </div>
-                <textarea className="dr-plan" value={plan} onChange={(e) => setPlan(e.target.value)} disabled={!planEdit} />
-                <div className="dr-actions">
-                  <button className="dr-control" onClick={() => setPlanEdit((v) => !v)}>{planEdit ? 'Lock Edit' : 'Edit'}</button>
-                  <button className="dr-control" onClick={() => control('update-plan')}>Save Plan</button>
-                  <button className="dr-control dr-approve" onClick={() => control('approve-plan')}>Approve & Start</button>
-                </div>
-              </article>
-            )}
-
-            <article className="dr-bubble dr-agent">
-              <button className="dr-fold" onClick={() => setShowThinking((v) => !v)}>
-                <span className="dr-orb-wrap" aria-hidden="true">
-                  <span className="dr-orb" />
-                  <span className="dr-ring" />
-                  <span className="dr-spark dr-spark-a" />
-                  <span className="dr-spark dr-spark-b" />
-                </span>
-                <span>Thinking... {status ? phaseLabel(status.phase) : 'initializing'}</span>
-              </button>
-              {showThinking && <p className="dr-subtle">Running live query fan-out, source analysis, and synthesis across evolving evidence.</p>}
-            </article>
-
-            {status?.phase === 'query_fanout' && (
-              <article className="dr-bubble dr-agent dr-typing">
-                <p>Generating search queries...</p>
-                <span className="dr-typing-glow" aria-hidden="true" />
-              </article>
-            )}
-
-            <article className="dr-bubble dr-agent">
-              <button className="dr-fold" onClick={() => setShowWebsites((v) => !v)}>
-                <span>Websites being searched</span>
-                <span className="dr-chip">{websites.length}</span>
-              </button>
-              {showWebsites && (
-                <ul className="dr-sites">
-                  {websites.slice(0, 24).map((site) => (
-                    <li key={site.id} className={`dr-site dr-${site.status}`}>
-                      <img src={site.favicon} alt="" />
-                      <div>
-                        <p>{site.domain}</p>
-                        <a href={site.url} target="_blank" rel="noreferrer">{site.title}</a>
+                {/* Plan card */}
+                {status && !status.planApproved && (
+                  <div className="dr-card dr-msg dr-msg-agent">
+                    <div className="dr-card-header">
+                      <h3>Research Plan</h3>
+                      <span className="dr-badge">Editable</span>
+                    </div>
+                    <div className="dr-card-body">
+                      <textarea
+                        className="dr-plan-textarea"
+                        value={plan}
+                        onChange={(e) => setPlan(e.target.value)}
+                        disabled={!planEdit}
+                      />
+                      <div className="dr-plan-actions">
+                        <button className="dr-btn" onClick={() => setPlanEdit(v => !v)}>
+                          {planEdit ? 'Lock' : 'Edit'}
+                        </button>
+                        <button className="dr-btn" onClick={() => control('update-plan')}>Save</button>
+                        <button className="dr-btn dr-btn--primary" onClick={() => control('approve-plan')}>
+                          Start Research
+                        </button>
                       </div>
-                      <span>{site.status === 'queued' ? 'searching' : site.status === 'fetching' ? 'analyzing' : site.status === 'analyzed' ? 'done' : 'failed'}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </article>
+                    </div>
+                  </div>
+                )}
 
-            <article className="dr-bubble dr-agent">
-              <button className="dr-fold" onClick={() => setShowLearned((v) => !v)}>
-                <span>What the agent learned</span>
-                <span className="dr-chip">{learned.length}</span>
-              </button>
-              {showLearned && (
-                <ul className="dr-learned">
-                  {learned.slice(0, 14).map((item, i) => (
-                    <li key={`${i}-${item.slice(0, 12)}`}>{item}</li>
-                  ))}
-                </ul>
-              )}
-            </article>
+                {/* Thinking indicator */}
+                {status && !['complete', 'stopped', 'error'].includes(status.phase) && status.planApproved && (
+                  <ThinkingOrb
+                    title={friendlyPhase(status.phase)}
+                    description={
+                      status.phase === 'query_fanout'
+                        ? 'Generating search queries across multiple angles...'
+                        : status.phase === 'analyzing'
+                        ? `Analyzing sources... ${stats.sourcesAnalyzed} found so far`
+                        : status.phase === 'synthesizing'
+                        ? 'Compiling findings into a comprehensive report...'
+                        : 'Initializing research agent...'
+                    }
+                  />
+                )}
 
-            <article className="dr-bubble dr-agent">
-              <div className="dr-head">
-                <h2>Live Stats</h2>
-                <span className="dr-chip">ETA {status?.etaMinutes ?? '-'}m</span>
-              </div>
-              <ul className="dr-pills">
-                <StatPill label="Sources" value={stats.sourcesAnalyzed} />
-                <StatPill label="Depth" value={stats.depthScore} />
-                <StatPill label="Queries" value={stats.queriesGenerated} />
-                <StatPill label="Iterations" value={stats.iterations} />
-                <StatPill label="Domains" value={stats.uniqueDomains} />
-                <StatPill label="Tokens" value={stats.tokensUsedEstimate} />
-              </ul>
-            </article>
+                {/* Skeleton while loading */}
+                {!status && !isNew && <Skeleton />}
 
-            <article className="dr-bubble dr-agent">
-              <div className="dr-head">
-                <h2>Research Log</h2>
-                <span className="dr-chip">Live</span>
-              </div>
-              <ul className="dr-log">
-                {events.slice(0, 18).map((event) => (
-                  <li key={event.id}>
-                    <p>{event.message}</p>
-                    <small>{new Date(event.at).toLocaleTimeString()} · {phaseLabel(event.phase)}</small>
-                  </li>
+                {/* Sources & Stats card */}
+                {websites.length > 0 && (
+                  <div className="dr-card dr-msg dr-msg-agent">
+                    <div className="dr-card-header">
+                      <h3>Analyzing Sources</h3>
+                      <span className={`dr-badge ${isRunning ? 'dr-badge--live' : ''}`}>
+                        {stats.sourcesAnalyzed} / {stats.uniqueDomains} domains
+                      </span>
+                    </div>
+                    <div className="dr-card-body">
+                      <div className="dr-sources-single">
+                        {[
+                          websites.find(s => s.status === 'fetching') || 
+                          websites.find(s => s.status === 'queued') || 
+                          [...websites].reverse().find(s => s.status === 'analyzed') || 
+                          [...websites].reverse().find(s => s.status === 'failed') || 
+                          websites[0]
+                        ].filter(Boolean).map((site) => (
+                          <div
+                            key={site.id + site.status}
+                            className={`dr-source dr-source--single dr-source--${
+                              site.status === 'analyzed' ? 'done' : site.status === 'failed' ? 'failed' : 'analyzing'
+                            }`}
+                          >
+                            <img className="dr-source-favicon" src={site.favicon} alt="" />
+                            <div className="dr-source-meta">
+                              <p className="dr-source-domain">{site.domain}</p>
+                              <a className="dr-source-title" href={site.url} target="_blank" rel="noreferrer">
+                                {site.title}
+                              </a>
+                            </div>
+                            <span className="dr-source-status">{statusLabel[site.status] || site.status}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="dr-stats">
+                        <div className="dr-stat">
+                          <span className="dr-stat-value"><AnimVal value={stats.sourcesAnalyzed} /></span>
+                          <span className="dr-stat-label">Sources</span>
+                        </div>
+                        <div className="dr-stat">
+                          <span className="dr-stat-value"><AnimVal value={stats.uniqueDomains} /></span>
+                          <span className="dr-stat-label">Domains</span>
+                        </div>
+                        <div className="dr-stat">
+                          <span className="dr-stat-value"><AnimVal value={stats.iterations} /></span>
+                          <span className="dr-stat-label">Iterations</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Final Report */}
+                {isComplete && report && (
+                  <div className="dr-card dr-msg dr-msg-agent">
+                    <div className="dr-card-header">
+                      <h3>{report.title}</h3>
+                      <span className="dr-badge dr-badge--complete">Complete</span>
+                    </div>
+                    <div className="dr-card-body">
+                      <p style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--text-secondary)', marginBottom: 12 }}>
+                        {report.summary}
+                      </p>
+                      <div className="dr-report-sections">
+                        {report.sections.map((section) => (
+                          <div key={section.id} className="dr-report-section dr-md">
+                            <h4>{section.title}</h4>
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              {parseCitations(section.body)}
+                            </ReactMarkdown>
+                          </div>
+                        ))}
+                      </div>
+                      {report.citations.length > 0 && (
+                        <div className="dr-citations">
+                          <h4>Sources</h4>
+                          <ul className="dr-citations-list" style={{ position: 'relative' }}>
+                            {(showAllSources ? report.citations : report.citations.slice(0, 3)).map((c) => (
+                              <li key={c.id} id={`citation-${c.id}`} style={{scrollMarginTop: 20}}>
+                                [{c.id}]{' '}
+                                <a href={c.url} target="_blank" rel="noreferrer">{c.title}</a>
+                              </li>
+                            ))}
+                            {!showAllSources && report.citations.length > 3 && (
+                              <div style={{ position: 'absolute', bottom: -5, left: 0, right: 0, height: 40, background: 'linear-gradient(transparent, var(--bg-surface))', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+                                <button onClick={() => setShowAllSources(true)} style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--r-full)', padding: '6px 14px', fontSize: 11, cursor: 'pointer', zIndex: 2, fontFamily: 'var(--font-label)', letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-secondary)'}}>
+                                  Show all {report.citations.length} sources
+                                </button>
+                              </div>
+                            )}
+                          </ul>
+                        </div>
+                      )}
+                      <div className="dr-plan-actions" style={{ marginTop: 16 }}>
+                        <button className="dr-btn" onClick={exportMarkdown}>Export Markdown</button>
+                        <button className="dr-btn" onClick={() => window.print()}>Export PDF</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {chat.map((m, idx) => (
+                  <div key={idx} className={m.role === 'user' ? 'dr-msg dr-msg-user' : 'dr-card dr-msg dr-msg-agent'} style={m.role === 'agent' ? { padding: '14px 16px' } : {}}>
+                    {m.role === 'agent' ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span className="dr-beta-dot" style={{ animation: 'none' }}></span>
+                          <span style={{ fontFamily: 'var(--font-label)', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>Report Analysis</span>
+                        </div>
+                        <div className="dr-md">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {parseCitations(m.content)}
+                          </ReactMarkdown>
+                        </div>
+                      </div>
+                    ) : (
+                      m.content
+                    )}
+                  </div>
                 ))}
-              </ul>
-            </article>
 
-            {isComplete && report && (
-              <article className="dr-bubble dr-agent dr-report">
-                <div className="dr-head">
-                  <h2>{report.title}</h2>
-                  <span className="dr-chip">Complete</span>
-                </div>
-                <p className="dr-subtle">{report.summary}</p>
-                <div className="dr-sections">
-                  {report.sections.map((section) => (
-                    <section key={section.id}>
-                      <h3>{section.title}</h3>
-                      <p>{section.body}</p>
-                    </section>
-                  ))}
-                </div>
-                <div className="dr-citations">
-                  <h3>Sources</h3>
-                  <ul>
-                    {report.citations.map((c) => (
-                      <li key={c.id}>
-                        <span>[{c.id}] </span>
-                        <a href={c.url} target="_blank" rel="noreferrer">{c.title}</a>
+                {chatLoading && (
+                  <ThinkingOrb title="Analyzing Report" description="Extracting intelligent answer from research architecture..." />
+                )}
+
+                {error && <p className="dr-error">{error}</p>}
+              </div>
+
+              {/* Bottom composer (follow-up) */}
+              <div className="dr-composer">
+                <form className="dr-composer-inner" onSubmit={submitFollowUp}>
+                  <textarea
+                    className="dr-composer-input"
+                    value={composerValue}
+                    onChange={(e) => setComposerValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        submitFollowUp(e as unknown as FormEvent);
+                      }
+                    }}
+                    placeholder={isComplete ? 'Ask a follow-up question...' : 'Follow-up available when research completes'}
+                    disabled={!isComplete}
+                  />
+                  <button className="dr-composer-send" type="submit" disabled={!isComplete || !composerValue.trim()} aria-label="Send follow-up">
+                    <ArrowIcon />
+                  </button>
+                </form>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* ─── Research Activity Sidebar ─── */}
+        {showSidebar && !isNew && (
+          <aside className="dr-sidebar">
+            <div className="dr-sidebar-header">
+              <h3>Research Activity</h3>
+              <button className="dr-sidebar-close" onClick={() => setShowSidebar(false)}>✕</button>
+            </div>
+            <div className="dr-sidebar-body">
+              {/* Findings */}
+              {learned.length > 0 && (
+                <div className="dr-sidebar-section">
+                  <p className="dr-sidebar-section-title">
+                    Key Findings ({learned.length})
+                  </p>
+                  <ul className="dr-findings">
+                    {learned.slice(0, 12).map((item, i) => (
+                      <li key={`${i}-${item.slice(0, 10)}`} className="dr-finding">
+                        {item.length > 120 ? item.slice(0, 120) + '…' : item}
                       </li>
                     ))}
                   </ul>
                 </div>
-                <div className="dr-actions">
-                  <button className="dr-control" onClick={exportMarkdown}>Export Markdown</button>
-                  <button className="dr-control" onClick={printPdf}>Export PDF</button>
-                </div>
-              </article>
-            )}
-            {error && <p className="dr-error">{error}</p>}
-          </section>
-
-          <form className="dr-composer" onSubmit={submitFollowUp}>
-            <textarea
-              className="dr-composer-input"
-              value={composerValue}
-              onChange={(e) => setComposerValue(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  void submitFollowUp(e as unknown as FormEvent);
-                }
-              }}
-              placeholder={isComplete ? 'Ask follow-up...' : 'Follow-up unlocks when report completes.'}
-              disabled={!isComplete}
-            />
-            <button className="dr-send" type="submit" disabled={!isComplete || !composerValue.trim()} aria-label="Send follow up">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M5 12h14M13 4l8 8-8 8" />
-              </svg>
-            </button>
-          </form>
-        </main>
-      )}
-
-      <footer className="footer">
-        <p className="footer-copy">© 2026 FORGE DIGITAL. ALL RIGHTS RESERVED.</p>
-        <div className="footer-links">
-          <Link href="/privacy" className="footer-link">Privacy</Link>
-          <Link href="/terms" className="footer-link">Terms</Link>
-          <Link href="/contact" className="footer-link">Contact</Link>
-          <a href="https://twitter.com/jip7e" target="_blank" rel="noopener noreferrer" className="footer-link">Twitter / X</a>
-        </div>
-      </footer>
-
-      <style jsx>{`
-        .dr-page {
-          min-height: 100vh;
-          min-height: 100dvh;
-          background: #0e0c09;
-          color: #f0e6d3;
-          display: grid;
-          grid-template-rows: auto auto 1fr auto;
-        }
-
-        .dr-topbar {
-          border-top: 1px solid #2c251d;
-          border-bottom: 1px solid #2c251d;
-          display: grid;
-          grid-template-columns: 1fr auto 1fr;
-          align-items: center;
-          gap: 10px;
-          padding: 10px 20px;
-          backdrop-filter: blur(14px) saturate(150%);
-          background: rgba(14, 12, 9, 0.84);
-        }
-
-        .dr-back,
-        .dr-control,
-        .dr-chip,
-        .dr-fold,
-        .dr-title {
-          font-family: var(--font-label);
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
-        }
-
-        .dr-back {
-          justify-self: start;
-          border: 1px solid #3d3328;
-          border-radius: 999px;
-          padding: 7px 12px;
-          font-size: 10px;
-          color: #a89278;
-        }
-
-        .dr-title {
-          margin: 0;
-          font-size: 11px;
-          color: #a89278;
-        }
-
-        .dr-controls {
-          justify-self: end;
-          display: inline-flex;
-          gap: 6px;
-        }
-
-        .dr-control {
-          border: 1px solid #3d3328;
-          color: #a89278;
-          background: transparent;
-          border-radius: 999px;
-          padding: 7px 10px;
-          font-size: 9px;
-          cursor: pointer;
-        }
-
-        .dr-approve {
-          color: #0e0c09;
-          background: #f0e6d3;
-          border-color: transparent;
-          box-shadow: 0 0 20px rgba(240, 230, 211, 0.2);
-        }
-
-        .dr-initial {
-          min-height: calc(100dvh - 68px - 58px - 74px);
-          display: grid;
-          place-items: center;
-          padding: 20px;
-        }
-
-        .dr-input-shell {
-          width: min(900px, 100%);
-          position: relative;
-        }
-
-        .dr-input,
-        .dr-composer-input,
-        .dr-plan {
-          width: 100%;
-          border: 1px solid #3d3328;
-          border-radius: 24px;
-          background: #181410;
-          color: #f0e6d3;
-          padding: 18px 58px 18px 18px;
-          resize: vertical;
-          font-size: 18px;
-          line-height: 1.45;
-        }
-
-        .dr-input:focus,
-        .dr-composer-input:focus,
-        .dr-plan:focus {
-          outline: none;
-          border-color: #4e4336;
-          box-shadow: 0 0 0 3px rgba(240, 230, 211, 0.06), 0 0 24px rgba(240, 230, 211, 0.1);
-        }
-
-        .dr-input {
-          min-height: 150px;
-        }
-
-        .dr-send {
-          position: absolute;
-          right: 12px;
-          bottom: 12px;
-          width: 36px;
-          height: 36px;
-          border-radius: 12px;
-          border: 1px solid #4e4336;
-          background: #f0e6d3;
-          color: #0e0c09;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-        }
-
-        .dr-send svg {
-          width: 14px;
-          height: 14px;
-          fill: none;
-          stroke: currentColor;
-          stroke-width: 2;
-          stroke-linecap: round;
-          stroke-linejoin: round;
-        }
-
-        .dr-send:disabled {
-          opacity: 0.45;
-          cursor: not-allowed;
-        }
-
-        .dr-chat {
-          min-height: 0;
-          display: grid;
-          grid-template-rows: 1fr auto;
-          animation: drDock 0.34s var(--ease-spring) both;
-        }
-
-        .dr-feed {
-          width: min(980px, calc(100vw - 28px));
-          margin: 0 auto;
-          min-height: 0;
-          overflow-y: auto;
-          padding: 14px 6px 20px;
-          display: grid;
-          gap: 11px;
-          scroll-behavior: smooth;
-        }
-
-        .dr-bubble {
-          border: 1px solid #2c251d;
-          border-radius: 16px;
-          background: #181410;
-          padding: 12px 14px;
-          animation: drMsg 0.26s var(--ease-spring) both;
-        }
-
-        .dr-user {
-          margin-left: auto;
-          max-width: 74%;
-          background: #f0e6d3;
-          color: #0e0c09;
-          border-color: transparent;
-          border-bottom-right-radius: 8px;
-        }
-
-        .dr-agent {
-          margin-right: auto;
-          width: min(90%, 860px);
-          border-bottom-left-radius: 8px;
-        }
-
-        .dr-head {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 10px;
-          margin-bottom: 8px;
-        }
-
-        .dr-head h2 {
-          margin: 0;
-          font-family: var(--font-headline);
-          font-size: 22px;
-        }
-
-        .dr-chip {
-          border: 1px solid #3d3328;
-          border-radius: 999px;
-          padding: 5px 8px;
-          font-size: 9px;
-          color: #a89278;
-        }
-
-        .dr-plan {
-          min-height: 126px;
-          padding: 12px;
-          font-size: 14px;
-        }
-
-        .dr-actions {
-          margin-top: 10px;
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-        }
-
-        .dr-fold {
-          border: 0;
-          background: transparent;
-          color: #f0e6d3;
-          width: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          text-align: left;
-          font-size: 11px;
-          cursor: pointer;
-        }
-
-        .dr-orb-wrap {
-          width: 22px;
-          height: 22px;
-          position: relative;
-          display: inline-block;
-          margin-right: 6px;
-        }
-
-        .dr-orb {
-          position: absolute;
-          inset: 5px;
-          border-radius: 999px;
-          background: radial-gradient(circle, #f0e6d3 0%, #a89278 74%);
-          box-shadow: 0 0 14px rgba(240, 230, 211, 0.18);
-          animation: drPulse 1.8s var(--ease-smooth) infinite;
-        }
-
-        .dr-ring {
-          position: absolute;
-          inset: 0;
-          border-radius: 999px;
-          border: 1px solid #4e4336;
-          animation: drRing 2.2s var(--ease-smooth) infinite;
-        }
-
-        .dr-spark {
-          position: absolute;
-          width: 4px;
-          height: 4px;
-          border-radius: 999px;
-          background: #f0e6d3;
-          animation: drSpark 1.5s ease-in-out infinite;
-        }
-
-        .dr-spark-a { top: 2px; right: 1px; }
-        .dr-spark-b { bottom: 1px; left: 1px; animation-delay: 0.4s; }
-
-        .dr-subtle {
-          margin-top: 8px;
-          font-size: 14px;
-          line-height: 1.6;
-          color: #a89278;
-        }
-
-        .dr-typing {
-          position: relative;
-          overflow: hidden;
-        }
-
-        .dr-typing p {
-          margin: 0;
-          position: relative;
-          z-index: 1;
-          font-size: 11px;
-          text-transform: uppercase;
-          letter-spacing: 0.09em;
-          font-family: var(--font-label);
-        }
-
-        .dr-typing-glow {
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(120deg, transparent 12%, rgba(240, 230, 211, 0.09) 45%, transparent 70%);
-          animation: drTyping 1.6s linear infinite;
-        }
-
-        .dr-sites,
-        .dr-learned,
-        .dr-pills,
-        .dr-log,
-        .dr-citations ul,
-        .dr-sections {
-          list-style: none;
-          margin: 0;
-          padding: 0;
-        }
-
-        .dr-sites {
-          margin-top: 10px;
-          display: grid;
-          gap: 8px;
-        }
-
-        .dr-site {
-          border: 1px solid #2c251d;
-          border-radius: 11px;
-          display: grid;
-          grid-template-columns: 20px 1fr auto;
-          gap: 8px;
-          align-items: center;
-          padding: 8px;
-          background: #0f0d0a;
-        }
-
-        .dr-site img {
-          width: 18px;
-          height: 18px;
-          border-radius: 3px;
-        }
-
-        .dr-site p {
-          margin: 0;
-          font-size: 10px;
-          font-family: var(--font-label);
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-          color: #a89278;
-        }
-
-        .dr-site a {
-          font-size: 13px;
-          color: #f0e6d3;
-          display: inline-block;
-          margin-top: 2px;
-        }
-
-        .dr-site span {
-          font-size: 9px;
-          border-radius: 999px;
-          border: 1px solid #3d3328;
-          padding: 4px 7px;
-          text-transform: uppercase;
-          letter-spacing: 0.08em;
-          font-family: var(--font-label);
-        }
-
-        .dr-analyzed span { color: #34d399; border-color: #34d399; }
-        .dr-fetching span,
-        .dr-queued span { color: #fcd34d; border-color: #fcd34d; }
-        .dr-failed span { color: #f87171; border-color: #f87171; }
-
-        .dr-learned {
-          margin-top: 10px;
-          display: grid;
-          gap: 7px;
-        }
-
-        .dr-learned li {
-          border-left: 2px solid #3d3328;
-          padding-left: 8px;
-          color: #a89278;
-          font-size: 13px;
-          line-height: 1.6;
-          animation: drFade 0.24s var(--ease-out);
-        }
-
-        .dr-pills {
-          margin-top: 8px;
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-        }
-
-        .dr-pill {
-          border: 1px solid #3d3328;
-          border-radius: 999px;
-          padding: 6px 10px;
-          display: inline-flex;
-          align-items: center;
-          gap: 7px;
-          background: #0f0d0a;
-        }
-
-        .dr-pill span {
-          font-size: 9px;
-          color: #a89278;
-          text-transform: uppercase;
-          letter-spacing: 0.09em;
-          font-family: var(--font-label);
-        }
-
-        .dr-pill strong {
-          font-size: 15px;
-          font-family: var(--font-headline);
-        }
-
-        .dr-log {
-          margin-top: 10px;
-          display: grid;
-          gap: 7px;
-        }
-
-        .dr-log li {
-          border-left: 2px solid #3d3328;
-          padding-left: 8px;
-        }
-
-        .dr-log p {
-          margin: 0;
-          font-size: 13px;
-          line-height: 1.55;
-        }
-
-        .dr-log small {
-          color: #a89278;
-          font-size: 11px;
-        }
-
-        .dr-sections {
-          margin-top: 10px;
-          display: grid;
-          gap: 10px;
-        }
-
-        .dr-sections section {
-          border: 1px solid #2c251d;
-          border-radius: 12px;
-          background: #0f0d0a;
-          padding: 11px;
-        }
-
-        .dr-sections h3 {
-          margin: 0 0 6px;
-          font-family: var(--font-headline);
-          font-size: 18px;
-        }
-
-        .dr-sections p {
-          margin: 0;
-          white-space: pre-wrap;
-          font-size: 13px;
-          line-height: 1.65;
-        }
-
-        .dr-citations {
-          margin-top: 10px;
-        }
-
-        .dr-citations h3 {
-          margin: 0 0 6px;
-          font-family: var(--font-headline);
-          font-size: 18px;
-        }
-
-        .dr-citations ul {
-          display: grid;
-          gap: 4px;
-        }
-
-        .dr-citations li {
-          font-size: 12px;
-          line-height: 1.5;
-        }
-
-        .dr-composer {
-          width: min(980px, calc(100vw - 28px));
-          margin: 0 auto;
-          position: sticky;
-          bottom: 0;
-          padding: 8px 6px 14px;
-          background: linear-gradient(180deg, transparent 0%, rgba(14, 12, 9, 0.5) 38%, #0e0c09 100%);
-        }
-
-        .dr-composer-input {
-          min-height: 56px;
-          max-height: 180px;
-          font-size: 14px;
-          border-radius: 18px;
-          padding: 12px 54px 12px 12px;
-        }
-
-        .dr-composer .dr-send {
-          right: 18px;
-          bottom: 20px;
-        }
-
-        .dr-error {
-          color: #f87171;
-          font-size: 12px;
-          margin: 6px 0 0;
-        }
-
-        :global(.dr-page .footer) {
-          margin-top: 22px;
-          position: relative;
-          z-index: 2;
-        }
-
-        @keyframes drMsg {
-          from { opacity: 0; transform: translateY(8px) scale(0.98); }
-          to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        @keyframes drDock {
-          from { opacity: 0.92; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes drPulse {
-          0% { transform: scale(0.9); opacity: 0.7; }
-          50% { transform: scale(1.16); opacity: 1; }
-          100% { transform: scale(0.9); opacity: 0.7; }
-        }
-
-        @keyframes drRing {
-          0% { transform: scale(0.9); opacity: 1; }
-          100% { transform: scale(1.25); opacity: 0; }
-        }
-
-        @keyframes drSpark {
-          0%, 100% { opacity: 0.22; transform: scale(0.75); }
-          50% { opacity: 1; transform: scale(1.2); }
-        }
-
-        @keyframes drTyping {
-          from { transform: translateX(-56%); }
-          to { transform: translateX(64%); }
-        }
-
-        @keyframes drFade {
-          from { opacity: 0; transform: translateY(6px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-
-        @media (max-width: 880px) {
-          .dr-page {
-            grid-template-rows: auto auto 1fr auto;
-          }
-
-          .dr-topbar {
-            grid-template-columns: auto 1fr;
-            padding: 12px;
-            height: auto;
-          }
-
-          .dr-title {
-            justify-self: start;
-            margin-left: 4px;
-          }
-
-          .dr-controls {
-            grid-column: 1 / -1;
-            justify-self: start;
-          }
-
-          .dr-input-shell,
-          .dr-feed,
-          .dr-composer {
-            width: min(100%, calc(100vw - 16px));
-          }
-
-          .dr-user,
-          .dr-agent {
-            width: 100%;
-            max-width: 100%;
-          }
-
-          .dr-site {
-            grid-template-columns: 20px 1fr;
-          }
-
-          .dr-site span {
-            grid-column: 1 / -1;
-            justify-self: start;
-          }
-
-          .dr-composer .dr-send {
-            right: 14px;
-          }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .dr-bubble,
-          .dr-orb,
-          .dr-ring,
-          .dr-spark,
-          .dr-typing-glow,
-          .dr-learned li {
-            animation: none !important;
-          }
-
-          .dr-feed {
-            scroll-behavior: auto;
-          }
-        }
-      `}</style>
+              )}
+
+              {/* Activity log */}
+              <div className="dr-sidebar-section">
+                <p className="dr-sidebar-section-title">
+                  Activity Log
+                </p>
+                <ul className="dr-log">
+                  {events.slice(0, 20).map((ev) => (
+                    <li key={ev.id} className="dr-log-entry">
+                      <span className="dr-log-time">
+                        {new Date(ev.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      <p className="dr-log-msg">{ev.message}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </aside>
+        )}
+      </div>
     </div>
   );
 }

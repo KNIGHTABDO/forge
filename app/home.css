@@ -256,6 +256,46 @@ html[data-theme="light"] .theme-toggle:hover {
   transform: translateY(0);
 }
 
+.hero-announcement {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px 8px 8px;
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  text-decoration: none;
+  color: var(--text);
+  margin-bottom: 32px;
+  align-self: flex-start;
+  transition: all 0.3s ease;
+  animation: hero-fade-up 0.8s 0.05s cubic-bezier(0.4,0,0.2,1) both;
+}
+
+.hero-announcement:hover {
+  background: var(--text);
+  color: var(--bg);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.hero-announcement-badge {
+  font-family: var(--font-label);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  background: var(--text);
+  color: var(--bg);
+  padding: 3px 8px;
+  border-radius: 100px;
+}
+
+.hero-announcement-text {
+  font-size: 13px;
+  font-weight: 500;
+}
+
 .hero-eyebrow {
   font-family: var(--font-label);
   font-size: 11px;

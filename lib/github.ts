@@ -38,7 +38,7 @@ export async function readFile(path: string): Promise<string | null> {
 
 export async function writeFile(path: string, content: string, message: string, isBase64: boolean = false): Promise<void> {
   const encoded = isBase64 ? content : Buffer.from(content, 'utf-8').toString('base64');
-  let retries = 3;
+  let retries = 4;
   while (retries > 0) {
     try {
       let sha: string | undefined;
@@ -56,9 +56,10 @@ export async function writeFile(path: string, content: string, message: string, 
       return; // Success
     } catch (err: any) {
       if (err.status === 409 && retries > 1) {
-        console.warn(`[github] 409 conflict for ${path}, retrying... (${retries-1} left)`);
         retries--;
-        await new Promise(r => setTimeout(r, 1000)); // Wait a bit for GitHub to settle
+        const baseDelay = 400 * Math.pow(2, 3 - retries);
+        const jitter = Math.random() * 300;
+        await new Promise(r => setTimeout(r, baseDelay + jitter));
         continue;
       }
       throw err;

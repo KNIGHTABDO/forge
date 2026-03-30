@@ -40,6 +40,7 @@ export default function TermsPage() {
         <div className="nav-links">
           <Link href="/#how" className="nav-link">How it works</Link>
           <Link href="/#gallery" className="nav-link">Gallery</Link>
+          <Link href="/research/new" className="nav-link">Deep Research</Link>
           <Link href="/pricing" className="nav-link">Pricing</Link>
         </div>
         <div className="nav-right" style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
