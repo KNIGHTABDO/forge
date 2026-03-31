@@ -1458,14 +1458,20 @@ html[data-theme="dark"] .cta-button:hover {
   font-size: 14px;
 }
 
-.cli-prompt {
-  color: #6B5D50;
-  user-select: none;
-}
-
 .cli-code {
   color: #F0E6D3;
   flex: 1;
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.cli-prompt {
+  color: #6B5D50;
+  user-select: none;
+  background: transparent;
+  border: none;
+  padding: 0;
 }
 
 .cli-copy {
