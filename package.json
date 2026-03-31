@@ -2,9 +2,7 @@
   "name": "forge",
   "version": "0.1.0",
   "private": true,
-  "workspaces": [
-    "forge-claude"
-  ],
+
   "scripts": {
     "dev": "next dev",
     "build": "next build",
