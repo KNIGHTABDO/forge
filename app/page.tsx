@@ -246,6 +246,7 @@ export default function Home() {
           <Link href="/research/new" className="nav-link">Deep Research</Link>
           <Link href="/changelog" className="nav-link">Changelog</Link>
           <Link href="/pricing" className="nav-link">Pricing</Link>
+          <a href="#cli" className="nav-link">CLI</a>
         </div>
         <div className="nav-right">
           <button className="nav-search" onClick={() => { setShowSearch(!showSearch); document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth' }); }}>Search</button>
@@ -428,6 +429,58 @@ export default function Home() {
       {/* Demo Section */}
       <section className="demo-section">
         <InteractiveDemo />
+      </section>
+      
+      {/* CLI Section */}
+      <section className="cli-section" id="cli">
+        <div className="cli-content">
+          <span className="section-eyebrow">Local / Terminal</span>
+          <h2 className="section-title">Forge Code CLI</h2>
+          <p className="section-desc">The high-performance agentic CLI protocol. Edit files, run commands, and coordinate agents directly from your terminal.</p>
+          
+          <div className="cli-installation">
+            <div className="cli-terminal">
+              <div className="cli-terminal-header">
+                <span className="cli-dot" />
+                <span className="cli-dot" />
+                <span className="cli-dot" />
+                <span className="cli-terminal-title">Install Forge Code</span>
+              </div>
+              <div className="cli-terminal-body">
+                <div className="cli-line">
+                  <span className="cli-prompt">$</span>
+                  <code className="cli-code">npm install -g forge-code</code>
+                  <button className="cli-copy" onClick={() => navigator.clipboard.writeText('npm install -g forge-code')}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="cli-features-grid">
+            <div className="cli-feature-card">
+              <h3>Local First</h3>
+              <p>Forge Code operates directly on your local filesystem with full speed and zero latency.</p>
+            </div>
+            <div className="cli-feature-card">
+              <h3>Secure & Gated</h3>
+              <p>Every file edit and shell command requires your explicit approval before execution.</p>
+            </div>
+            <div className="cli-feature-card">
+              <h3>Advanced Agentics</h3>
+              <p>Coordinate multi-agent swarms and complex engineering workflows from the terminal.</p>
+            </div>
+          </div>
+          
+          <div className="cli-footer-links">
+             <Link href="https://github.com/KNIGHTABDO/forge" className="btn-ghost">View on GitHub</Link>
+             <Link href="/changelog" className="btn-ghost">Read CLI Changelog</Link>
+          </div>
+        </div>
       </section>
 
       {/* Exhibition / Gallery */}

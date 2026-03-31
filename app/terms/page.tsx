@@ -105,6 +105,7 @@ export default function TermsPage() {
               <li>Delta-Sync: Incremental multi-file updates to your project</li>
               <li>Automated branding with "Smart Title" analysis</li>
               <li>Forge BaaS for cloud-synced micro-SaaS data persistence</li>
+              <li>Forge Code: The agentic CLI protocol for local-first engineering</li>
               <li>Public gallery and remix capabilities for community projects</li>
             </ul>
             <p>

@@ -38,6 +38,21 @@ export default function ChangelogPage() {
 
   const updates = [
     {
+      version: 'v3.2',
+      date: 'March 2026',
+      title: 'Forge Code: The Agentic CLI Protocol',
+      description: 'The Forge protocol expands to the terminal. Forge Code is a high-performance agentic CLI for local-first engineering, providing full-speed file manipulation, permission-gated shell access, and multi-agent coordination.',
+      items: [
+        'Local-first: Direct operation on the local filesystem with zero latency',
+        'Permission-gated: Explicit user approval for every file edit and shell command',
+        'Tool-rich: Built-in support for Bash, Glob, Grep, and File-Edit operations',
+        'Agentic: Support for multi-agent swarm coordination via AgentTool',
+        'Unified: Integrated with the same Gemini 3 Orchestration engine as the web app',
+        'Portable: Pure TypeScript native-module ports for seamless Windows/macOS support',
+        'Headless: Designed for background agent service and remote-control loops'
+      ]
+    },
+    {
       version: 'v3.1',
       date: 'March 2026',
       title: 'Deep Research Agent (Beta)',

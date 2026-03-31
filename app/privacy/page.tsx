@@ -109,6 +109,7 @@ export default function PrivacyPage() {
               <li>Multi-page React state-based routing</li>
               <li>Atomic Multi-file Deployments for zero corruption</li>
               <li>Forge BaaS for cloud-synced application data persistence</li>
+              <li>Forge Code: Local-first agentic CLI for terminal-based engineering</li>
             </ul>
             <p>
               We do not use your data for advertising purposes, and we do not sell your personal information to third parties under any circumstances.

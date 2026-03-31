@@ -16,11 +16,11 @@ First off, thank you for considering contributing to FORGE! It's people like you
 
 ### Pull Requests
 1. Fork the repo and create your branch from `main`.
-2. Install dependencies with `npm install`.
+2. Install dependencies with `npm install` from the root.
 3. Ensure the project builds with `npm run build`.
-4. If you've added code that should be tested, add tests.
-5. Ensure the test suite passes.
-6. Make sure your code lints.
+4. To work on the CLI specifically, navigate to `cd forge-code`.
+5. If you've added code that should be tested, add tests.
+6. Ensure the test suite passes.
 7. Issue that pull request!
 
 ## Style Guide
@@ -60,6 +60,15 @@ Forge includes a dedicated Deep Research capability on a standalone route (`/res
 - Prefer existing Forge timing/easing tokens and subtle motion (pulse, fade-in, progress fill, smooth state transitions).
 - Keep animations informative (phase changes, status transitions, loading indicators), not decorative noise.
 - Respect responsive behavior and avoid introducing visual styles outside the current premium minimal design system.
+
+## 💻 Forge Code CLI
+
+Forge Code is a high-performance agentic CLI built with Bun, React (Ink), and Commander.js.
+
+- **Source**: located in `forge-claude/`.
+- **Development**: use `bun run dev` inside the CLI directory for hot-reloading.
+- **Native Modules**: use the local TypeScript ports in `src/native-ts/` for maximum portability.
+- **Strict Typing**: ensure all tools and commands are strictly typed.
 
 ## License
 By contributing to FORGE, you agree that your contributions will be licensed under the project's MIT License.

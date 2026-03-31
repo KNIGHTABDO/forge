@@ -71,6 +71,7 @@ export default function PricingPage() {
                 <li>Stitch Design AI Access</li>
                 <li>Custom Domain Deployment</li>
                 <li>Global Edge Network</li>
+                <li>Local Forge Code CLI Access</li>
                 <li>Priority 24/7 Support</li>
               </ul>
               <Link href="/build" className="btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: '32px' }}>

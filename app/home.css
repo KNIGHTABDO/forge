@@ -1391,4 +1391,129 @@ html[data-theme="dark"] .cta-button:hover {
     text-align: center;
   }
 }
+/* ── CLI Section ── */
+.cli-section {
+  padding: 120px 48px;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+}
 
+.cli-content {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.cli-installation {
+  margin: 48px 0;
+  display: flex;
+  justify-content: center;
+}
+
+.cli-terminal {
+  width: 100%;
+  max-width: 600px;
+  background: #0E0C09;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 40px 80px -20px rgba(0,0,0,0.5);
+  border: 1px solid #2C251D;
+}
+
+.cli-terminal-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #181410;
+  border-bottom: 1px solid #2C251D;
+}
+
+.cli-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #2C251D;
+}
+
+.cli-terminal-title {
+  flex: 1;
+  text-align: center;
+  font-family: var(--font-label);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #A89278;
+  margin-right: 34px;
+}
+
+.cli-terminal-body {
+  padding: 24px;
+}
+
+.cli-line {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+}
+
+.cli-prompt {
+  color: #6B5D50;
+  user-select: none;
+}
+
+.cli-code {
+  color: #F0E6D3;
+  flex: 1;
+}
+
+.cli-copy {
+  background: none;
+  border: none;
+  color: #6B5D50;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.cli-copy:hover {
+  color: #F0E6D3;
+  background: rgba(255,255,255,0.05);
+}
+
+.cli-features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  margin-top: 64px;
+}
+
+@media (max-width: 900px) {
+  .cli-features-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}
+
+.cli-feature-card h3 {
+  font-family: var(--font-label);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 12px;
+}
+
+.cli-feature-card p {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-muted);
+}
+
+.cli-footer-links {
+  margin-top: 64px;
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}

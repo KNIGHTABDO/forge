@@ -41,6 +41,7 @@ Your work-primary work is now automatically synchronized to GitHub as a **Develo
 - **Delta-Sync Updates** — Incremental code delivery for faster builds and better state preservation.
 - **Deep Research Agent (Beta)** — Dedicated standalone conversational route for long-form research with live animated thinking feed, source transparency, and citable reports.
 - **Mobile-First Premium Minimal UI** — High-fidelity responsive interface built with Forge’s vanilla CSS design tokens and dynamic Tailwind support.
+- **Forge Code CLI** — High-performance agentic CLI for local-first engineering tasks, file editing, and advanced orchestration.
 - **Legacy Compatibility** — Built-in support for rendering older FORGE V1/V2 HTML projects.
 
 ---
@@ -66,6 +67,27 @@ Deep Research is a **fully standalone capability** at `/research/[id]`. It is in
 - The agent performs query fan-out, iterative retrieval, and gap-closing loops.
 - Progress metrics include sources analyzed, token estimate, iterations, unique domains, and depth score.
 - Sessions are persisted via GitHub-backed session storage, enabling resume via `?session=...`.
+
+---
+
+## 💻 Forge Code CLI
+
+Forge Code is the local-first extension of the Forge protocol, providing a powerful terminal interface for advanced engineering tasks.
+
+### Features
+- **File Manipulation** — Full-speed file reading, writing, and partial editing.
+- **Command Execution** — Permission-gated shell access for runs and builds.
+- **Web Research** — Integration with the Deep Research search protocol.
+- **Headless Mode** — Run Forge as a background agent for scheduled or remote tasks.
+
+### Quick Start
+```bash
+# Install the CLI from the workspace
+cd forge-claude
+npm install
+npm link
+forge-code --help
+```
 
 ---
 
@@ -110,6 +132,7 @@ Visit `localhost:3000` to start forging. Every project you build is automaticall
 - `app/api/session/` — The background auto-save and state recovery API.
 - `app/api/generate/` — The Orchestrator core logic.
 - `app/api/research/` — Deep research start/status/control/report endpoints.
+- `forge-claude/` — The high-performance agentic CLI source code.
 - `lib/system-prompt.ts` — The "Brain" containing the V3 Orchestration rules.
 - `lib/research.ts` — Research state machine, web analysis loop, and report synthesis.
 - `components/ToolViewerClient.tsx` — The smart rendering engine for both React & Legacy tools.
