@@ -457,6 +457,10 @@ export default function Home() {
                     </svg>
                   </button>
                 </div>
+                <div className="cli-line">
+                  <span className="cli-prompt">$</span>
+                  <code className="cli-code">npm update -g forge-code</code>
+                </div>
               </div>
             </div>
           </div>
@@ -477,7 +481,7 @@ export default function Home() {
           </div>
           
           <div className="cli-footer-links">
-             <Link href="https://github.com/KNIGHTABDO/forge" className="btn-ghost">View on GitHub</Link>
+             <Link href="https://github.com/KNIGHTABDO/forge-claude" className="btn-ghost">CLI Repo (Live)</Link>
              <Link href="/changelog" className="btn-ghost">Read CLI Changelog</Link>
           </div>
         </div>

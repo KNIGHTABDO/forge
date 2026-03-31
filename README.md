@@ -82,12 +82,17 @@ Forge Code is the local-first extension of the Forge protocol, providing a power
 
 ### Quick Start
 ```bash
-# Install the CLI from the workspace
-cd forge-claude
-npm install
-npm link
+# Install globally
+npm install -g forge-code
+
+# Keep it updated
+npm update -g forge-code
+
+# Run
 forge-code --help
 ```
+
+CLI repository (live): https://github.com/KNIGHTABDO/forge-claude
 
 ---
 
