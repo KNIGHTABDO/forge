@@ -92,7 +92,7 @@ npm update -g forge-code
 forge-code --help
 ```
 
-CLI repository (live): https://github.com/KNIGHTABDO/forge-claude
+CLI repository (live): https://github.com/KNIGHTABDO/forge-code
 
 ---
 
