@@ -15,20 +15,20 @@ import {
 } from './settings/settings.js'
 
 /**
- * `claude ssh` remote: FORGE_TEAM_UNIX_SOCKET routes auth through a -R forwarded
+ * `Forge ssh` remote: ANTHROPIC_UNIX_SOCKET routes auth through a -R forwarded
  * socket to a local proxy, and the launcher sets a handful of placeholder auth
- * env vars that the remote's ~/.claude settings.env MUST NOT clobber (see
- * isForgeTeamAuthEnabled). Strip them from any settings-sourced env object.
+ * env vars that the remote's ~/.Forge settings.env MUST NOT clobber (see
+ * isAnthropicAuthEnabled). Strip them from any settings-sourced env object.
  */
 function withoutSSHTunnelVars(
   env: Record<string, string> | undefined,
 ): Record<string, string> {
-  if (!env || !process.env.FORGE_TEAM_UNIX_SOCKET) return env || {}
+  if (!env || !process.env.ANTHROPIC_UNIX_SOCKET) return env || {}
   const {
-    FORGE_TEAM_UNIX_SOCKET: _1,
-    FORGE_TEAM_BASE_URL: _2,
-    FORGE_TEAM_API_KEY: _3,
-    FORGE_TEAM_AUTH_TOKEN: _4,
+    ANTHROPIC_UNIX_SOCKET: _1,
+    ANTHROPIC_BASE_URL: _2,
+    ANTHROPIC_API_KEY: _3,
+    ANTHROPIC_AUTH_TOKEN: _4,
     FORGE_CODE_OAUTH_TOKEN: _5,
     ...rest
   } = env
@@ -39,7 +39,7 @@ function withoutSSHTunnelVars(
  * When the host owns inference routing (sets
  * FORGE_CODE_PROVIDER_MANAGED_BY_HOST in spawn env), strip
  * provider-selection / model-default vars from settings-sourced env so a
- * user's ~/.claude/settings.json can't redirect requests away from the
+ * user's ~/.Forge/settings.json can't redirect requests away from the
  * host-configured provider.
  */
 function withoutHostManagedProviderVars(
@@ -93,14 +93,14 @@ function filterSettingsEnv(
 /**
  * Trusted setting sources whose env vars can be applied before the trust dialog.
  *
- * - userSettings (~/.claude/settings.json): controlled by the user, not project-specific
+ * - userSettings (~/.Forge/settings.json): controlled by the user, not project-specific
  * - flagSettings (--settings CLI flag or SDK inline settings): explicitly passed by the user
  * - policySettings (managed settings from enterprise API or local managed-settings.json):
  *   controlled by IT/admin (highest priority, cannot be overridden)
  *
  * Project-scoped sources (projectSettings, localSettings) are excluded because they live
  * inside the project directory and could be committed by a malicious actor to redirect
- * traffic (e.g., FORGE_TEAM_BASE_URL) to an attacker-controlled server.
+ * traffic (e.g., ANTHROPIC_BASE_URL) to an attacker-controlled server.
  */
 const TRUSTED_SETTING_SOURCES = [
   'userSettings',
@@ -111,10 +111,10 @@ const TRUSTED_SETTING_SOURCES = [
 /**
  * Apply environment variables from trusted sources to process.env.
  * Called before the trust dialog so that user/enterprise env vars like
- * FORGE_TEAM_BASE_URL take effect during first-run/onboarding.
+ * ANTHROPIC_BASE_URL take effect during first-run/onboarding.
  *
  * For trusted sources (user settings, managed settings, CLI flags), ALL env vars
- * are applied — including ones like FORGE_TEAM_BASE_URL that would be dangerous
+ * are applied — including ones like ANTHROPIC_BASE_URL that would be dangerous
  * from project-scoped settings.
  *
  * For project-scoped sources (projectSettings, localSettings), only safe env vars
@@ -125,19 +125,19 @@ export function applySafeConfigEnvironmentVariables(): void {
   // Capture CCD spawn-env keys before any settings.env is applied (once).
   if (ccdSpawnEnvKeys === undefined) {
     ccdSpawnEnvKeys =
-      process.env.FORGE_CODE_ENTRYPOINT === 'claude-desktop'
+      process.env.FORGE_CODE_ENTRYPOINT === 'Forge-desktop'
         ? new Set(Object.keys(process.env))
         : null
   }
 
-  // Global config (~/.claude.json) is user-controlled. In CCD mode,
+  // Global config (~/.Forge.json) is user-controlled. In CCD mode,
   // filterSettingsEnv strips keys that were in the spawn env snapshot so
   // the desktop host's operational vars (OTEL, etc.) are not overridden.
   Object.assign(process.env, filterSettingsEnv(getGlobalConfig().env))
 
   // Apply ALL env vars from trusted setting sources, policySettings last.
   // Gate on isSettingSourceEnabled so SDK settingSources: [] (isolation mode)
-  // doesn't get clobbered by ~/.claude/settings.json env (gh#217). policy/flag
+  // doesn't get clobbered by ~/.Forge/settings.json env (gh#217). policy/flag
   // sources are always enabled, so this only ever filters userSettings.
   for (const source of TRUSTED_SETTING_SOURCES) {
     if (source === 'policySettings') continue
@@ -150,7 +150,7 @@ export function applySafeConfigEnvironmentVariables(): void {
 
   // Compute remote-managed-settings eligibility now, with userSettings and
   // flagSettings env applied. Eligibility reads FORGE_CODE_USE_BEDROCK,
-  // FORGE_TEAM_BASE_URL — both settable via settings.env.
+  // ANTHROPIC_BASE_URL — both settable via settings.env.
   // getSettingsForSource('policySettings') below consults the remote cache,
   // which guards on this. The two-phase structure makes the ordering
   // dependency visible: non-policy env → eligibility → policy env.
@@ -197,7 +197,3 @@ export function applyConfigEnvironmentVariables(): void {
   // Reconfigure proxy/mTLS agents to pick up any proxy env vars from settings
   configureGlobalAgents()
 }
-
-
-
-

@@ -339,7 +339,3 @@ export async function installSelectedPlugins(
 
   return { installed, failed }
 }
-
-
-
-

@@ -37,10 +37,10 @@ export function migrateLegacyOpusToCurrent(): void {
 
   const model = getSettingsForSource('userSettings')?.model
   if (
-    model !== 'claude-opus-4-20250514' &&
-    model !== 'claude-opus-4-1-20250805' &&
-    model !== 'claude-opus-4-0' &&
-    model !== 'claude-opus-4-1'
+    model !== 'Forge-opus-4-20250514' &&
+    model !== 'Forge-opus-4-1-20250805' &&
+    model !== 'Forge-opus-4-0' &&
+    model !== 'Forge-opus-4-1'
   ) {
     return
   }
@@ -55,7 +55,3 @@ export function migrateLegacyOpusToCurrent(): void {
       model as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
   })
 }
-
-
-
-

@@ -719,7 +719,3 @@ export function useVirtualScroll(
     scrollToIndex,
   }
 }
-
-
-
-

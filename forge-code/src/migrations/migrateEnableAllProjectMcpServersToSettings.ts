@@ -1,4 +1,4 @@
-import { logEvent } from '../services/analytics/index.js'
+import { logEvent } from 'src/services/analytics/index.js'
 import {
   getCurrentProjectConfig,
   saveCurrentProjectConfig,
@@ -116,7 +116,3 @@ export function migrateEnableAllProjectMcpServersToSettings(): void {
     logEvent('tengu_migrate_mcp_approval_fields_error', {})
   }
 }
-
-
-
-

@@ -30,7 +30,3 @@ const CursorDeclarationContext = createContext<CursorDeclarationSetter>(
 )
 
 export default CursorDeclarationContext
-
-
-
-

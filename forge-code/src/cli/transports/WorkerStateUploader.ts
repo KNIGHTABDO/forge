@@ -129,10 +129,3 @@ function coalescePatches(
 
   return merged
 }
-
-
-
-
-
-
-

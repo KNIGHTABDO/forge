@@ -19,7 +19,3 @@ const AppContext = createContext<Props>({
 AppContext.displayName = 'InternalAppContext'
 
 export default AppContext
-
-
-
-

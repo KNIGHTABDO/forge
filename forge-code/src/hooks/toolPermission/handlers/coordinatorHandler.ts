@@ -63,7 +63,3 @@ async function handleCoordinatorPermission(
 
 export { handleCoordinatorPermission }
 export type { CoordinatorPermissionParams }
-
-
-
-

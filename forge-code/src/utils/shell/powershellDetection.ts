@@ -105,7 +105,3 @@ export async function getPowerShellEdition(): Promise<PowerShellEdition | null> 
 export function resetPowerShellCache(): void {
   cachedPowerShellPath = null
 }
-
-
-
-

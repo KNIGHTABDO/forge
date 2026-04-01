@@ -23,7 +23,3 @@ export function useVoiceEnabled(): boolean {
   const authed = useMemo(hasVoiceAuth, [authVersion])
   return userIntent && authed && isVoiceGrowthBookEnabled()
 }
-
-
-
-

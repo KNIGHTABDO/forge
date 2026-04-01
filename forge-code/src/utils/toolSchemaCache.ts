@@ -24,7 +24,3 @@ export function getToolSchemaCache(): Map<string, CachedSchema> {
 export function clearToolSchemaCache(): void {
   TOOL_SCHEMA_CACHE.clear()
 }
-
-
-
-

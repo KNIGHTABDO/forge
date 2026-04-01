@@ -1,10 +1,10 @@
 import axios from 'axios'
 import isEqual from 'lodash-es/isEqual.js'
 import {
-  getForgeTeamApiKey,
+  getAnthropicApiKey,
   getClaudeAIOAuthTokens,
   hasProfileScope,
-} from '../../utils/auth.js'
+} from 'src/utils/auth.js'
 import { z } from 'zod'
 import { getOauthConfig, OAUTH_BETA_HEADER } from '../../constants/oauth.js'
 import { getGlobalConfig, saveGlobalConfig } from '../../utils/config.js'
@@ -52,7 +52,7 @@ async function fetchBootstrapAPI(): Promise<BootstrapResponse | null> {
 
   // OAuth preferred (requires user:profile scope — service-key OAuth tokens
   // lack it and would 403). Fall back to API key auth for console users.
-  const apiKey = getForgeTeamApiKey()
+  const apiKey = getAnthropicApiKey()
   const hasUsableOAuth =
     getClaudeAIOAuthTokens()?.accessToken && hasProfileScope()
   if (!hasUsableOAuth && !apiKey) {
@@ -72,7 +72,7 @@ async function fetchBootstrapAPI(): Promise<BootstrapResponse | null> {
       if (token && hasProfileScope()) {
         authHeaders = {
           Authorization: `Bearer ${token}`,
-          'ForgeTeam-beta': OAUTH_BETA_HEADER,
+          'anthropic-beta': OAUTH_BETA_HEADER,
         }
       } else if (apiKey) {
         authHeaders = { 'x-api-key': apiKey }
@@ -139,7 +139,3 @@ export async function fetchBootstrapData(): Promise<void> {
     logError(error)
   }
 }
-
-
-
-

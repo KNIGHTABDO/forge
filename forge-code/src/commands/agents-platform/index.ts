@@ -1,1 +1,2 @@
-export { default } from '../agents/index.js';
+// Stub
+export default null

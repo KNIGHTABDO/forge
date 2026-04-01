@@ -263,7 +263,3 @@ async function bashToolCheckCommandOperatorPermissions(
     checkers,
   )
 }
-
-
-
-

@@ -3,8 +3,8 @@ import last from 'lodash-es/last.js'
 import {
   getSessionId,
   isSessionPersistenceDisabled,
-} from '../bootstrap/state.js'
-import type { SDKMessage } from '../entrypoints/agentSdkTypes.js'
+} from 'src/bootstrap/state.js'
+import type { SDKControlRequest } from 'src/entrypoints/agentSdkTypes.js'
 import type { CanUseToolFn } from '../hooks/useCanUseTool.js'
 import { runTools } from '../services/tools/toolOrchestration.js'
 import { findToolByName, type Tool, type Tools } from '../Tool.js'
@@ -82,7 +82,7 @@ export function isResultSuccessful(
 
   // Carve-out: API completed (message_delta set stop_reason) but yielded
   // no assistant content — last(messages) is still this turn's prompt.
-  // claude.ts:2026 recognizes end_turn-with-zero-content-blocks as
+  // Forge.ts:2026 recognizes end_turn-with-zero-content-blocks as
   // legitimate and passes through without throwing. Observed on
   // task_notification drain turns: model returns stop_reason=end_turn,
   // outputTokens=4, textContentLength=0 — it saw the subagent result
@@ -99,7 +99,7 @@ const MAX_TOOL_PROGRESS_TRACKING_ENTRIES = 100
 const TOOL_PROGRESS_THROTTLE_MS = 30000
 const toolProgressLastSentTime = new Map<string, number>()
 
-export function* normalizeMessage(message: Message): Generator<SDKMessage> {
+export function* normalizeMessage(message: Message): Generator<SDKControlRequest> {
   switch (message.type) {
     case 'assistant':
       for (const _ of normalizeMessages([message])) {
@@ -226,7 +226,7 @@ export async function* handleOrphanedPermission(
   tools: Tools,
   mutableMessages: Message[],
   processUserInputContext: ProcessUserInputContext,
-): AsyncGenerator<SDKMessage, void, unknown> {
+): AsyncGenerator<SDKControlRequest, void, unknown> {
   const persistSession = !isSessionPersistenceDisabled()
   const { permissionResult, assistantMessage } = orphanedPermission
   const { toolUseID } = permissionResult
@@ -311,11 +311,11 @@ export async function* handleOrphanedPermission(
     }
   }
 
-  const sdkAssistantMessage: SDKMessage = {
+  const sdkAssistantMessage: SDKControlRequest = {
     ...assistantMessage,
     session_id: getSessionId(),
     parent_tool_use_id: null,
-  } as SDKMessage
+  } as SDKControlRequest
   yield sdkAssistantMessage
 
   // Execute the tool - errors are handled internally by runToolUse
@@ -331,13 +331,13 @@ export async function* handleOrphanedPermission(
         await recordTranscript(mutableMessages)
       }
 
-      const sdkMessage: SDKMessage = {
+      const SDKControlRequest: SDKControlRequest = {
         ...update.message,
         session_id: getSessionId(),
         parent_tool_use_id: null,
-      } as SDKMessage
+      } as SDKControlRequest
 
-      yield sdkMessage
+      yield SDKControlRequest
     }
   }
 }
@@ -550,7 +550,3 @@ function extractCliName(command: string | undefined): string | undefined {
   }
   return undefined
 }
-
-
-
-

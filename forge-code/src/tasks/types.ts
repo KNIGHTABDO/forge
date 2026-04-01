@@ -44,7 +44,3 @@ export function isBackgroundTask(task: TaskState): task is BackgroundTaskState {
   }
   return true
 }
-
-
-
-

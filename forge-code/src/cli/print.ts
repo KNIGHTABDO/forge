@@ -5,41 +5,41 @@ import { dirname } from 'path'
 import {
   downloadUserSettings,
   redownloadUserSettings,
-} from '../services/settingsSync/index.js'
-import { waitForRemoteManagedSettingsToLoad } from '../services/remoteManagedSettings/index.js'
-import { StructuredIO } from '../cli/structuredIO.js'
-import { RemoteIO } from '../cli/remoteIO.js'
+} from 'src/services/settingsSync/index.js'
+import { waitForRemoteManagedSettingsToLoad } from 'src/services/remoteManagedSettings/index.js'
+import { StructuredIO } from 'src/cli/structuredIO.js'
+import { RemoteIO } from 'src/cli/remoteIO.js'
 import {
   type Command,
   formatDescriptionWithSource,
   getCommandName,
-} from '../commands.js'
-import { createStreamlinedTransformer } from '../utils/streamlinedTransform.js'
-import { installStreamJsonStdoutGuard } from '../utils/streamJsonStdoutGuard.js'
-import type { ToolPermissionContext } from '../Tool.js'
-import type { ThinkingConfig } from '../utils/thinking.js'
-import { assembleToolPool, filterToolsByDenyRules } from '../tools.js'
+} from 'src/commands.js'
+import { createStreamlinedTransformer } from 'src/utils/streamlinedTransform.js'
+import { installStreamJsonStdoutGuard } from 'src/utils/streamJsonStdoutGuard.js'
+import type { ToolPermissionContext } from 'src/Tool.js'
+import type { ThinkingConfig } from 'src/utils/thinking.js'
+import { assembleToolPool, filterToolsByDenyRules } from 'src/tools.js'
 import uniqBy from 'lodash-es/uniqBy.js'
-import { uniq } from '../utils/array.js'
-import { mergeAndFilterTools } from '../utils/toolPool.js'
+import { uniq } from 'src/utils/array.js'
+import { mergeAndFilterTools } from 'src/utils/toolPool.js'
 import {
   logEvent,
   type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
-} from '../services/analytics/index.js'
-import { getFeatureValue_CACHED_MAY_BE_STALE } from '../services/analytics/growthbook.js'
-import { logForDebugging } from '../utils/debug.js'
+} from 'src/services/analytics/index.js'
+import { getFeatureValue_CACHED_MAY_BE_STALE } from 'src/services/analytics/growthbook.js'
+import { logForDebugging } from 'src/utils/debug.js'
 import {
   logForDiagnosticsNoPII,
   withDiagnosticsTiming,
-} from '../utils/diagLogs.js'
-import { toolMatchesName, type Tool, type Tools } from '../Tool.js'
+} from 'src/utils/diagLogs.js'
+import { toolMatchesName, type Tool, type Tools } from 'src/Tool.js'
 import {
   type AgentDefinition,
   isBuiltInAgent,
   parseAgentsFromJson,
-} from '../tools/AgentTool/loadAgentsDir.js'
-import type { Message, NormalizedUserMessage } from '../types/message.js'
-import type { QueuedCommand } from '../types/textInputTypes.js'
+} from 'src/tools/AgentTool/loadAgentsDir.js'
+import type { Message, NormalizedUserMessage } from 'src/types/message.js'
+import type { QueuedCommand } from 'src/types/textInputTypes.js'
 import {
   dequeue,
   dequeueAllMatching,
@@ -48,8 +48,8 @@ import {
   peek,
   subscribeToCommandQueue,
   getCommandsByMaxPriority,
-} from '../utils/messageQueueManager.js'
-import { notifyCommandLifecycle } from '../utils/commandLifecycle.js'
+} from 'src/utils/messageQueueManager.js'
+import { notifyCommandLifecycle } from 'src/utils/commandLifecycle.js'
 import {
   getSessionState,
   notifySessionStateChanged,
@@ -57,67 +57,67 @@ import {
   setPermissionModeChangedListener,
   type RequiresActionDetails,
   type SessionExternalMetadata,
-} from '../utils/sessionState.js'
-import { externalMetadataToAppState } from '../state/onChangeAppState.js'
-import { getInMemoryErrors, logError, logMCPDebug } from '../utils/log.js'
+} from 'src/utils/sessionState.js'
+import { externalMetadataToAppState } from 'src/state/onChangeAppState.js'
+import { getInMemoryErrors, logError, logMCPDebug } from 'src/utils/log.js'
 import {
   writeToStdout,
   registerProcessOutputErrorHandlers,
-} from '../utils/process.js'
-import type { Stream } from '../utils/stream.js'
-import { EMPTY_USAGE } from '../services/api/logging.js'
+} from 'src/utils/process.js'
+import type { Stream } from 'src/utils/stream.js'
+import { EMPTY_USAGE } from 'src/services/api/logging.js'
 import {
   loadConversationForResume,
   type TurnInterruptionState,
-} from '../utils/conversationRecovery.js'
+} from 'src/utils/conversationRecovery.js'
 import type {
   MCPServerConnection,
   McpSdkServerConfig,
   ScopedMcpServerConfig,
-} from '../services/mcp/types.js'
+} from 'src/services/mcp/types.js'
 import {
   ChannelMessageNotificationSchema,
   gateChannelServer,
   wrapChannelMessage,
   findChannelEntry,
-} from '../services/mcp/channelNotification.js'
+} from 'src/services/mcp/channelNotification.js'
 import {
   isChannelAllowlisted,
   isChannelsEnabled,
-} from '../services/mcp/channelAllowlist.js'
-import { parsePluginIdentifier } from '../utils/plugins/pluginIdentifier.js'
-import { validateUuid } from '../utils/uuid.js'
-import { fromArray } from '../utils/generators.js'
-import { ask } from '../QueryEngine.js'
-import type { PermissionPromptTool } from '../utils/queryHelpers.js'
+} from 'src/services/mcp/channelAllowlist.js'
+import { parsePluginIdentifier } from 'src/utils/plugins/pluginIdentifier.js'
+import { validateUuid } from 'src/utils/uuid.js'
+import { fromArray } from 'src/utils/generators.js'
+import { ask } from 'src/QueryEngine.js'
+import type { PermissionPromptTool } from 'src/utils/queryHelpers.js'
 import {
   createFileStateCacheWithSizeLimit,
   mergeFileStateCaches,
   READ_FILE_STATE_CACHE_SIZE,
-} from '../utils/fileStateCache.js'
-import { expandPath } from '../utils/path.js'
-import { extractReadFilesFromMessages } from '../utils/queryHelpers.js'
-import { registerHookEventHandler } from '../utils/hooks/hookEvents.js'
-import { executeFilePersistence } from '../utils/filePersistence/filePersistence.js'
-import { finalizePendingAsyncHooks } from '../utils/hooks/AsyncHookRegistry.js'
+} from 'src/utils/fileStateCache.js'
+import { expandPath } from 'src/utils/path.js'
+import { extractReadFilesFromMessages } from 'src/utils/queryHelpers.js'
+import { registerHookEventHandler } from 'src/utils/hooks/hookEvents.js'
+import { executeFilePersistence } from 'src/utils/filePersistence/filePersistence.js'
+import { finalizePendingAsyncHooks } from 'src/utils/hooks/AsyncHookRegistry.js'
 import {
   gracefulShutdown,
   gracefulShutdownSync,
   isShuttingDown,
-} from '../utils/gracefulShutdown.js'
-import { registerCleanup } from '../utils/cleanupRegistry.js'
-import { createIdleTimeoutManager } from '../utils/idleTimeout.js'
+} from 'src/utils/gracefulShutdown.js'
+import { registerCleanup } from 'src/utils/cleanupRegistry.js'
+import { createIdleTimeoutManager } from 'src/utils/idleTimeout.js'
 import type {
   SDKStatus,
   ModelInfo,
-  SDKMessage,
+  SDKControlRequest,
   SDKUserMessage,
   SDKUserMessageReplay,
   PermissionResult,
   McpServerConfigForProcessTransport,
   McpServerStatus,
   RewindFilesResult,
-} from '../entrypoints/agentSdkTypes.js'
+} from 'src/entrypoints/agentSdkTypes.js'
 import type {
   StdoutMessage,
   SDKControlInitializeRequest,
@@ -126,82 +126,82 @@ import type {
   SDKControlResponse,
   SDKControlMcpSetServersResponse,
   SDKControlReloadPluginsResponse,
-} from './entrypoints/sdk/controlTypes.js'
-import type { PermissionMode } from '@anthropic-ai/claude-agent-sdk'
-import type { PermissionMode as InternalPermissionMode } from '../types/permissions.js'
+} from 'src/entrypoints/sdk/controlTypes.js'
+import type { PermissionMode } from '@anthropic-ai/Forge-agent-sdk'
+import type { PermissionMode as InternalPermissionMode } from 'src/types/permissions.js'
 import { cwd } from 'process'
-import { getCwd } from '../utils/cwd.js'
+import { getCwd } from 'src/utils/cwd.js'
 import omit from 'lodash-es/omit.js'
 import reject from 'lodash-es/reject.js'
-import { isPolicyAllowed } from '../services/policyLimits/index.js'
-import type { ReplBridgeHandle } from '../bridge/replBridge.js'
-import { getRemoteSessionUrl } from '../constants/product.js'
-import { buildBridgeConnectUrl } from '../bridge/bridgeStatusUtil.js'
-import { extractInboundMessageFields } from '../bridge/inboundMessages.js'
-import { resolveAndPrepend } from '../bridge/inboundAttachments.js'
-import type { CanUseToolFn } from '../hooks/useCanUseTool.js'
-import { hasPermissionsToUseTool } from '../utils/permissions/permissions.js'
-import { safeParseJSON } from '../utils/json.js'
+import { isPolicyAllowed } from 'src/services/policyLimits/index.js'
+import type { ReplBridgeHandle } from 'src/bridge/replBridge.js'
+import { getRemoteSessionUrl } from 'src/constants/product.js'
+import { buildBridgeConnectUrl } from 'src/bridge/bridgeStatusUtil.js'
+import { extractInboundMessageFields } from 'src/bridge/inboundMessages.js'
+import { resolveAndPrepend } from 'src/bridge/inboundAttachments.js'
+import type { CanUseToolFn } from 'src/hooks/useCanUseTool.js'
+import { hasPermissionsToUseTool } from 'src/utils/permissions/permissions.js'
+import { safeParseJSON } from 'src/utils/json.js'
 import {
   outputSchema as permissionToolOutputSchema,
   permissionPromptToolResultToPermissionDecision,
-} from '../utils/permissions/PermissionPromptToolResultSchema.js'
-import { createAbortController } from '../utils/abortController.js'
-import { createCombinedAbortSignal } from '../utils/combinedAbortSignal.js'
-import { generateSessionTitle } from '../utils/sessionTitle.js'
-import { buildSideQuestionFallbackParams } from '../utils/queryContext.js'
-import { runSideQuestion } from '../utils/sideQuestion.js'
+} from 'src/utils/permissions/PermissionPromptToolResultSchema.js'
+import { createAbortController } from 'src/utils/abortController.js'
+import { createCombinedAbortSignal } from 'src/utils/combinedAbortSignal.js'
+import { generateSessionTitle } from 'src/utils/sessionTitle.js'
+import { buildSideQuestionFallbackParams } from 'src/utils/queryContext.js'
+import { runSideQuestion } from 'src/utils/sideQuestion.js'
 import {
   processSessionStartHooks,
   processSetupHooks,
   takeInitialUserMessage,
-} from '../utils/sessionStart.js'
+} from 'src/utils/sessionStart.js'
 import {
   DEFAULT_OUTPUT_STYLE_NAME,
   getAllOutputStyles,
-} from '../constants/outputStyles.js'
-import { TEAMMATE_MESSAGE_TAG, TICK_TAG } from '../constants/xml.js'
+} from 'src/constants/outputStyles.js'
+import { TEAMMATE_MESSAGE_TAG, TICK_TAG } from 'src/constants/xml.js'
 import {
   getSettings_DEPRECATED,
   getSettingsWithSources,
-} from '../utils/settings/settings.js'
-import { settingsChangeDetector } from '../utils/settings/changeDetector.js'
-import { applySettingsChange } from '../utils/settings/applySettingsChange.js'
+} from 'src/utils/settings/settings.js'
+import { settingsChangeDetector } from 'src/utils/settings/changeDetector.js'
+import { applySettingsChange } from 'src/utils/settings/applySettingsChange.js'
 import {
   isFastModeAvailable,
   isFastModeEnabled,
   isFastModeSupportedByModel,
   getFastModeState,
-} from '../utils/fastMode.js'
+} from 'src/utils/fastMode.js'
 import {
   isAutoModeGateEnabled,
   getAutoModeUnavailableNotification,
   getAutoModeUnavailableReason,
   isBypassPermissionsModeDisabled,
   transitionPermissionMode,
-} from '../utils/permissions/permissionSetup.js'
+} from 'src/utils/permissions/permissionSetup.js'
 import {
   tryGenerateSuggestion,
   logSuggestionOutcome,
   logSuggestionSuppressed,
   type PromptVariant,
-} from '../services/PromptSuggestion/promptSuggestion.js'
-import { getLastCacheSafeParams } from '../utils/forkedAgent.js'
-import { getAccountInformation } from '../utils/auth.js'
-import { OAuthService } from '../services/oauth/index.js'
-import { installOAuthTokens } from '../cli/handlers/auth.js'
-import { getAPIProvider } from '../utils/model/providers.js'
-import type { HookCallbackMatcher } from '../types/hooks.js'
-import { AwsAuthStatusManager } from '../utils/awsAuthStatusManager.js'
-import type { HookEvent } from '../entrypoints/agentSdkTypes.js'
+} from 'src/services/PromptSuggestion/promptSuggestion.js'
+import { getLastCacheSafeParams } from 'src/utils/forkedAgent.js'
+import { getAccountInformation } from 'src/utils/auth.js'
+import { OAuthService } from 'src/services/oauth/index.js'
+import { installOAuthTokens } from 'src/cli/handlers/auth.js'
+import { getAPIProvider } from 'src/utils/model/providers.js'
+import type { HookCallbackMatcher } from 'src/types/hooks.js'
+import { AwsAuthStatusManager } from 'src/utils/awsAuthStatusManager.js'
+import type { HookEvent } from 'src/entrypoints/agentSdkTypes.js'
 import {
   registerHookCallbacks,
   setInitJsonSchema,
   getInitJsonSchema,
   setSdkAgentProgressSummariesEnabled,
-} from '../bootstrap/state.js'
-import { createSyntheticOutputTool } from '../tools/SyntheticOutputTool/SyntheticOutputTool.js'
-import { parseSessionIdentifier } from '../utils/sessionUrl.js'
+} from 'src/bootstrap/state.js'
+import { createSyntheticOutputTool } from 'src/tools/SyntheticOutputTool/SyntheticOutputTool.js'
+import { parseSessionIdentifier } from 'src/utils/sessionUrl.js'
 import {
   hydrateRemoteSession,
   hydrateFromCCRv2InternalEvents,
@@ -213,8 +213,8 @@ import {
   saveMode,
   saveAiGeneratedTitle,
   restoreSessionMetadata,
-} from '../utils/sessionStorage.js'
-import { incrementPromptCount } from '../utils/commitAttribution.js'
+} from 'src/utils/sessionStorage.js'
+import { incrementPromptCount } from 'src/utils/commitAttribution.js'
 import {
   setupSdkMcpClients,
   connectToServer,
@@ -222,64 +222,64 @@ import {
   fetchToolsForClient,
   areMcpConfigsEqual,
   reconnectMcpServerImpl,
-} from '../services/mcp/client.js'
+} from 'src/services/mcp/client.js'
 import {
   filterMcpServersByPolicy,
   getMcpConfigByName,
   isMcpServerDisabled,
   setMcpServerEnabled,
-} from '../services/mcp/config.js'
+} from 'src/services/mcp/config.js'
 import {
   performMCPOAuthFlow,
   revokeServerTokens,
-} from '../services/mcp/auth.js'
+} from 'src/services/mcp/auth.js'
 import {
   runElicitationHooks,
   runElicitationResultHooks,
-} from '../services/mcp/elicitationHandler.js'
-import { executeNotificationHooks } from '../utils/hooks.js'
+} from 'src/services/mcp/elicitationHandler.js'
+import { executeNotificationHooks } from 'src/utils/hooks.js'
 import {
   ElicitRequestSchema,
   ElicitationCompleteNotificationSchema,
 } from '@modelcontextprotocol/sdk/types.js'
-import { getMcpPrefix } from '../services/mcp/mcpStringUtils.js'
+import { getMcpPrefix } from 'src/services/mcp/mcpStringUtils.js'
 import {
   commandBelongsToServer,
   filterToolsByServer,
-} from '../services/mcp/utils.js'
-import { setupVscodeSdkMcp } from '../services/mcp/vscodeSdkMcp.js'
-import { getAllMcpConfigs } from '../services/mcp/config.js'
+} from 'src/services/mcp/utils.js'
+import { setupVscodeSdkMcp } from 'src/services/mcp/vscodeSdkMcp.js'
+import { getAllMcpConfigs } from 'src/services/mcp/config.js'
 import {
   isQualifiedForGrove,
   checkGroveForNonInteractive,
-} from '../services/api/grove.js'
+} from 'src/services/api/grove.js'
 import {
   toInternalMessages,
   toSDKRateLimitInfo,
-} from '../utils/messages/mappers.js'
-import { createModelSwitchBreadcrumbs } from '../utils/messages.js'
-import { collectContextData } from '../commands/context/context-noninteractive.js'
-import { LOCAL_COMMAND_STDOUT_TAG } from '../constants/xml.js'
+} from 'src/utils/messages/mappers.js'
+import { createModelSwitchBreadcrumbs } from 'src/utils/messages.js'
+import { collectContextData } from 'src/commands/context/context-noninteractive.js'
+import { LOCAL_COMMAND_STDOUT_TAG } from 'src/constants/xml.js'
 import {
   statusListeners,
   type ClaudeAILimits,
-} from '../services/claudeAiLimits.js'
+} from 'src/services/claudeAiLimits.js'
 import {
   getDefaultMainLoopModel,
   getMainLoopModel,
   modelDisplayString,
   parseUserSpecifiedModel,
-} from '../utils/model/model.js'
-import { getModelOptions } from '../utils/model/modelOptions.js'
+} from 'src/utils/model/model.js'
+import { getModelOptions } from 'src/utils/model/modelOptions.js'
 import {
   modelSupportsEffort,
   modelSupportsMaxEffort,
   EFFORT_LEVELS,
   resolveAppliedEffort,
-} from '../utils/effort.js'
-import { modelSupportsAdaptiveThinking } from '../utils/thinking.js'
-import { modelSupportsAutoMode } from '../utils/betas.js'
-import { ensureModelStringsInitialized } from '../utils/model/modelStrings.js'
+} from 'src/utils/effort.js'
+import { modelSupportsAdaptiveThinking } from 'src/utils/thinking.js'
+import { modelSupportsAutoMode } from 'src/utils/betas.js'
+import { ensureModelStringsInitialized } from 'src/utils/model/modelStrings.js'
 import {
   getSessionId,
   setMainLoopModelOverride,
@@ -293,33 +293,33 @@ import {
   getAllowedChannels,
   setAllowedChannels,
   type ChannelEntry,
-} from '../bootstrap/state.js'
-import { runWithWorkload, WORKLOAD_CRON } from '../utils/workloadContext.js'
+} from 'src/bootstrap/state.js'
+import { runWithWorkload, WORKLOAD_CRON } from 'src/utils/workloadContext.js'
 import type { UUID } from 'crypto'
 import { randomUUID } from 'crypto'
 import type { ContentBlockParam } from '@anthropic-ai/sdk/resources/messages.mjs'
-import type { AppState } from '../state/AppStateStore.js'
+import type { AppState } from 'src/state/AppStateStore.js'
 import {
   fileHistoryRewind,
   fileHistoryCanRestore,
   fileHistoryEnabled,
   fileHistoryGetDiffStats,
-} from '../utils/fileHistory.js'
+} from 'src/utils/fileHistory.js'
 import {
   restoreAgentFromSession,
   restoreSessionStateFromLog,
-} from '../utils/sessionRestore.js'
-import { SandboxManager } from '../utils/sandbox/sandbox-adapter.js'
+} from 'src/utils/sessionRestore.js'
+import { SandboxManager } from 'src/utils/sandbox/sandbox-adapter.js'
 import {
   headlessProfilerStartTurn,
   headlessProfilerCheckpoint,
   logHeadlessProfilerTurn,
-} from '../utils/headlessProfiler.js'
+} from 'src/utils/headlessProfiler.js'
 import {
   startQueryProfile,
   logQueryProfileReport,
-} from '../utils/queryProfiler.js'
-import { asSessionId } from '../types/ids.js'
+} from 'src/utils/queryProfiler.js'
+import { asSessionId } from 'src/types/ids.js'
 import { jsonStringify } from '../utils/slowOperations.js'
 import { skillChangeDetector } from '../utils/skills/skillChangeDetector.js'
 import { getCommands, clearCommandsCache } from '../commands.js'
@@ -849,8 +849,8 @@ export async function runHeadless(
   // read for the exit code / final result. Avoid accumulating every message in
   // memory for the entire session.
   const needsFullArray = options.outputFormat === 'json' && options.verbose
-  const messages: SDKMessage[] = []
-  let lastMessage: SDKMessage | undefined
+  const messages: SDKControlRequest[] = []
+  let lastMessage: SDKControlRequest | undefined
   // Streamlined mode transforms messages when FORGE_CODE_STREAMLINED_OUTPUT=true and using stream-json
   // Build flag gates this out of external builds; env var is the runtime opt-in for ant builds
   const transformToStreamlined =
@@ -1508,7 +1508,7 @@ function runHeadlessStreaming(
   let bridgeLastForwardedIndex = 0
 
   // Forward new messages from mutableMessages to the bridge.
-  // Called incrementally during each turn (so forge-app.vercel.app sees progress
+  // Called incrementally during each turn (so Forge.ai sees progress
   // and stays alive during permission waits) and again after the turn.
   //
   // writeMessages has its own UUID-based dedup (initialMessageUUIDs,
@@ -1664,7 +1664,7 @@ function runHeadlessStreaming(
             }))
           : undefined
       // Capabilities passthrough with allowlist pre-filter. The IDE reads
-      // experimental['claude/channel'] to decide whether to show the
+      // experimental['Forge/channel'] to decide whether to show the
       // Enable-channel prompt — only echo it if channel_enable would
       // actually pass the allowlist. Not a security boundary (the
       // handler re-runs the full gate); just avoids dead buttons.
@@ -1676,11 +1676,11 @@ function runHeadlessStreaming(
       ) {
         const exp = { ...connection.capabilities.experimental }
         if (
-          exp['claude/channel'] &&
+          exp['Forge/channel'] &&
           (!isChannelsEnabled() ||
             !isChannelAllowlisted(connection.config.pluginSource))
         ) {
-          delete exp['claude/channel']
+          delete exp['Forge/channel']
         }
         if (Object.keys(exp).length > 0) {
           capabilities = { experimental: exp }
@@ -2209,7 +2209,7 @@ function runHeadlessStreaming(
               },
             })) {
               // Forward messages to bridge incrementally (mid-turn) so
-              // forge-app.vercel.app sees progress and the connection stays alive
+              // Forge.ai sees progress and the connection stays alive
               // while blocked on permission requests.
               forwardMessagesToBridge()
 
@@ -2794,7 +2794,7 @@ function runHeadlessStreaming(
   // extension via handleAuthDone → mcp_reconnect.
   const oauthAuthPromises = new Map<string, Promise<void>>()
 
-  // In-flight ForgeTeam OAuth flow (claude_authenticate). Single-slot: a
+  // In-flight Anthropic OAuth flow (claude_authenticate). Single-slot: a
   // second authenticate request cleans up the first. The service holds the
   // PKCE verifier + localhost listener; the promise settles after
   // installOAuthTokens — after it resolves, the in-process memoized token
@@ -3512,7 +3512,7 @@ function runHeadlessStreaming(
             )
           }
         } else if (message.request.subtype === 'claude_authenticate') {
-          // ForgeTeam OAuth over the control channel. The SDK client owns
+          // Anthropic OAuth over the control channel. The SDK client owns
           // the user's browser (we're headless in -p mode); we hand back
           // both URLs and wait. Automatic URL → localhost listener catches
           // the redirect if the browser is on this host; manual URL → the
@@ -3756,7 +3756,7 @@ function runHeadlessStreaming(
         } else if (message.request.subtype === 'get_settings') {
           const currentAppState = getAppState()
           const model = getMainLoopModel()
-          // modelSupportsEffort gate matches claude.ts — applied.effort must
+          // modelSupportsEffort gate matches Forge.ts — applied.effort must
           // mirror what actually goes to the API, not just what's configured.
           const effort = modelSupportsEffort(model)
             ? resolveAppliedEffort(model, currentAppState.effortValue)
@@ -4649,7 +4649,7 @@ function handleSetPermissionMode(
  * handler that enqueues channel messages at priority:'next' — drainCommandQueue
  * picks them up between turns.
  *
- * Intentionally does NOT register the claude/channel/permission handler that
+ * Intentionally does NOT register the Forge/channel/permission handler that
  * useManageMCPConnections sets up for interactive mode. That handler resolves
  * a pending dialog inside handleInteractivePermission — but print.ts never
  * calls handleInteractivePermission. When SDK permission lands on 'ask', it
@@ -4736,7 +4736,7 @@ function handleChannelEnable(
       const { content, meta } = notification.params
       logMCPDebug(
         serverName,
-        `notifications/claude/channel: ${content.slice(0, 80)}`,
+        `notifications/Forge/channel: ${content.slice(0, 80)}`,
       )
       logEvent('tengu_mcp_channel_message', {
         content_length: content.length,
@@ -4812,7 +4812,7 @@ function reregisterChannelHandlerAfterReconnect(
       const { content, meta } = notification.params
       logMCPDebug(
         connection.name,
-        `notifications/claude/channel: ${content.slice(0, 80)}`,
+        `notifications/Forge/channel: ${content.slice(0, 80)}`,
       )
       logEvent('tengu_mcp_channel_message', {
         content_length: content.length,
@@ -5036,7 +5036,7 @@ async function loadInitialMessages(
       )
       if (!parsedSessionId) {
         let errorMessage =
-          'Error: --resume requires a valid session ID when used with --print. Usage: claude -p --resume <session-id>'
+          'Error: --resume requires a valid session ID when used with --print. Usage: Forge -p --resume <session-id>'
         if (typeof options.resume === 'string') {
           errorMessage += `. Session IDs must be in UUID format (e.g., 550e8400-e29b-41d4-a716-446655440000). Provided value "${options.resume}" is not a valid UUID`
         }
@@ -5592,10 +5592,3 @@ export async function reconcileMcpServers(
     newState,
   }
 }
-
-
-
-
-
-
-

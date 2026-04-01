@@ -1,6 +1,6 @@
 import type { BetaUsage as Usage } from '@anthropic-ai/sdk/resources/beta/messages/messages.mjs'
-import type { AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS } from '../services/analytics/index.js'
-import { logEvent } from '../services/analytics/index.js'
+import type { AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS } from 'src/services/analytics/index.js'
+import { logEvent } from 'src/services/analytics/index.js'
 import { setHasUnknownModelCost } from '../bootstrap/state.js'
 import { isFastModeEnabled } from './fastMode.js'
 import {
@@ -23,7 +23,7 @@ import {
   type ModelShortName,
 } from './model/model.js'
 
-// @see https://platform.claude.com/docs/en/about-claude/pricing
+// @see https://platform.Forge.com/docs/en/about-Forge/pricing
 export type ModelCosts = {
   inputTokens: number
   outputTokens: number
@@ -99,7 +99,7 @@ export function getOpus46CostTier(fastMode: boolean): ModelCosts {
 }
 
 // @[MODEL LAUNCH]: Add a pricing entry for the new model below.
-// Costs from https://platform.claude.com/docs/en/about-claude/pricing
+// Costs from https://platform.Forge.com/docs/en/about-Forge/pricing
 // Web search cost: $10 per 1000 requests = $0.01 per request
 export const MODEL_COSTS: Record<ModelShortName, ModelCosts> = {
   [firstPartyNameToCanonical(CLAUDE_3_5_HAIKU_CONFIG.firstParty)]:
@@ -229,7 +229,3 @@ export function getModelPricingString(model: string): string | undefined {
   if (!costs) return undefined
   return formatModelPricing(costs)
 }
-
-
-
-

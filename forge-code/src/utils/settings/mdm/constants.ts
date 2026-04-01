@@ -9,7 +9,7 @@ import { homedir, userInfo } from 'os'
 import { join } from 'path'
 
 /** macOS preference domain for Forge Code MDM profiles. */
-export const MACOS_PREFERENCE_DOMAIN = 'com.ForgeTeam.claudecode'
+export const MACOS_PREFERENCE_DOMAIN = 'com.anthropic.claudecode'
 
 /**
  * Windows registry key paths for Forge Code MDM policies.
@@ -79,7 +79,3 @@ export function getMacOSPlistPaths(): Array<{ path: string; label: string }> {
 
   return paths
 }
-
-
-
-

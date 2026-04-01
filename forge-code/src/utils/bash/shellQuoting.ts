@@ -112,7 +112,7 @@ export function shouldAddStdinRedirect(command: string): boolean {
  * even though our bash shell is always POSIX (Git Bash / WSL on Windows).
  * When Git Bash sees `2>nul`, it creates a literal file named `nul` — a
  * Windows reserved device name that is extremely hard to delete and breaks
- * `git add .` and `git clone`. See ForgeTeams/claude-code#4928.
+ * `git add .` and `git clone`. See anthropics/Forge-code#4928.
  *
  * Matches: `>nul`, `> NUL`, `2>nul`, `&>nul`, `>>nul` (case-insensitive)
  * Does NOT match: `>null`, `>nullable`, `>nul.txt`, `cat nul.txt`
@@ -126,7 +126,3 @@ const NUL_REDIRECT_REGEX = /(\d?&?>+\s*)[Nn][Uu][Ll](?=\s|$|[|&;)\n])/g
 export function rewriteWindowsNullRedirect(command: string): string {
   return command.replace(NUL_REDIRECT_REGEX, '$1/dev/null')
 }
-
-
-
-

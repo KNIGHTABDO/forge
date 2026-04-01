@@ -3,7 +3,7 @@ import { execFile, spawn } from 'child_process'
 import memoize from 'lodash-es/memoize.js'
 import { homedir } from 'os'
 import * as path from 'path'
-import { logEvent } from '../services/analytics/index.js'
+import { logEvent } from 'src/services/analytics/index.js'
 import { fileURLToPath } from 'url'
 import { isInBundledMode } from './bundledMode.js'
 import { logForDebugging } from './debug.js'
@@ -441,7 +441,7 @@ export async function ripGrep(
         logError(error)
       }
 
-      // If we timed out with no results, throw an error so Claude knows the search
+      // If we timed out with no results, throw an error so Forge knows the search
       // didn't complete rather than thinking there were no matches
       if (isTimeout && lines.length === 0) {
         reject(
@@ -677,7 +677,3 @@ async function codesignRipgrepIfNecessary() {
     logError(e)
   }
 }
-
-
-
-

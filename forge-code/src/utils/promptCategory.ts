@@ -1,4 +1,4 @@
-import type { QuerySource } from './constants/querySource.js'
+import type { QuerySource } from 'src/constants/querySource.js'
 import {
   DEFAULT_OUTPUT_STYLE_NAME,
   OUTPUT_STYLE_CONFIG,
@@ -47,7 +47,3 @@ export function getQuerySourceForREPL(): QuerySource {
     ? (`repl_main_thread:outputStyle:${style}` as QuerySource)
     : 'repl_main_thread:outputStyle:custom'
 }
-
-
-
-

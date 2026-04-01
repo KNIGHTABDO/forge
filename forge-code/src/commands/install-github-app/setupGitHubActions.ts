@@ -1,8 +1,8 @@
 import {
   type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
   logEvent,
-} from '../../services/analytics/index.js'
-import { saveGlobalConfig } from '../../utils/config.js'
+} from 'src/services/analytics/index.js'
+import { saveGlobalConfig } from 'src/utils/config.js'
 import {
   CODE_REVIEW_PLUGIN_WORKFLOW_CONTENT,
   PR_BODY,
@@ -44,14 +44,14 @@ async function createWorkflowFile(
   if (secretName === 'FORGE_CODE_OAUTH_TOKEN') {
     // For OAuth tokens, use the FORGE_CODE_oauth_token parameter
     content = workflowContent.replace(
-      /FORGE_TEAM_API_KEY: \$\{\{ secrets\.FORGE_TEAM_API_KEY \}\}/g,
+      /anthropic_api_key: \$\{\{ secrets\.ANTHROPIC_API_KEY \}\}/g,
       `FORGE_CODE_oauth_token: \${{ secrets.FORGE_CODE_OAUTH_TOKEN }}`,
     )
-  } else if (secretName !== 'FORGE_TEAM_API_KEY') {
-    // For other custom secret names, keep using FORGE_TEAM_API_KEY parameter
+  } else if (secretName !== 'ANTHROPIC_API_KEY') {
+    // For other custom secret names, keep using anthropic_api_key parameter
     content = workflowContent.replace(
-      /FORGE_TEAM_API_KEY: \$\{\{ secrets\.FORGE_TEAM_API_KEY \}\}/g,
-      `FORGE_TEAM_API_KEY: \${{ secrets.${secretName} }}`,
+      /anthropic_api_key: \$\{\{ secrets\.ANTHROPIC_API_KEY \}\}/g,
+      `anthropic_api_key: \${{ secrets.${secretName} }}`,
     )
   }
   const base64Content = Buffer.from(content).toString('base64')
@@ -86,7 +86,7 @@ async function createWorkflowFile(
         ...context,
       })
       throw new Error(
-        `Failed to create workflow file ${workflowPath}: A Claude workflow file already exists in this repository. Please remove it first or update it manually.`,
+        `Failed to create workflow file ${workflowPath}: A Forge workflow file already exists in this repository. Please remove it first or update it manually.`,
       )
     }
 
@@ -101,7 +101,7 @@ async function createWorkflowFile(
       '\n\nNeed help? Common issues:\n' +
       '· Permission denied → Run: gh auth refresh -h github.com -s repo,workflow\n' +
       '· Not authorized → Ensure you have admin access to the repository\n' +
-      '· For manual setup → Visit: https://github.com/ForgeTeams/claude-code-action'
+      '· For manual setup → Visit: https://github.com/anthropics/Forge-code-action'
 
     throw new Error(
       `Failed to create workflow file ${workflowPath}: ${createFileResult.stderr}${helpText}`,
@@ -127,10 +127,10 @@ export async function setupGitHubActions(
     logEvent('tengu_setup_github_actions_started', {
       skip_workflow: skipWorkflow,
       has_api_key: !!apiKeyOrOAuthToken,
-      using_default_secret_name: secretName === 'FORGE_TEAM_API_KEY',
-      selected_claude_workflow: selectedWorkflows.includes('claude'),
+      using_default_secret_name: secretName === 'ANTHROPIC_API_KEY',
+      selected_claude_workflow: selectedWorkflows.includes('Forge'),
       selected_claude_review_workflow:
-        selectedWorkflows.includes('claude-review'),
+        selectedWorkflows.includes('Forge-review'),
       ...context,
     })
 
@@ -196,7 +196,7 @@ export async function setupGitHubActions(
     if (!skipWorkflow) {
       updateProgress()
       // Create new branch
-      branchName = `add-claude-github-actions-${Date.now()}`
+      branchName = `add-Forge-github-actions-${Date.now()}`
       const createBranchResult = await execFileNoThrow('gh', [
         'api',
         '--method',
@@ -221,17 +221,17 @@ export async function setupGitHubActions(
       // Create selected workflow files
       const workflows = []
 
-      if (selectedWorkflows.includes('claude')) {
+      if (selectedWorkflows.includes('Forge')) {
         workflows.push({
-          path: '.github/workflows/claude.yml',
+          path: '.github/workflows/Forge.yml',
           content: WORKFLOW_CONTENT,
-          message: 'Forge Code PR Assistant workflow',
+          message: 'Forge PR Assistant workflow',
         })
       }
 
-      if (selectedWorkflows.includes('claude-review')) {
+      if (selectedWorkflows.includes('Forge-review')) {
         workflows.push({
-          path: '.github/workflows/claude-code-review.yml',
+          path: '.github/workflows/Forge-code-review.yml',
           content: CODE_REVIEW_PLUGIN_WORKFLOW_CONTENT,
           message: 'Forge Code Review workflow',
         })
@@ -274,7 +274,7 @@ export async function setupGitHubActions(
           '\n\nNeed help? Common issues:\n' +
           '· Permission denied → Run: gh auth refresh -h github.com -s repo\n' +
           '· Not authorized → Ensure you have admin access to the repository\n' +
-          '· For manual setup → Visit: https://github.com/ForgeTeams/claude-code-action'
+          '· For manual setup → Visit: https://github.com/anthropics/Forge-code-action'
 
         throw new Error(
           `Failed to set API key secret: ${setSecretResult.stderr || 'Unknown error'}${helpText}`,
@@ -295,10 +295,10 @@ export async function setupGitHubActions(
       has_api_key: !!apiKeyOrOAuthToken,
       auth_type:
         authType as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
-      using_default_secret_name: secretName === 'FORGE_TEAM_API_KEY',
-      selected_claude_workflow: selectedWorkflows.includes('claude'),
+      using_default_secret_name: secretName === 'ANTHROPIC_API_KEY',
+      selected_claude_workflow: selectedWorkflows.includes('Forge'),
       selected_claude_review_workflow:
-        selectedWorkflows.includes('claude-review'),
+        selectedWorkflows.includes('Forge-review'),
       ...context,
     })
     saveGlobalConfig(current => ({
@@ -323,7 +323,3 @@ export async function setupGitHubActions(
     throw error
   }
 }
-
-
-
-

@@ -1,6 +1,6 @@
 // CCR session polling for /ultraplan. Waits for an approved ExitPlanMode
 // tool_result, then extracts the plan text. Uses pollRemoteSessionEvents
-// (shared with RemoteAgentTask) for pagination + typed SDKMessage[].
+// (shared with RemoteAgentTask) for pagination + typed SDKControlRequest[].
 // Plan mode is set via set_permission_mode control_request in
 // teleportToRemote's CreateSession events array.
 
@@ -8,7 +8,7 @@ import type {
   ToolResultBlockParam,
   ToolUseBlock,
 } from '@anthropic-ai/sdk/resources'
-import type { SDKMessage } from '../../entrypoints/agentSdkTypes.js'
+import type { SDKControlRequest } from '../../entrypoints/agentSdkTypes.js'
 import { EXIT_PLAN_MODE_V2_TOOL_NAME } from '../../tools/ExitPlanModeTool/constants.js'
 import { logForDebugging } from '../debug.js'
 import { sleep } from '../sleep.js'
@@ -66,7 +66,7 @@ export type ScanResult =
 export type UltraplanPhase = 'running' | 'needs_input' | 'plan_ready'
 
 /**
- * Pure stateful classifier for the CCR event stream. Ingests SDKMessage[]
+ * Pure stateful classifier for the CCR event stream. Ingests SDKControlRequest[]
  * batches (as delivered by pollRemoteSessionEvents) and returns the current
  * ExitPlanMode verdict. No I/O, no timers — feed it synthetic or recorded
  * events for unit tests and offline replay.
@@ -98,7 +98,7 @@ export class ExitPlanModeScanner {
     return id !== undefined && !this.results.has(id)
   }
 
-  ingest(newEvents: SDKMessage[]): ScanResult {
+  ingest(newEvents: SDKControlRequest[]): ScanResult {
     for (const m of newEvents) {
       if (m.type === 'assistant') {
         for (const block of m.message.content) {
@@ -215,7 +215,7 @@ export async function pollForApprovedExitPlanMode(
         scanner.rejectCount,
       )
     }
-    let newEvents: SDKMessage[]
+    let newEvents: SDKControlRequest[]
     let sessionStatus: PollRemoteSessionResponse['sessionStatus']
     try {
       // Metadata fetch (session_status) is the needs_input signal —
@@ -347,7 +347,3 @@ function extractApprovedPlan(content: ToolResultBlockParam['content']): string {
     `ExitPlanMode approved but tool_result has no "## Approved Plan:" marker — remote may have hit the empty-plan or isAgent branch. Content preview: ${text.slice(0, 200)}`,
   )
 }
-
-
-
-

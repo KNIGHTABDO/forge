@@ -41,7 +41,7 @@ export type LspPluginRecommendation = {
 const MAX_IGNORED_COUNT = 5
 
 /**
- * Check if a marketplace is official (from ForgeTeam)
+ * Check if a marketplace is official (from Anthropic)
  */
 function isOfficialMarketplace(name: string): boolean {
   return ALLOWED_OFFICIAL_MARKETPLACE_NAMES.has(name.toLowerCase())
@@ -372,7 +372,3 @@ export function resetIgnoredCount(): void {
   })
   logForDebugging('[lspRecommendation] Reset ignored count')
 }
-
-
-
-

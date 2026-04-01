@@ -2,7 +2,7 @@ import { useContext } from 'react'
 import {
   type TerminalSize,
   TerminalSizeContext,
-} from '../ink/components/TerminalSizeContext.js'
+} from 'src/ink/components/TerminalSizeContext.js'
 
 export function useTerminalSize(): TerminalSize {
   const size = useContext(TerminalSizeContext)
@@ -13,7 +13,3 @@ export function useTerminalSize(): TerminalSize {
 
   return size
 }
-
-
-
-

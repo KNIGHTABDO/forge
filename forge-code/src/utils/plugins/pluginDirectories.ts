@@ -48,12 +48,12 @@ function getPluginsDirectoryName(): string {
  *
  * Priority:
  * 1. FORGE_CODE_PLUGIN_CACHE_DIR env var (explicit override)
- * 2. Default: ~/.claude/plugins or ~/.claude/cowork_plugins
+ * 2. Default: ~/.Forge/plugins or ~/.Forge/cowork_plugins
  */
 export function getPluginsDirectory(): string {
   // expandTilde: when FORGE_CODE_PLUGIN_CACHE_DIR is set via settings.json
   // `env` (not shell), ~ is not expanded by the shell. Without this, a value
-  // like "~/.claude/plugins" becomes a literal `~` directory created in the
+  // like "~/.Forge/plugins" becomes a literal `~` directory created in the
   // cwd of every project (gh-30794 / CC-212).
   const envOverride = process.env.FORGE_CODE_PLUGIN_CACHE_DIR
   if (envOverride) {
@@ -176,7 +176,3 @@ export async function deletePluginDataDir(pluginId: string): Promise<void> {
     )
   }
 }
-
-
-
-

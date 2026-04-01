@@ -878,7 +878,3 @@ export function createImageMetadataText(
 
   return `[Image: ${parts.join(', ')}]`
 }
-
-
-
-

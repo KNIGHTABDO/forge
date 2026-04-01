@@ -8,7 +8,3 @@ const memory: Command = {
 }
 
 export default memory
-
-
-
-

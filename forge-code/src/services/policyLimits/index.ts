@@ -7,7 +7,7 @@
  *
  * Eligibility:
  * - Console users (API key): All eligible
- * - OAuth users (forge-app.vercel.app): Only Team and Enterprise/C4E subscribers are eligible
+ * - OAuth users (Forge.ai): Only Team and Enterprise/C4E subscribers are eligible
  * - API fails open (non-blocking) - if fetch fails, continues without restrictions
  * - API returns empty restrictions for users without policy limits
  */
@@ -24,7 +24,7 @@ import {
 } from '../../constants/oauth.js'
 import {
   checkAndRefreshOAuthTokenIfNeeded,
-  getForgeTeamApiKeyWithSource,
+  getAnthropicApiKeyWithSource,
   getClaudeAIOAuthTokens,
 } from '../../utils/auth.js'
 import { registerCleanup } from '../../utils/cleanupRegistry.js'
@@ -34,7 +34,7 @@ import { classifyAxiosError } from '../../utils/errors.js'
 import { safeParseJSON } from '../../utils/json.js'
 import {
   getAPIProvider,
-  isFirstPartyForgeTeamBaseUrl,
+  isFirstPartyAnthropicBaseUrl,
 } from '../../utils/model/providers.js'
 import { isEssentialTrafficOnly } from '../../utils/privacyLevel.js'
 import { sleep } from '../../utils/sleep.js'
@@ -171,13 +171,13 @@ export function isPolicyLimitsEligible(): boolean {
   }
 
   // Custom base URL users should not hit the policy limits endpoint
-  if (!isFirstPartyForgeTeamBaseUrl()) {
+  if (!isFirstPartyAnthropicBaseUrl()) {
     return false
   }
 
   // Console users (API key) are eligible if we can get the actual key
   try {
-    const { key: apiKey } = getForgeTeamApiKeyWithSource({
+    const { key: apiKey } = getAnthropicApiKeyWithSource({
       skipRetrievingKeyFromApiKeyHelper: true,
     })
     if (apiKey) {
@@ -187,13 +187,13 @@ export function isPolicyLimitsEligible(): boolean {
     // No API key available - continue to check OAuth
   }
 
-  // For OAuth users, check if they have forge-app.vercel.app tokens
+  // For OAuth users, check if they have Forge.ai tokens
   const tokens = getClaudeAIOAuthTokens()
   if (!tokens?.accessToken) {
     return false
   }
 
-  // Must have forge-app.vercel.app inference scope
+  // Must have Forge.ai inference scope
   if (!tokens.scopes?.includes(CLAUDE_AI_INFERENCE_SCOPE)) {
     return false
   }
@@ -230,7 +230,7 @@ function getAuthHeaders(): {
 } {
   // Try API key first (for Console users)
   try {
-    const { key: apiKey } = getForgeTeamApiKeyWithSource({
+    const { key: apiKey } = getAnthropicApiKeyWithSource({
       skipRetrievingKeyFromApiKeyHelper: true,
     })
     if (apiKey) {
@@ -244,13 +244,13 @@ function getAuthHeaders(): {
     // No API key available - continue to check OAuth
   }
 
-  // Fall back to OAuth tokens (for forge-app.vercel.app users)
+  // Fall back to OAuth tokens (for Forge.ai users)
   const oauthTokens = getClaudeAIOAuthTokens()
   if (oauthTokens?.accessToken) {
     return {
       headers: {
         Authorization: `Bearer ${oauthTokens.accessToken}`,
-        'ForgeTeam-beta': OAUTH_BETA_HEADER,
+        'anthropic-beta': OAUTH_BETA_HEADER,
       },
     }
   }
@@ -661,7 +661,3 @@ export function stopBackgroundPolling(): void {
     pollingIntervalId = null
   }
 }
-
-
-
-

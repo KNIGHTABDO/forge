@@ -372,7 +372,3 @@ You are running in autonomous/proactive mode. This is NOT a first wake-up — yo
 
   return baseSummary
 }
-
-
-
-

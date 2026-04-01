@@ -90,7 +90,3 @@ function squashTextNodes(node: DOMElement): string {
 }
 
 export default squashTextNodes
-
-
-
-

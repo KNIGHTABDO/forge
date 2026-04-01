@@ -528,7 +528,3 @@ function maybeTimeBasedMicrocompact(
 
   return { messages: result }
 }
-
-
-
-

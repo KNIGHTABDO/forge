@@ -57,7 +57,7 @@ export type PermissionHandlerOptions = {
   hasFeedback?: boolean
   feedback?: string
   enteredFeedbackMode?: boolean
-  scope?: 'claude-folder' | 'global-claude-folder'
+  scope?: 'Forge-folder' | 'global-Forge-folder'
 }
 
 function handleAcceptOnce(
@@ -101,13 +101,13 @@ function handleAcceptSession(
 
   logPermissionEvent('accept', completionType, languageName, messageId)
 
-  // For claude-folder scope, grant session-level access to all .claude/ files
+  // For Forge-folder scope, grant session-level access to all .Forge/ files
   if (
-    options?.scope === 'claude-folder' ||
-    options?.scope === 'global-claude-folder'
+    options?.scope === 'Forge-folder' ||
+    options?.scope === 'global-Forge-folder'
   ) {
     const pattern =
-      options.scope === 'global-claude-folder'
+      options.scope === 'global-Forge-folder'
         ? GLOBAL_CLAUDE_FOLDER_PERMISSION_PATTERN
         : CLAUDE_FOLDER_PERMISSION_PATTERN
     const suggestions: PermissionUpdate[] = [
@@ -183,7 +183,3 @@ export const PERMISSION_HANDLERS: Record<
   'accept-session': handleAcceptSession,
   reject: handleReject,
 }
-
-
-
-

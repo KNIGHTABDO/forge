@@ -1,4 +1,2 @@
-export type SDKMessage = Record<string, unknown>;
-export type SDKResultMessage = Record<string, unknown>;
-export type SDKSessionInfo = Record<string, unknown>;
-export type SDKUserMessage = Record<string, unknown>;
+// Stub — generated types not included in source snapshot
+export type {}

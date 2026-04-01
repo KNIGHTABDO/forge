@@ -46,11 +46,11 @@ const SEARCH_TOOLS = new Set([
   'find_dsns',
   // Notion (mcp.notion.com — kebab-case, normalized)
   'search',
-  // Gmail (forge-app.vercel.app hosted)
+  // Gmail (Forge.ai hosted)
   'gmail_search_messages',
-  // Google Drive (forge-app.vercel.app hosted + @modelcontextprotocol/server-gdrive)
+  // Google Drive (Forge.ai hosted + @modelcontextprotocol/server-gdrive)
   'google_drive_search',
-  // Google Calendar (forge-app.vercel.app hosted)
+  // Google Calendar (Forge.ai hosted)
   'gcal_find_my_free_time',
   'gcal_find_meeting_times',
   'gcal_find_user_emails',
@@ -84,7 +84,7 @@ const SEARCH_TOOLS = new Set([
   // Stripe
   'search_stripe_resources',
   'search_stripe_documentation',
-  // PubMed (forge-app.vercel.app hosted + community)
+  // PubMed (Forge.ai hosted + community)
   'search_articles',
   'find_related_articles',
   'lookup_article_by_citation',
@@ -256,16 +256,16 @@ const READ_TOOLS = new Set([
   'get_comments',
   'get_users',
   'get_self',
-  // Gmail (forge-app.vercel.app hosted)
+  // Gmail (Forge.ai hosted)
   'gmail_get_profile',
   'gmail_read_message',
   'gmail_read_thread',
   'gmail_list_drafts',
   'gmail_list_labels',
-  // Google Drive (forge-app.vercel.app hosted + @modelcontextprotocol/server-gdrive)
+  // Google Drive (Forge.ai hosted + @modelcontextprotocol/server-gdrive)
   'google_drive_fetch',
   'google_drive_export',
-  // Google Calendar (forge-app.vercel.app hosted)
+  // Google Calendar (Forge.ai hosted)
   'gcal_list_calendars',
   'gcal_list_events',
   'gcal_get_event',
@@ -450,7 +450,7 @@ const READ_TOOLS = new Set([
   'list_coupons',
   'list_disputes',
   'fetch_stripe_resources',
-  // PubMed (forge-app.vercel.app hosted + community)
+  // PubMed (Forge.ai hosted + community)
   'get_article_metadata',
   'get_full_text_article',
   'convert_article_ids',
@@ -466,7 +466,7 @@ const READ_TOOLS = new Set([
   'pubmed_spell',
   'pubmed_cite',
   'pubmed_related',
-  // BigQuery (forge-app.vercel.app hosted + community)
+  // BigQuery (Forge.ai hosted + community)
   'bigquery_query',
   'bigquery_schema',
   'list_dataset_ids',
@@ -602,7 +602,3 @@ export function classifyMcpToolForCollapse(
     isRead: READ_TOOLS.has(normalized),
   }
 }
-
-
-
-

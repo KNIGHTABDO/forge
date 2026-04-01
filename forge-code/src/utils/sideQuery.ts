@@ -1,4 +1,4 @@
-import type ForgeTeam from '@anthropic-ai/sdk'
+import type Anthropic from '@anthropic-ai/sdk'
 import type { BetaToolUnion } from '@anthropic-ai/sdk/resources/beta/messages.js'
 import {
   getLastApiCompletionTimestamp,
@@ -13,18 +13,18 @@ import {
 import { logEvent } from '../services/analytics/index.js'
 import type { AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS } from '../services/analytics/metadata.js'
 import { getAPIMetadata } from '../services/api/claude.js'
-import { getForgeTeamClient } from '../services/api/client.js'
+import { getAnthropicClient } from '../services/api/client.js'
 import { getModelBetas, modelSupportsStructuredOutputs } from './betas.js'
 import { computeFingerprint } from './fingerprint.js'
 import { normalizeModelStringForAPI } from './model/model.js'
 
-type MessageParam = ForgeTeam.MessageParam
-type TextBlockParam = ForgeTeam.TextBlockParam
-type Tool = ForgeTeam.Tool
-type ToolChoice = ForgeTeam.ToolChoice
-type BetaMessage = ForgeTeam.Beta.Messages.BetaMessage
-type BetaJSONOutputFormat = ForgeTeam.Beta.Messages.BetaJSONOutputFormat
-type BetaThinkingConfigParam = ForgeTeam.Beta.Messages.BetaThinkingConfigParam
+type MessageParam = Anthropic.MessageParam
+type TextBlockParam = Anthropic.TextBlockParam
+type Tool = Anthropic.Tool
+type ToolChoice = Anthropic.ToolChoice
+type BetaMessage = Anthropic.Beta.Messages.BetaMessage
+type BetaJSONOutputFormat = Anthropic.Beta.Messages.BetaJSONOutputFormat
+type BetaThinkingConfigParam = Anthropic.Beta.Messages.BetaThinkingConfigParam
 
 export type SideQueryOptions = {
   /** Model to use for the query */
@@ -121,7 +121,7 @@ export async function sideQuery(opts: SideQueryOptions): Promise<BetaMessage> {
     stop_sequences,
   } = opts
 
-  const client = await getForgeTeamClient({
+  const client = await getAnthropicClient({
     maxRetries,
     model,
     source: 'side_query',
@@ -220,7 +220,3 @@ export async function sideQuery(opts: SideQueryOptions): Promise<BetaMessage> {
 
   return response
 }
-
-
-
-

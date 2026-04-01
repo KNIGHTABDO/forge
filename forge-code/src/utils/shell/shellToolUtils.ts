@@ -20,7 +20,3 @@ export function isPowerShellToolEnabled(): boolean {
     ? !isEnvDefinedFalsy(process.env.FORGE_CODE_USE_POWERSHELL_TOOL)
     : isEnvTruthy(process.env.FORGE_CODE_USE_POWERSHELL_TOOL)
 }
-
-
-
-

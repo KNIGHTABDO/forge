@@ -238,12 +238,12 @@ export const ConfigTool = buildTool({
         '../../voice/voiceModeEnabled.js'
       )
       if (!isVoiceModeEnabled()) {
-        const { isForgeTeamAuthEnabled } = await import('../../utils/auth.js')
+        const { isAnthropicAuthEnabled } = await import('../../utils/auth.js')
         return {
           data: {
             success: false,
-            error: !isForgeTeamAuthEnabled()
-              ? 'Voice mode requires a forge-app.vercel.app account. Please run /login to sign in.'
+            error: !isAnthropicAuthEnabled()
+              ? 'Voice mode requires a Forge.ai account. Please run /login to sign in.'
               : 'Voice mode is not available.',
           },
         }
@@ -273,7 +273,7 @@ export const ConfigTool = buildTool({
           data: {
             success: false,
             error:
-              'Voice mode requires a forge-app.vercel.app account. Please run /login to sign in.',
+              'Voice mode requires a Forge.ai account. Please run /login to sign in.',
           },
         }
       }
@@ -465,7 +465,3 @@ function buildNestedObject(
   }
   return { [key]: buildNestedObject(path.slice(1), value) }
 }
-
-
-
-

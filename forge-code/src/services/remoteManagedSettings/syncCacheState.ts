@@ -16,7 +16,7 @@
  * null), false (ineligible — return null), true (proceed). managedEnv.ts
  * calls isRemoteManagedSettingsEligible() just before the policySettings
  * read — after userSettings/flagSettings env vars are applied, so the check
- * sees config-provided FORGE_CODE_USE_BEDROCK/FORGE_TEAM_BASE_URL. That call
+ * sees config-provided FORGE_CODE_USE_BEDROCK/ANTHROPIC_BASE_URL. That call
  * computes once and mirrors the result here via setEligibility(). Every
  * subsequent read hits the cached bool instead of re-running the auth chain.
  */
@@ -94,7 +94,3 @@ export function getRemoteManagedSettingsSyncFromCache(): SettingsJson | null {
   }
   return null
 }
-
-
-
-

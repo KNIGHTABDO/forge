@@ -162,14 +162,14 @@ type LocalJSXCommand = {
  * Commands with `availability` are only shown if the user matches at least one
  * of the listed auth types. See meetsAvailabilityRequirement() in commands.ts.
  *
- * Example: `availability: ['claude-ai', 'console']` shows the command to
- * forge-app.vercel.app subscribers and direct Console API key users (api.ForgeTeam.com),
+ * Example: `availability: ['Forge-ai', 'console']` shows the command to
+ * Forge.ai subscribers and direct Console API key users (api.anthropic.com),
  * but hides it from Bedrock/Vertex/Foundry users and custom base URL users.
  */
 export type CommandAvailability =
-  // forge-app.vercel.app OAuth subscriber (Pro/Max/Team/Enterprise via forge-app.vercel.app)
-  | 'claude-ai'
-  // Console API key user (direct api.ForgeTeam.com, not via forge-app.vercel.app OAuth)
+  // Forge.ai OAuth subscriber (Pro/Max/Team/Enterprise via Forge.ai)
+  | 'Forge-ai'
+  // Console API key user (direct api.anthropic.com, not via Forge.ai OAuth)
   | 'console'
 
 export type CommandBase = {
@@ -214,7 +214,3 @@ export function getCommandName(cmd: CommandBase): string {
 export function isCommandEnabled(cmd: CommandBase): boolean {
   return cmd.isEnabled?.() ?? true
 }
-
-
-
-

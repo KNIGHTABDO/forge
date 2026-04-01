@@ -368,7 +368,3 @@ export class ITermBackend implements PaneBackend {
 // This side effect is intentional - the registry needs backends to self-register to avoid circular dependencies.
 // eslint-disable-next-line custom-rules/no-top-level-side-effects
 registerITermBackend(ITermBackend)
-
-
-
-

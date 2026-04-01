@@ -1,30 +1,30 @@
 import type { BetaContentBlock } from '@anthropic-ai/sdk/resources/beta/messages/messages.mjs'
 import { randomUUID, type UUID } from 'crypto'
-import { getSessionId } from '../../bootstrap/state.js'
+import { getSessionId } from 'src/bootstrap/state.js'
 import {
   LOCAL_COMMAND_STDERR_TAG,
   LOCAL_COMMAND_STDOUT_TAG,
-} from '../../constants/xml.js'
+} from 'src/constants/xml.js'
 import type {
   SDKAssistantMessage,
   SDKCompactBoundaryMessage,
-  SDKMessage,
+  SDKControlRequest,
   SDKRateLimitInfo,
-} from '../../entrypoints/agentSdkTypes.js'
-import type { ClaudeAILimits } from '../../services/claudeAiLimits.js'
-import { EXIT_PLAN_MODE_V2_TOOL_NAME } from '../../tools/ExitPlanModeTool/constants.js'
+} from 'src/entrypoints/agentSdkTypes.js'
+import type { ClaudeAILimits } from 'src/services/claudeAiLimits.js'
+import { EXIT_PLAN_MODE_V2_TOOL_NAME } from 'src/tools/ExitPlanModeTool/constants.js'
 import type {
   AssistantMessage,
   CompactMetadata,
   Message,
-} from '../../types/message.js'
-import type { DeepImmutable } from './types/utils.js'
+} from 'src/types/message.js'
+import type { DeepImmutable } from 'src/types/utils.js'
 import stripAnsi from 'strip-ansi'
 import { createAssistantMessage } from '../messages.js'
 import { getPlan } from '../plans.js'
 
 export function toInternalMessages(
-  messages: readonly DeepImmutable<SDKMessage>[],
+  messages: readonly DeepImmutable<SDKControlRequest>[],
 ): Message[] {
   return messages.flatMap(message => {
     switch (message.type) {
@@ -112,8 +112,8 @@ export function fromSDKCompactMetadata(
   }
 }
 
-export function toSDKMessages(messages: Message[]): SDKMessage[] {
-  return messages.flatMap((message): SDKMessage[] => {
+export function toSDKMessages(messages: Message[]): SDKControlRequest[] {
+  return messages.flatMap((message): SDKControlRequest[] => {
     switch (message.type) {
       case 'assistant':
         return [
@@ -189,7 +189,7 @@ export function toSDKMessages(messages: Message[]): SDKMessage[] {
  * because the system/local_command_output subtype is unknown to:
  *   - mobile-apps Android SdkMessageTypes.kt (no local_command_output handler)
  *   - api-go session-ingress convertSystemEvent (only init/compact_boundary)
- * See: https://ForgeTeam.sentry.io/issues/7266299248/ (Android)
+ * See: https://anthropic.sentry.io/issues/7266299248/ (Android)
  *
  * Strips ANSI (e.g. chalk.dim() in /cost) then unwraps the XML wrapper tags.
  */
@@ -288,7 +288,3 @@ function normalizeAssistantMessageForSDK(
     content: normalizedContent,
   }
 }
-
-
-
-

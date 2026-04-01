@@ -1550,7 +1550,3 @@ export function startInProcessTeammate(config: InProcessRunnerConfig): void {
     logForDebugging(`[inProcessRunner] Unhandled error in ${agentId}: ${error}`)
   })
 }
-
-
-
-

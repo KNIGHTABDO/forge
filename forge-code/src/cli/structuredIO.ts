@@ -4,39 +4,39 @@ import type {
   JSONRPCMessage,
 } from '@modelcontextprotocol/sdk/types.js'
 import { randomUUID } from 'crypto'
-import type { AssistantMessage } from './/types/message.js'
+import type { AssistantMessage } from 'src/types/message.js'
 import type {
   HookInput,
   HookJSONOutput,
   PermissionUpdate,
-  SDKMessage,
+  SDKControlRequest,
   SDKUserMessage,
-} from '../entrypoints/agentSdkTypes.js'
-import { SDKControlElicitationResponseSchema } from '../entrypoints/sdk/controlSchemas.js'
+} from 'src/entrypoints/agentSdkTypes.js'
+import { SDKControlElicitationResponseSchema } from 'src/entrypoints/sdk/controlSchemas.js'
 import type {
   SDKControlRequest,
   SDKControlResponse,
   StdinMessage,
   StdoutMessage,
-} from './entrypoints/sdk/controlTypes.js'
-import type { CanUseToolFn } from '../hooks/useCanUseTool.js'
-import type { Tool, ToolUseContext } from '../Tool.js'
-import { type HookCallback, hookJSONOutputSchema } from '../types/hooks.js'
-import { logForDebugging } from '../utils/debug.js'
-import { logForDiagnosticsNoPII } from '../utils/diagLogs.js'
-import { AbortError } from '../utils/errors.js'
+} from 'src/entrypoints/sdk/controlTypes.js'
+import type { CanUseToolFn } from 'src/hooks/useCanUseTool.js'
+import type { Tool, ToolUseContext } from 'src/Tool.js'
+import { type HookCallback, hookJSONOutputSchema } from 'src/types/hooks.js'
+import { logForDebugging } from 'src/utils/debug.js'
+import { logForDiagnosticsNoPII } from 'src/utils/diagLogs.js'
+import { AbortError } from 'src/utils/errors.js'
 import {
   type Output as PermissionToolOutput,
   permissionPromptToolResultToPermissionDecision,
   outputSchema as permissionToolOutputSchema,
-} from '../utils/permissions/PermissionPromptToolResultSchema.js'
+} from 'src/utils/permissions/PermissionPromptToolResultSchema.js'
 import type {
   PermissionDecision,
   PermissionDecisionReason,
-} from '../utils/permissions/PermissionResult.js'
-import { hasPermissionsToUseTool } from '../utils/permissions/permissions.js'
-import { writeToStdout } from '../utils/process.js'
-import { jsonStringify } from '../utils/slowOperations.js'
+} from 'src/utils/permissions/PermissionResult.js'
+import { hasPermissionsToUseTool } from 'src/utils/permissions/permissions.js'
+import { writeToStdout } from 'src/utils/process.js'
+import { jsonStringify } from 'src/utils/slowOperations.js'
 import { z } from 'zod/v4'
 import { notifyCommandLifecycle } from '../utils/commandLifecycle.js'
 import { normalizeControlMessageKeys } from '../utils/controlMessageCompat.js'
@@ -133,7 +133,7 @@ type PendingRequest<T> = {
 const MAX_RESOLVED_TOOL_USE_IDS = 1000
 
 export class StructuredIO {
-  readonly structuredInput: AsyncGenerator<StdinMessage | SDKMessage>
+  readonly structuredInput: AsyncGenerator<StdinMessage | SDKControlRequest>
   private readonly pendingRequests = new Map<string, PendingRequest<unknown>>()
 
   // CCR external_metadata read back on worker start; null when the
@@ -274,7 +274,7 @@ export class StructuredIO {
 
   /**
    * Inject a control_response message to resolve a pending permission request.
-   * Used by the bridge to feed permission responses from forge-app.vercel.app into the
+   * Used by the bridge to feed permission responses from Forge.ai into the
    * SDK permission flow.
    *
    * Also sends a control_cancel_request to the SDK consumer so its canUseTool
@@ -311,7 +311,7 @@ export class StructuredIO {
   /**
    * Register a callback invoked whenever a can_use_tool control_request
    * is written to stdout. Used by the bridge to forward permission
-   * requests to forge-app.vercel.app.
+   * requests to Forge.ai.
    */
   setOnControlRequestSent(
     callback: ((request: SDKControlRequest) => void) | undefined,
@@ -322,7 +322,7 @@ export class StructuredIO {
   /**
    * Register a callback invoked when a can_use_tool control_response arrives
    * from the SDK consumer (via stdin). Used by the bridge to cancel the
-   * stale permission prompt on forge-app.vercel.app when the SDK consumer wins the race.
+   * stale permission prompt on Forge.ai when the SDK consumer wins the race.
    */
   setOnControlRequestResolved(
     callback: ((requestId: string) => void) | undefined,
@@ -332,7 +332,7 @@ export class StructuredIO {
 
   private async processLine(
     line: string,
-  ): Promise<StdinMessage | SDKMessage | undefined> {
+  ): Promise<StdinMessage | SDKControlRequest | undefined> {
     // Skip empty lines (e.g. from double newlines in piped stdin)
     if (!line) {
       return undefined
@@ -340,7 +340,7 @@ export class StructuredIO {
     try {
       const message = normalizeControlMessageKeys(jsonParse(line)) as
         | StdinMessage
-        | SDKMessage
+        | SDKControlRequest
       if (message.type === 'keep_alive') {
         // Silently ignore keep-alive messages
         return undefined
@@ -400,7 +400,7 @@ export class StructuredIO {
         this.trackResolvedToolUseId(request.request)
         this.pendingRequests.delete(message.response.request_id)
         // Notify the bridge when the SDK consumer resolves a can_use_tool
-        // request, so it can cancel the stale permission prompt on forge-app.vercel.app.
+        // request, so it can cancel the stale permission prompt on Forge.ai.
         if (
           request.request.request.subtype === 'can_use_tool' &&
           this.onControlRequestResolved
@@ -857,10 +857,3 @@ async function executePermissionRequestHooksForSDK(
 
   return undefined
 }
-
-
-
-
-
-
-

@@ -66,7 +66,3 @@ export function clearSystemPromptSections(): void {
   clearSystemPromptSectionState()
   clearBetaHeaderLatches()
 }
-
-
-
-

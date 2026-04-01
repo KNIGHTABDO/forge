@@ -1,4 +1,4 @@
-import type { SDKMessage } from '../entrypoints/agentSdkTypes.js'
+import type { SDKControlRequest } from '../entrypoints/agentSdkTypes.js'
 import type {
   SDKControlCancelRequest,
   SDKControlPermissionRequest,
@@ -17,15 +17,15 @@ import {
 } from './SessionsWebSocket.js'
 
 /**
- * Type guard to check if a message is an SDKMessage (not a control message)
+ * Type guard to check if a message is an SDKControlRequest (not a control message)
  */
 function isSDKMessage(
   message:
-    | SDKMessage
+    | SDKControlRequest
     | SDKControlRequest
     | SDKControlResponse
     | SDKControlCancelRequest,
-): message is SDKMessage {
+): message is SDKControlRequest {
   return (
     message.type !== 'control_request' &&
     message.type !== 'control_response' &&
@@ -56,14 +56,14 @@ export type RemoteSessionConfig = {
   /**
    * When true, this client is a pure viewer. Ctrl+C/Escape do NOT send
    * interrupt to the remote agent; 60s reconnect timeout is disabled;
-   * session title is never updated. Used by `claude assistant`.
+   * session title is never updated. Used by `Forge assistant`.
    */
   viewerOnly?: boolean
 }
 
 export type RemoteSessionCallbacks = {
-  /** Called when an SDKMessage is received from the session */
-  onMessage: (message: SDKMessage) => void
+  /** Called when an SDKControlRequest is received from the session */
+  onMessage: (message: SDKControlRequest) => void
   /** Called when a permission request is received from CCR */
   onPermissionRequest: (
     request: SDKControlPermissionRequest,
@@ -145,7 +145,7 @@ export class RemoteSessionManager {
    */
   private handleMessage(
     message:
-      | SDKMessage
+      | SDKControlRequest
       | SDKControlRequest
       | SDKControlResponse
       | SDKControlCancelRequest,
@@ -341,7 +341,3 @@ export function createRemoteSessionConfig(
     viewerOnly,
   }
 }
-
-
-
-

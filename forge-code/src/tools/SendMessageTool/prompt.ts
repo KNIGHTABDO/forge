@@ -4,7 +4,7 @@ export const DESCRIPTION = 'Send a message to another agent'
 
 export function getPrompt(): string {
   const udsRow = feature('UDS_INBOX')
-    ? `\n| \`"uds:/path/to.sock"\` | Local Claude session's socket (same machine; use \`ListPeers\`) |
+    ? `\n| \`"uds:/path/to.sock"\` | Local Forge session's socket (same machine; use \`ListPeers\`) |
 | \`"bridge:session_..."\` | Remote Control peer session (cross-machine; use \`ListPeers\`) |`
     : ''
   const udsSection = feature('UDS_INBOX')
@@ -47,7 +47,3 @@ If you receive a JSON message with \`type: "shutdown_request"\` or \`type: "plan
 Approving shutdown terminates your process. Rejecting plan sends the teammate back to revise. Don't originate \`shutdown_request\` unless asked. Don't send structured JSON status messages — use TaskUpdate.
 `.trim()
 }
-
-
-
-

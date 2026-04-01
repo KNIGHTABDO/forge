@@ -1,6 +1,6 @@
 /**
  * Shared utilities for displaying agent information.
- * Used by both the CLI `claude agents` handler and the interactive `/agents` command.
+ * Used by both the CLI `Forge agents` handler and the interactive `/agents` command.
  */
 
 import { getDefaultSubagentModel } from '../../utils/model/agent.js'
@@ -102,7 +102,3 @@ export function compareAgentsByName(
     sensitivity: 'base',
   })
 }
-
-
-
-

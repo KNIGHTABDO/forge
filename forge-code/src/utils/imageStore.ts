@@ -165,7 +165,3 @@ export async function cleanupOldImageCaches(): Promise<void> {
     // Ignore errors reading base directory
   }
 }
-
-
-
-

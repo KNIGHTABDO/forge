@@ -34,7 +34,16 @@ export type ModelName = string
 export type ModelSetting = ModelName | ModelAlias | null
 
 export function getSmallFastModel(): ModelName {
-  return process.env.FORGE_TEAM_SMALL_FAST_MODEL || getDefaultHaikuModel()
+  if (process.env.ANTHROPIC_SMALL_FAST_MODEL) return process.env.ANTHROPIC_SMALL_FAST_MODEL
+  // For Gemini provider, use a fast model
+  if (getAPIProvider() === 'gemini') {
+    return process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite-preview'
+  }
+  // For OpenAI provider, use OPENAI_MODEL or a sensible default
+  if (getAPIProvider() === 'openai') {
+    return process.env.OPENAI_MODEL || 'gpt-4o-mini'
+  }
+  return getDefaultHaikuModel()
 }
 
 export function isNonCustomOpusModel(model: ModelName): boolean {
@@ -55,7 +64,7 @@ export function isNonCustomOpusModel(model: ModelName): boolean {
  * Priority order within this function:
  * 1. Model override during session (from /model command) - highest priority
  * 2. Model override at startup (from --model flag)
- * 3. FORGE_TEAM_MODEL environment variable
+ * 3. ANTHROPIC_MODEL environment variable
  * 4. Settings (from user's saved settings)
  */
 export function getUserSpecifiedModelSetting(): ModelSetting | undefined {
@@ -66,7 +75,7 @@ export function getUserSpecifiedModelSetting(): ModelSetting | undefined {
     specifiedModel = modelOverride
   } else {
     const settings = getSettings_DEPRECATED() || {}
-    specifiedModel = process.env.FORGE_TEAM_MODEL || settings.model || undefined
+    specifiedModel = process.env.ANTHROPIC_MODEL || process.env.GEMINI_MODEL || process.env.OPENAI_MODEL || settings.model || undefined
   }
 
   // Ignore the user-specified model if it's not in the availableModels allowlist.
@@ -83,7 +92,7 @@ export function getUserSpecifiedModelSetting(): ModelSetting | undefined {
  * Model Selection Priority Order:
  * 1. Model override during session (from /model command) - highest priority
  * 2. Model override at startup (from --model flag)
- * 3. FORGE_TEAM_MODEL environment variable
+ * 3. ANTHROPIC_MODEL environment variable
  * 4. Settings (from user's saved settings)
  * 5. Built-in default
  *
@@ -103,8 +112,16 @@ export function getBestModel(): ModelName {
 
 // @[MODEL LAUNCH]: Update the default Opus model (3P providers may lag so keep defaults unchanged).
 export function getDefaultOpusModel(): ModelName {
-  if (process.env.FORGE_TEAM_DEFAULT_OPUS_MODEL) {
-    return process.env.FORGE_TEAM_DEFAULT_OPUS_MODEL
+  if (process.env.ANTHROPIC_DEFAULT_OPUS_MODEL) {
+    return process.env.ANTHROPIC_DEFAULT_OPUS_MODEL
+  }
+  // Gemini provider
+  if (getAPIProvider() === 'gemini') {
+    return process.env.GEMINI_MODEL || 'gemini-2.5-pro-preview-03-25'
+  }
+  // OpenAI provider: use user-specified model or default
+  if (getAPIProvider() === 'openai') {
+    return process.env.OPENAI_MODEL || 'gpt-4o'
   }
   // 3P providers (Bedrock, Vertex, Foundry) — kept as a separate branch
   // even when values match, since 3P availability lags firstParty and
@@ -117,8 +134,16 @@ export function getDefaultOpusModel(): ModelName {
 
 // @[MODEL LAUNCH]: Update the default Sonnet model (3P providers may lag so keep defaults unchanged).
 export function getDefaultSonnetModel(): ModelName {
-  if (process.env.FORGE_TEAM_DEFAULT_SONNET_MODEL) {
-    return process.env.FORGE_TEAM_DEFAULT_SONNET_MODEL
+  if (process.env.ANTHROPIC_DEFAULT_SONNET_MODEL) {
+    return process.env.ANTHROPIC_DEFAULT_SONNET_MODEL
+  }
+  // Gemini provider
+  if (getAPIProvider() === 'gemini') {
+    return process.env.GEMINI_MODEL || 'gemini-2.0-flash'
+  }
+  // OpenAI provider
+  if (getAPIProvider() === 'openai') {
+    return process.env.OPENAI_MODEL || 'gpt-4o'
   }
   // Default to Sonnet 4.5 for 3P since they may not have 4.6 yet
   if (getAPIProvider() !== 'firstParty') {
@@ -129,8 +154,16 @@ export function getDefaultSonnetModel(): ModelName {
 
 // @[MODEL LAUNCH]: Update the default Haiku model (3P providers may lag so keep defaults unchanged).
 export function getDefaultHaikuModel(): ModelName {
-  if (process.env.FORGE_TEAM_DEFAULT_HAIKU_MODEL) {
-    return process.env.FORGE_TEAM_DEFAULT_HAIKU_MODEL
+  if (process.env.ANTHROPIC_DEFAULT_HAIKU_MODEL) {
+    return process.env.ANTHROPIC_DEFAULT_HAIKU_MODEL
+  }
+  // Gemini provider
+  if (getAPIProvider() === 'gemini') {
+    return process.env.GEMINI_MODEL || 'gemini-2.0-flash-lite'
+  }
+  // OpenAI provider
+  if (getAPIProvider() === 'openai') {
+    return process.env.OPENAI_MODEL || 'gpt-4o-mini'
   }
 
   // Haiku 4.5 is available on all platforms (first-party, Foundry, Bedrock, Vertex)
@@ -176,6 +209,15 @@ export function getRuntimeMainLoopModel(params: {
  * @returns The default model setting to use
  */
 export function getDefaultMainLoopModelSetting(): ModelName | ModelAlias {
+  // Gemini provider: always use the configured Gemini model
+  if (getAPIProvider() === 'gemini') {
+    return process.env.GEMINI_MODEL || 'gemini-2.0-flash'
+  }
+  // OpenAI provider: always use the configured OpenAI model
+  if (getAPIProvider() === 'openai') {
+    return process.env.OPENAI_MODEL || 'gpt-4o'
+  }
+
   // Ants default to defaultModel from flag config, or Opus 1M if not configured
   if (process.env.USER_TYPE === 'ant') {
     return (
@@ -210,58 +252,58 @@ export function getDefaultMainLoopModel(): ModelName {
 // @[MODEL LAUNCH]: Add a canonical name mapping for the new model below.
 /**
  * Pure string-match that strips date/provider suffixes from a first-party model
- * name. Input must already be a 1P-format ID (e.g. 'claude-3-7-sonnet-20250219',
- * 'us.ForgeTeam.claude-opus-4-6-v1:0'). Does not touch settings, so safe at
+ * name. Input must already be a 1P-format ID (e.g. 'Forge-3-7-sonnet-20250219',
+ * 'us.anthropic.Forge-opus-4-6-v1:0'). Does not touch settings, so safe at
  * module top-level (see MODEL_COSTS in modelCost.ts).
  */
 export function firstPartyNameToCanonical(name: ModelName): ModelShortName {
   name = name.toLowerCase()
-  // Special cases for Claude 4+ models to differentiate versions
+  // Special cases for Forge 4+ models to differentiate versions
   // Order matters: check more specific versions first (4-5 before 4)
-  if (name.includes('claude-opus-4-6')) {
-    return 'claude-opus-4-6'
+  if (name.includes('Forge-opus-4-6')) {
+    return 'Forge-opus-4-6'
   }
-  if (name.includes('claude-opus-4-5')) {
-    return 'claude-opus-4-5'
+  if (name.includes('Forge-opus-4-5')) {
+    return 'Forge-opus-4-5'
   }
-  if (name.includes('claude-opus-4-1')) {
-    return 'claude-opus-4-1'
+  if (name.includes('Forge-opus-4-1')) {
+    return 'Forge-opus-4-1'
   }
-  if (name.includes('claude-opus-4')) {
-    return 'claude-opus-4'
+  if (name.includes('Forge-opus-4')) {
+    return 'Forge-opus-4'
   }
-  if (name.includes('claude-sonnet-4-6')) {
-    return 'claude-sonnet-4-6'
+  if (name.includes('Forge-sonnet-4-6')) {
+    return 'Forge-sonnet-4-6'
   }
-  if (name.includes('claude-sonnet-4-5')) {
-    return 'claude-sonnet-4-5'
+  if (name.includes('Forge-sonnet-4-5')) {
+    return 'Forge-sonnet-4-5'
   }
-  if (name.includes('claude-sonnet-4')) {
-    return 'claude-sonnet-4'
+  if (name.includes('Forge-sonnet-4')) {
+    return 'Forge-sonnet-4'
   }
-  if (name.includes('claude-haiku-4-5')) {
-    return 'claude-haiku-4-5'
+  if (name.includes('Forge-haiku-4-5')) {
+    return 'Forge-haiku-4-5'
   }
-  // Claude 3.x models use a different naming scheme (claude-3-{family})
-  if (name.includes('claude-3-7-sonnet')) {
-    return 'claude-3-7-sonnet'
+  // Forge 3.x models use a different naming scheme (Forge-3-{family})
+  if (name.includes('Forge-3-7-sonnet')) {
+    return 'Forge-3-7-sonnet'
   }
-  if (name.includes('claude-3-5-sonnet')) {
-    return 'claude-3-5-sonnet'
+  if (name.includes('Forge-3-5-sonnet')) {
+    return 'Forge-3-5-sonnet'
   }
-  if (name.includes('claude-3-5-haiku')) {
-    return 'claude-3-5-haiku'
+  if (name.includes('Forge-3-5-haiku')) {
+    return 'Forge-3-5-haiku'
   }
-  if (name.includes('claude-3-opus')) {
-    return 'claude-3-opus'
+  if (name.includes('Forge-3-opus')) {
+    return 'Forge-3-opus'
   }
-  if (name.includes('claude-3-sonnet')) {
-    return 'claude-3-sonnet'
+  if (name.includes('Forge-3-sonnet')) {
+    return 'Forge-3-sonnet'
   }
-  if (name.includes('claude-3-haiku')) {
-    return 'claude-3-haiku'
+  if (name.includes('Forge-3-haiku')) {
+    return 'Forge-3-haiku'
   }
-  const match = name.match(/(claude-(\d+-\d+-)?\w+)/)
+  const match = name.match(/(Forge-(\d+-\d+-)?\w+)/)
   if (match && match[1]) {
     return match[1]
   }
@@ -271,10 +313,10 @@ export function firstPartyNameToCanonical(name: ModelName): ModelShortName {
 
 /**
  * Maps a full model string to a shorter canonical version that's unified across 1P and 3P providers.
- * For example, 'claude-3-5-haiku-20241022' and 'us.ForgeTeam.claude-3-5-haiku-20241022-v1:0'
- * would both be mapped to 'claude-3-5-haiku'.
- * @param fullModelName The full model name (e.g., 'claude-3-5-haiku-20241022')
- * @returns The short name (e.g., 'claude-3-5-haiku') if found, or the original name if no mapping exists
+ * For example, 'Forge-3-5-haiku-20241022' and 'us.anthropic.Forge-3-5-haiku-20241022-v1:0'
+ * would both be mapped to 'Forge-3-5-haiku'.
+ * @param fullModelName The full model name (e.g., 'Forge-3-5-haiku-20241022')
+ * @returns The short name (e.g., 'Forge-3-5-haiku') if found, or the original name if no mapping exists
  */
 export function getCanonicalName(fullModelName: ModelName): ModelShortName {
   // Resolve overridden model IDs (e.g. Bedrock ARNs) back to canonical names.
@@ -288,18 +330,24 @@ export function getClaudeAiUserDefaultModelDescription(
 ): string {
   if (isMaxSubscriber() || isTeamPremiumSubscriber()) {
     if (isOpus1mMergeEnabled()) {
-      return `Reasoning profile with 1M context · Most capable for complex work${fastMode ? getOpus46PricingSuffix(true) : ''}`
+      return `Opus 4.6 with 1M context · Most capable for complex work${fastMode ? getOpus46PricingSuffix(true) : ''}`
     }
-    return `Reasoning profile · Most capable for complex work${fastMode ? getOpus46PricingSuffix(true) : ''}`
+    return `Opus 4.6 · Most capable for complex work${fastMode ? getOpus46PricingSuffix(true) : ''}`
   }
-  return 'Balanced profile · Best for everyday tasks'
+  return 'Sonnet 4.6 · Best for everyday tasks'
 }
 
 export function renderDefaultModelSetting(
   setting: ModelName | ModelAlias,
 ): string {
   if (setting === 'opusplan') {
-    return 'Reasoning profile in plan mode, else Balanced profile'
+    return 'Opus 4.6 in plan mode, else Sonnet 4.6'
+  }
+  if (setting === 'codexplan') {
+    return 'Codex Plan (GPT-5.4 high reasoning)'
+  }
+  if (setting === 'codexspark') {
+    return 'Codex Spark (GPT-5.3 Codex Spark)'
   }
   return renderModelName(parseUserSpecifiedModel(setting))
 }
@@ -333,12 +381,15 @@ export function isOpus1mMergeEnabled(): boolean {
 
 export function renderModelSetting(setting: ModelName | ModelAlias): string {
   if (setting === 'opusplan') {
-    return 'Reasoning Plan'
+    return 'Opus Plan'
+  }
+  if (setting === 'codexplan') {
+    return 'Codex Plan'
+  }
+  if (setting === 'codexspark') {
+    return 'Codex Spark'
   }
   if (isModelAlias(setting)) {
-    if (setting === 'sonnet') return 'Balanced'
-    if (setting === 'opus') return 'Reasoning'
-    if (setting === 'haiku') return 'Fast'
     return capitalize(setting)
   }
   return renderModelName(setting)
@@ -350,37 +401,45 @@ export function renderModelSetting(setting: ModelName | ModelAlias): string {
  * if the model is not recognized as a public model.
  */
 export function getPublicModelDisplayName(model: ModelName): string | null {
+  // For OpenAI/Gemini providers, show the actual model name not a Forge alias
+  if (getAPIProvider() === 'openai' || getAPIProvider() === 'gemini') {
+    return null
+  }
   switch (model) {
+    case 'gpt-5.4':
+      return 'GPT-5.4'
+    case 'gpt-5.3-codex-spark':
+      return 'GPT-5.3 Codex Spark'
     case getModelStrings().opus46:
-      return 'Reasoning profile'
+      return 'Opus 4.6'
     case getModelStrings().opus46 + '[1m]':
-      return 'Reasoning profile (1M context)'
+      return 'Opus 4.6 (1M context)'
     case getModelStrings().opus45:
-      return 'Reasoning profile'
+      return 'Opus 4.5'
     case getModelStrings().opus41:
-      return 'Reasoning profile'
+      return 'Opus 4.1'
     case getModelStrings().opus40:
-      return 'Reasoning profile'
+      return 'Opus 4'
     case getModelStrings().sonnet46 + '[1m]':
-      return 'Balanced profile (1M context)'
+      return 'Sonnet 4.6 (1M context)'
     case getModelStrings().sonnet46:
-      return 'Balanced profile'
+      return 'Sonnet 4.6'
     case getModelStrings().sonnet45 + '[1m]':
-      return 'Balanced profile (1M context)'
+      return 'Sonnet 4.5 (1M context)'
     case getModelStrings().sonnet45:
-      return 'Balanced profile'
+      return 'Sonnet 4.5'
     case getModelStrings().sonnet40:
-      return 'Balanced profile'
+      return 'Sonnet 4'
     case getModelStrings().sonnet40 + '[1m]':
-      return 'Balanced profile (1M context)'
+      return 'Sonnet 4 (1M context)'
     case getModelStrings().sonnet37:
-      return 'Balanced profile'
+      return 'Sonnet 3.7'
     case getModelStrings().sonnet35:
-      return 'Balanced profile'
+      return 'Sonnet 3.5'
     case getModelStrings().haiku45:
-      return 'Fast profile'
+      return 'Haiku 4.5'
     case getModelStrings().haiku35:
-      return 'Fast profile'
+      return 'Haiku 3.5'
     default:
       return null
   }
@@ -419,18 +478,18 @@ export function renderModelName(model: ModelName): string {
 
 /**
  * Returns a safe author name for public display (e.g., in git commit trailers).
- * Returns "Claude {ModelName}" for publicly known models, or "Claude ({model})"
+ * Returns "Forge {ModelName}" for publicly known models, or "Forge ({model})"
  * for unknown/internal models so the exact model name is preserved.
  *
  * @param model The full model name
- * @returns "Claude {ModelName}" for public models, or "Claude ({model})" for non-public models
+ * @returns "Forge {ModelName}" for public models, or "Forge ({model})" for non-public models
  */
 export function getPublicModelName(model: ModelName): string {
   const publicName = getPublicModelDisplayName(model)
   if (publicName) {
-    return `Claude ${publicName}`
+    return `Forge ${publicName}`
   }
-  return `Claude (${model})`
+  return `Forge (${model})`
 }
 
 /**
@@ -458,6 +517,10 @@ export function parseUserSpecifiedModel(
 
   if (isModelAlias(modelString)) {
     switch (modelString) {
+      case 'codexplan':
+        return modelInputTrimmed
+      case 'codexspark':
+        return modelInputTrimmed
       case 'opusplan':
         return getDefaultSonnetModel() + (has1mTag ? '[1m]' : '') // Sonnet is default, Opus in plan mode
       case 'sonnet':
@@ -473,7 +536,7 @@ export function parseUserSpecifiedModel(
   }
 
   // Opus 4/4.1 are no longer available on the first-party API (same as
-  // forge-app.vercel.app) — silently remap to the current Opus default. The 'opus'
+  // Forge.ai) — silently remap to the current Opus default. The 'opus'
   // alias already resolves to 4.6, so the only users on these explicit
   // strings pinned them in settings/env/--model/SDK before 4.5 launched.
   // 3P providers may not yet have 4.6 capacity, so pass through unchanged.
@@ -530,7 +593,7 @@ export function resolveSkillModelOverride(
   if (has1mContext(skillModel) || !has1mContext(currentModel)) {
     return skillModel
   }
-  // modelSupports1M matches on canonical IDs ('claude-opus-4-6', 'claude-sonnet-4');
+  // modelSupports1M matches on canonical IDs ('Forge-opus-4-6', 'Forge-sonnet-4');
   // a bare 'opus' alias falls through getCanonicalName unmatched. Resolve first.
   if (modelSupports1M(parseUserSpecifiedModel(skillModel))) {
     return skillModel + '[1m]'
@@ -539,10 +602,10 @@ export function resolveSkillModelOverride(
 }
 
 const LEGACY_OPUS_FIRSTPARTY = [
-  'claude-opus-4-20250514',
-  'claude-opus-4-1-20250805',
-  'claude-opus-4-0',
-  'claude-opus-4-1',
+  'Forge-opus-4-20250514',
+  'Forge-opus-4-1-20250805',
+  'Forge-opus-4-0',
+  'Forge-opus-4-1',
 ]
 
 function isLegacyOpusFirstParty(model: string): boolean {
@@ -579,38 +642,38 @@ export function getMarketingNameForModel(modelId: string): string | undefined {
   const has1m = modelId.toLowerCase().includes('[1m]')
   const canonical = getCanonicalName(modelId)
 
-  if (canonical.includes('claude-opus-4-6')) {
+  if (canonical.includes('Forge-opus-4-6')) {
     return has1m ? 'Opus 4.6 (with 1M context)' : 'Opus 4.6'
   }
-  if (canonical.includes('claude-opus-4-5')) {
+  if (canonical.includes('Forge-opus-4-5')) {
     return 'Opus 4.5'
   }
-  if (canonical.includes('claude-opus-4-1')) {
+  if (canonical.includes('Forge-opus-4-1')) {
     return 'Opus 4.1'
   }
-  if (canonical.includes('claude-opus-4')) {
+  if (canonical.includes('Forge-opus-4')) {
     return 'Opus 4'
   }
-  if (canonical.includes('claude-sonnet-4-6')) {
+  if (canonical.includes('Forge-sonnet-4-6')) {
     return has1m ? 'Sonnet 4.6 (with 1M context)' : 'Sonnet 4.6'
   }
-  if (canonical.includes('claude-sonnet-4-5')) {
+  if (canonical.includes('Forge-sonnet-4-5')) {
     return has1m ? 'Sonnet 4.5 (with 1M context)' : 'Sonnet 4.5'
   }
-  if (canonical.includes('claude-sonnet-4')) {
+  if (canonical.includes('Forge-sonnet-4')) {
     return has1m ? 'Sonnet 4 (with 1M context)' : 'Sonnet 4'
   }
-  if (canonical.includes('claude-3-7-sonnet')) {
-    return 'Claude 3.7 Sonnet'
+  if (canonical.includes('Forge-3-7-sonnet')) {
+    return 'Forge 3.7 Sonnet'
   }
-  if (canonical.includes('claude-3-5-sonnet')) {
-    return 'Claude 3.5 Sonnet'
+  if (canonical.includes('Forge-3-5-sonnet')) {
+    return 'Forge 3.5 Sonnet'
   }
-  if (canonical.includes('claude-haiku-4-5')) {
+  if (canonical.includes('Forge-haiku-4-5')) {
     return 'Haiku 4.5'
   }
-  if (canonical.includes('claude-3-5-haiku')) {
-    return 'Claude 3.5 Haiku'
+  if (canonical.includes('Forge-3-5-haiku')) {
+    return 'Forge 3.5 Haiku'
   }
 
   return undefined
@@ -619,7 +682,3 @@ export function getMarketingNameForModel(modelId: string): string | undefined {
 export function normalizeModelStringForAPI(model: string): string {
   return model.replace(/\[(1|2)m\]/gi, '')
 }
-
-
-
-

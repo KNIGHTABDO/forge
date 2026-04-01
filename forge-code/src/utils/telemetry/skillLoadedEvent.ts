@@ -37,7 +37,3 @@ export async function logSkillsLoaded(
     })
   }
 }
-
-
-
-

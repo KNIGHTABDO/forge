@@ -83,14 +83,14 @@ export function createMcpAuthTool(
       return { behavior: 'allow', updatedInput: input }
     },
     async call(_input, context) {
-      // forge-app.vercel.app connectors use a separate auth flow (handleClaudeAIAuth in
+      // Forge.ai connectors use a separate auth flow (handleClaudeAIAuth in
       // MCPRemoteServerMenu) that we don't invoke programmatically here —
       // just point the user at /mcp.
       if (config.type === 'claudeai-proxy') {
         return {
           data: {
             status: 'unsupported' as const,
-            message: `This is a forge-app.vercel.app MCP connector. Ask the user to run /mcp and select "${serverName}" to authenticate.`,
+            message: `This is a Forge.ai MCP connector. Ask the user to run /mcp and select "${serverName}" to authenticate.`,
           },
         }
       }
@@ -213,7 +213,3 @@ export function createMcpAuthTool(
     },
   } satisfies Tool<InputSchema, McpAuthOutput>
 }
-
-
-
-

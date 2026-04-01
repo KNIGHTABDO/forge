@@ -42,7 +42,3 @@ export function getMCPSkillBuilders(): MCPSkillBuilders {
   }
   return builders
 }
-
-
-
-

@@ -36,7 +36,7 @@ import { logForDebugging } from './debug.js'
 import { isEnvDefinedFalsy, isEnvTruthy } from './envUtils.js'
 import {
   getAPIProvider,
-  isFirstPartyForgeTeamBaseUrl,
+  isFirstPartyAnthropicBaseUrl,
 } from './model/providers.js'
 import { jsonStringify } from './slowOperations.js'
 import { zodToJsonSchema } from './zodToJsonSchema.js'
@@ -177,7 +177,7 @@ export function getToolSearchMode(): ToolSearchMode {
   // reach the wire, even if ENABLE_TOOL_SEARCH is also set. This is the
   // explicit escape hatch for proxy gateways that the heuristic in
   // isToolSearchEnabledOptimistic doesn't cover.
-  // github.com/ForgeTeams/claude-code/issues/20031
+  // github.com/anthropics/Forge-code/issues/20031
   if (isEnvTruthy(process.env.FORGE_CODE_DISABLE_EXPERIMENTAL_BETAS)) {
     return 'standard'
   }
@@ -280,11 +280,11 @@ export function isToolSearchEnabledOptimistic(): boolean {
   }
 
   // tool_reference is a beta content type that third-party API gateways
-  // (FORGE_TEAM_BASE_URL proxies) typically don't support. When the provider
+  // (ANTHROPIC_BASE_URL proxies) typically don't support. When the provider
   // is 'firstParty' but the base URL points elsewhere, the proxy will reject
   // tool_reference blocks with a 400. Vertex/Bedrock/Foundry are unaffected —
   // they have their own endpoints and beta headers.
-  // https://github.com/ForgeTeams/claude-code/issues/30912
+  // https://github.com/anthropics/Forge-code/issues/30912
   //
   // HOWEVER: some proxies DO support tool_reference (LiteLLM passthrough,
   // Cloudflare AI Gateway, corp gateways that forward beta headers). The
@@ -299,12 +299,12 @@ export function isToolSearchEnabledOptimistic(): boolean {
   if (
     !process.env.ENABLE_TOOL_SEARCH &&
     getAPIProvider() === 'firstParty' &&
-    !isFirstPartyForgeTeamBaseUrl()
+    !isFirstPartyAnthropicBaseUrl()
   ) {
     if (!loggedOptimistic) {
       loggedOptimistic = true
       logForDebugging(
-        `[ToolSearch:optimistic] disabled: FORGE_TEAM_BASE_URL=${process.env.FORGE_TEAM_BASE_URL} is not a first-party ForgeTeam host. Set ENABLE_TOOL_SEARCH=true (or auto / auto:N) if your proxy forwards tool_reference blocks.`,
+        `[ToolSearch:optimistic] disabled: ANTHROPIC_BASE_URL=${process.env.ANTHROPIC_BASE_URL} is not a first-party Anthropic host. Set ENABLE_TOOL_SEARCH=true (or auto / auto:N) if your proxy forwards tool_reference blocks.`,
       )
     }
     return false
@@ -419,7 +419,7 @@ export async function isToolSearchEnabled(
   if (!modelSupportsToolReference(model)) {
     logForDebugging(
       `Tool search disabled for model '${model}': model does not support tool_reference blocks. ` +
-        `This feature is only available on Claude Sonnet 4+, Opus 4+, and newer models.`,
+        `This feature is only available on Forge Sonnet 4+, Opus 4+, and newer models.`,
     )
     logModeDecision(false, 'standard', 'model_unsupported')
     return false
@@ -623,7 +623,7 @@ export type DeferredToolsDeltaScanContext = {
 
 /**
  * True → announce deferred tools via persisted delta attachments.
- * False → claude.ts keeps its per-call <available-deferred-tools>
+ * False → Forge.ts keeps its per-call <available-deferred-tools>
  * header prepend (the attachment does not fire).
  */
 export function isDeferredToolsDeltaEnabled(): boolean {
@@ -754,7 +754,3 @@ async function checkAutoThreshold(
     metrics: { deferredToolDescriptionChars, charThreshold },
   }
 }
-
-
-
-

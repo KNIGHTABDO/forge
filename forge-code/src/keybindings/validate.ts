@@ -496,7 +496,3 @@ export function formatWarnings(warnings: KeybindingWarning[]): string {
 
   return lines.join('\n')
 }
-
-
-
-

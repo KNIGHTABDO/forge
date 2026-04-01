@@ -10,7 +10,3 @@ export const TURN_COMPLETION_VERBS = [
   'Sautéed',
   'Worked',
 ]
-
-
-
-

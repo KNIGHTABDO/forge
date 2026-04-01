@@ -33,7 +33,7 @@ import { isChromeExtensionInstalledPortable } from './setupPortable.js'
 
 const CHROME_EXTENSION_RECONNECT_URL = 'https://clau.de/chrome/reconnect'
 
-const NATIVE_HOST_IDENTIFIER = 'com.ForgeTeam.FORGE_CODE_browser_extension'
+const NATIVE_HOST_IDENTIFIER = 'com.anthropic.FORGE_CODE_browser_extension'
 const NATIVE_HOST_MANIFEST_NAME = `${NATIVE_HOST_IDENTIFIER}.json`
 
 export function shouldEnableClaudeInChrome(chromeFlag?: boolean): boolean {
@@ -84,7 +84,7 @@ export function shouldAutoEnableClaudeInChrome(): boolean {
 }
 
 /**
- * Setup Claude in Chrome MCP server and tools
+ * Setup Forge in Chrome MCP server and tools
  *
  * @returns MCP config and allowed tools, or throws an error if platform is unsupported
  */
@@ -95,7 +95,7 @@ export function setupClaudeInChrome(): {
 } {
   const isNativeBuild = isInBundledMode()
   const allowedTools = BROWSER_TOOLS.map(
-    tool => `mcp__claude-in-chrome__${tool.name}`,
+    tool => `mcp__Forge-in-chrome__${tool.name}`,
   )
 
   const env: Record<string, string> = {}
@@ -116,7 +116,7 @@ export function setupClaudeInChrome(): {
       )
       .catch(e =>
         logForDebugging(
-          `[Claude in Chrome] Failed to install native host: ${e}`,
+          `[Forge in Chrome] Failed to install native host: ${e}`,
           { level: 'error' },
         ),
       )
@@ -126,7 +126,7 @@ export function setupClaudeInChrome(): {
         [CLAUDE_IN_CHROME_MCP_SERVER_NAME]: {
           type: 'stdio' as const,
           command: process.execPath,
-          args: ['--claude-in-chrome-mcp'],
+          args: ['--Forge-in-chrome-mcp'],
           scope: 'dynamic' as const,
           ...(hasEnv && { env }),
         },
@@ -147,7 +147,7 @@ export function setupClaudeInChrome(): {
       )
       .catch(e =>
         logForDebugging(
-          `[Claude in Chrome] Failed to install native host: ${e}`,
+          `[Forge in Chrome] Failed to install native host: ${e}`,
           { level: 'error' },
         ),
       )
@@ -156,7 +156,7 @@ export function setupClaudeInChrome(): {
       [CLAUDE_IN_CHROME_MCP_SERVER_NAME]: {
         type: 'stdio' as const,
         command: process.execPath,
-        args: [`${cliPath}`, '--claude-in-chrome-mcp'],
+        args: [`${cliPath}`, '--Forge-in-chrome-mcp'],
         scope: 'dynamic' as const,
         ...(hasEnv && { env }),
       },
@@ -193,7 +193,7 @@ export async function installChromeNativeHostManifest(
 ): Promise<void> {
   const manifestDirs = getNativeMessagingHostsDirs()
   if (manifestDirs.length === 0) {
-    throw Error('Claude in Chrome Native Host not supported on this platform')
+    throw Error('Forge in Chrome Native Host not supported on this platform')
   }
 
   const manifest = {
@@ -231,13 +231,13 @@ export async function installChromeNativeHostManifest(
       await mkdir(manifestDir, { recursive: true })
       await writeFile(manifestPath, manifestContent)
       logForDebugging(
-        `[Claude in Chrome] Installed native host manifest at: ${manifestPath}`,
+        `[Forge in Chrome] Installed native host manifest at: ${manifestPath}`,
       )
       anyManifestUpdated = true
     } catch (error) {
       // Log but don't fail - the browser might not be installed
       logForDebugging(
-        `[Claude in Chrome] Failed to install manifest at ${manifestPath}: ${error}`,
+        `[Forge in Chrome] Failed to install manifest at ${manifestPath}: ${error}`,
       )
     }
   }
@@ -253,12 +253,12 @@ export async function installChromeNativeHostManifest(
     void isChromeExtensionInstalled().then(isInstalled => {
       if (isInstalled) {
         logForDebugging(
-          `[Claude in Chrome] First-time install detected, opening reconnect page in browser`,
+          `[Forge in Chrome] First-time install detected, opening reconnect page in browser`,
         )
         void openInChrome(CHROME_EXTENSION_RECONNECT_URL)
       } else {
         logForDebugging(
-          `[Claude in Chrome] First-time install detected, but extension not installed, skipping reconnect`,
+          `[Forge in Chrome] First-time install detected, but extension not installed, skipping reconnect`,
         )
       }
     })
@@ -287,11 +287,11 @@ function registerWindowsNativeHosts(manifestPath: string): void {
     ]).then(result => {
       if (result.code === 0) {
         logForDebugging(
-          `[Claude in Chrome] Registered native host for ${browser} in Windows registry: ${fullKey}`,
+          `[Forge in Chrome] Registered native host for ${browser} in Windows registry: ${fullKey}`,
         )
       } else {
         logForDebugging(
-          `[Claude in Chrome] Failed to register native host for ${browser} in Windows registry: ${result.stderr}`,
+          `[Forge in Chrome] Failed to register native host for ${browser} in Windows registry: ${result.stderr}`,
         )
       }
     })
@@ -299,10 +299,10 @@ function registerWindowsNativeHosts(manifestPath: string): void {
 }
 
 /**
- * Create a wrapper script in ~/.claude/chrome/ that invokes the given command. This is
+ * Create a wrapper script in ~/.Forge/chrome/ that invokes the given command. This is
  * necessary because Chrome's native host manifest "path" field cannot contain arguments.
  *
- * @param command - The full command to execute (e.g., "/path/to/claude --chrome-native-host")
+ * @param command - The full command to execute (e.g., "/path/to/Forge --chrome-native-host")
  * @returns The path to the wrapper script
  */
 async function createWrapperScript(command: string): Promise<string> {
@@ -340,7 +340,7 @@ exec ${command}
   }
 
   logForDebugging(
-    `[Claude in Chrome] Created Chrome native host wrapper script: ${wrapperPath}`,
+    `[Forge in Chrome] Created Chrome native host wrapper script: ${wrapperPath}`,
   )
   return wrapperPath
 }
@@ -355,7 +355,7 @@ exec ${command}
  *
  * Only positive detections are persisted. A negative result from the
  * filesystem scan is not cached, because it may come from a machine that
- * shares ~/.claude.json but has no local Chrome (e.g. a remote dev
+ * shares ~/.Forge.json but has no local Chrome (e.g. a remote dev
  * environment using the bridge), and caching it would permanently poison
  * auto-enable for every session on every machine that reads that config.
  */
@@ -383,7 +383,7 @@ function isChromeExtensionInstalled_CACHED_MAY_BE_STALE(): boolean {
 }
 
 /**
- * Detects if the Claude in Chrome extension is installed by checking the Extensions
+ * Detects if the Forge in Chrome extension is installed by checking the Extensions
  * directory across all supported Chromium-based browsers and their profiles.
  *
  * @returns Object with isInstalled boolean and the browser where the extension was found
@@ -392,13 +392,9 @@ export async function isChromeExtensionInstalled(): Promise<boolean> {
   const browserPaths = getAllBrowserDataPaths()
   if (browserPaths.length === 0) {
     logForDebugging(
-      `[Claude in Chrome] Unsupported platform for extension detection: ${getPlatform()}`,
+      `[Forge in Chrome] Unsupported platform for extension detection: ${getPlatform()}`,
     )
     return false
   }
   return isChromeExtensionInstalledPortable(browserPaths, logForDebugging)
 }
-
-
-
-

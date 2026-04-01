@@ -210,7 +210,3 @@ export class TerminalQuerier {
     }
   }
 }
-
-
-
-

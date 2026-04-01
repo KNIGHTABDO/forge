@@ -1,10 +1,10 @@
 import { LRUCache } from 'lru-cache'
 import { basename, dirname, join, sep } from 'path'
-import type { SuggestionItem } from '../../components/PromptInput/PromptInputFooterSuggestions.js'
-import { getCwd } from '../../utils/cwd.js'
-import { getFsImplementation } from '../../utils/fsOperations.js'
-import { logError } from '../../utils/log.js'
-import { expandPath } from '../../utils/path.js'
+import type { SuggestionItem } from 'src/components/PromptInput/PromptInputFooterSuggestions.js'
+import { getCwd } from 'src/utils/cwd.js'
+import { getFsImplementation } from 'src/utils/fsOperations.js'
+import { logError } from 'src/utils/log.js'
+import { expandPath } from 'src/utils/path.js'
 // Types
 export type DirectoryEntry = {
   name: string
@@ -261,7 +261,3 @@ export function clearPathCache(): void {
   directoryCache.clear()
   pathCache.clear()
 }
-
-
-
-

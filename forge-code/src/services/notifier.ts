@@ -154,7 +154,3 @@ async function isAppleTerminalBellDisabled(): Promise<boolean> {
     return false
   }
 }
-
-
-
-

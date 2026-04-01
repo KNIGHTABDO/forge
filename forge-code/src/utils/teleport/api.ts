@@ -1,7 +1,7 @@
 import axios, { type AxiosRequestConfig, type AxiosResponse } from 'axios'
 import { randomUUID } from 'crypto'
-import { getOauthConfig } from '../../constants/oauth.js'
-import { getOrganizationUUID } from '../../services/oauth/client.js'
+import { getOauthConfig } from 'src/constants/oauth.js'
+import { getOrganizationUUID } from 'src/services/oauth/client.js'
 import z from 'zod/v4'
 import { getClaudeAIOAuthTokens } from '../auth.js'
 import { logForDebugging } from '../debug.js'
@@ -185,7 +185,7 @@ export async function prepareApiRequest(): Promise<{
   const accessToken = getClaudeAIOAuthTokens()?.accessToken
   if (accessToken === undefined) {
     throw new Error(
-      'Forge Code web sessions require authentication with a forge-app.vercel.app account. API key authentication is not sufficient. Please run /login to authenticate, or check your authentication status with /status.',
+      'Forge Code web sessions require authentication with a Forge.ai account. API key authentication is not sufficient. Please run /login to authenticate, or check your authentication status with /status.',
     )
   }
 
@@ -211,7 +211,7 @@ export async function fetchCodeSessionsFromSessionsAPI(): Promise<
   try {
     const headers = {
       ...getOAuthHeaders(accessToken),
-      'ForgeTeam-beta': 'ccr-byoc-2025-07-29',
+      'anthropic-beta': 'ccr-byoc-2025-07-29',
       'x-organization-uuid': orgUUID,
     }
 
@@ -271,13 +271,13 @@ export async function fetchCodeSessionsFromSessionsAPI(): Promise<
 /**
  * Creates OAuth headers for API requests
  * @param accessToken The OAuth access token
- * @returns Headers object with Authorization, Content-Type, and ForgeTeam-version
+ * @returns Headers object with Authorization, Content-Type, and anthropic-version
  */
 export function getOAuthHeaders(accessToken: string): Record<string, string> {
   return {
     Authorization: `Bearer ${accessToken}`,
     'Content-Type': 'application/json',
-    'ForgeTeam-version': '2023-06-01',
+    'anthropic-version': '2023-06-01',
   }
 }
 
@@ -294,7 +294,7 @@ export async function fetchSession(
   const url = `${getOauthConfig().BASE_API_URL}/v1/sessions/${sessionId}`
   const headers = {
     ...getOAuthHeaders(accessToken),
-    'ForgeTeam-beta': 'ccr-byoc-2025-07-29',
+    'anthropic-beta': 'ccr-byoc-2025-07-29',
     'x-organization-uuid': orgUUID,
   }
 
@@ -344,7 +344,7 @@ export function getBranchFromSession(
 /**
  * Content for a remote session message.
  * Accepts a plain string or an array of content blocks (text, image, etc.)
- * following the ForgeTeam API messages spec.
+ * following the Anthropic API messages spec.
  */
 export type RemoteMessageContent =
   | string
@@ -369,7 +369,7 @@ export async function sendEventToRemoteSession(
     const url = `${getOauthConfig().BASE_API_URL}/v1/sessions/${sessionId}/events`
     const headers = {
       ...getOAuthHeaders(accessToken),
-      'ForgeTeam-beta': 'ccr-byoc-2025-07-29',
+      'anthropic-beta': 'ccr-byoc-2025-07-29',
       'x-organization-uuid': orgUUID,
     }
 
@@ -432,7 +432,7 @@ export async function updateSessionTitle(
     const url = `${getOauthConfig().BASE_API_URL}/v1/sessions/${sessionId}`
     const headers = {
       ...getOAuthHeaders(accessToken),
-      'ForgeTeam-beta': 'ccr-byoc-2025-07-29',
+      'anthropic-beta': 'ccr-byoc-2025-07-29',
       'x-organization-uuid': orgUUID,
     }
 
@@ -464,7 +464,3 @@ export async function updateSessionTitle(
     return false
   }
 }
-
-
-
-

@@ -29,9 +29,9 @@ export const getBedrockInferenceProfiles = memoize(async function (): Promise<
       nextToken = response.nextToken
     } while (nextToken)
 
-    // Filter for ForgeTeam models (SYSTEM_DEFINED filtering handled in query)
+    // Filter for Anthropic models (SYSTEM_DEFINED filtering handled in query)
     return allProfiles
-      .filter(profile => profile.inferenceProfileId?.includes('ForgeTeam'))
+      .filter(profile => profile.inferenceProfileId?.includes('anthropic'))
       .map(profile => profile.inferenceProfileId)
       .filter(Boolean) as string[]
   } catch (error) {
@@ -49,7 +49,7 @@ export function findFirstMatch(
 
 async function createBedrockClient() {
   const { BedrockClient } = await import('@aws-sdk/client-bedrock')
-  // Match the ForgeTeam Bedrock SDK's region behavior exactly:
+  // Match the Anthropic Bedrock SDK's region behavior exactly:
   // - Reads AWS_REGION or AWS_DEFAULT_REGION env vars (not AWS config files)
   // - Falls back to 'us-east-1' if neither is set
   // This ensures we query profiles from the same region the client will use
@@ -59,8 +59,8 @@ async function createBedrockClient() {
 
   const clientConfig: ConstructorParameters<typeof BedrockClient>[0] = {
     region,
-    ...(process.env.FORGE_TEAM_BEDROCK_BASE_URL && {
-      endpoint: process.env.FORGE_TEAM_BEDROCK_BASE_URL,
+    ...(process.env.ANTHROPIC_BEDROCK_BASE_URL && {
+      endpoint: process.env.ANTHROPIC_BEDROCK_BASE_URL,
     }),
     ...(await getAWSClientProxyConfig()),
     ...(skipAuth && {
@@ -102,8 +102,8 @@ export async function createBedrockRuntimeClient() {
 
   const clientConfig: ConstructorParameters<typeof BedrockRuntimeClient>[0] = {
     region,
-    ...(process.env.FORGE_TEAM_BEDROCK_BASE_URL && {
-      endpoint: process.env.FORGE_TEAM_BEDROCK_BASE_URL,
+    ...(process.env.ANTHROPIC_BEDROCK_BASE_URL && {
+      endpoint: process.env.ANTHROPIC_BEDROCK_BASE_URL,
     }),
     ...(await getAWSClientProxyConfig()),
     ...(skipAuth && {
@@ -176,10 +176,10 @@ export const getInferenceProfileBackingModel = memoize(async function (
 })
 
 /**
- * Check if a model ID is a foundation model (e.g., "ForgeTeam.claude-sonnet-4-5-20250929-v1:0")
+ * Check if a model ID is a foundation model (e.g., "anthropic.Forge-sonnet-4-5-20250929-v1:0")
  */
 export function isFoundationModel(modelId: string): boolean {
-  return modelId.startsWith('ForgeTeam.')
+  return modelId.startsWith('anthropic.')
 }
 
 /**
@@ -213,11 +213,11 @@ export type BedrockRegionPrefix = (typeof BEDROCK_REGION_PREFIXES)[number]
  * Extract the region prefix from a Bedrock cross-region inference model ID.
  * Handles both plain model IDs and full ARN format.
  * For example:
- * - "eu.ForgeTeam.claude-sonnet-4-5-20250929-v1:0" → "eu"
- * - "us.ForgeTeam.claude-3-7-sonnet-20250219-v1:0" → "us"
- * - "arn:aws:bedrock:ap-northeast-2:123:inference-profile/global.ForgeTeam.claude-opus-4-6-v1" → "global"
- * - "ForgeTeam.claude-3-5-sonnet-20241022-v2:0" → undefined (foundation model)
- * - "claude-sonnet-4-5-20250929" → undefined (first-party format)
+ * - "eu.anthropic.Forge-sonnet-4-5-20250929-v1:0" → "eu"
+ * - "us.anthropic.Forge-3-7-sonnet-20250219-v1:0" → "us"
+ * - "arn:aws:bedrock:ap-northeast-2:123:inference-profile/global.anthropic.Forge-opus-4-6-v1" → "global"
+ * - "anthropic.Forge-3-5-sonnet-20241022-v2:0" → undefined (foundation model)
+ * - "Forge-sonnet-4-5-20250929" → undefined (first-party format)
  */
 export function getBedrockRegionPrefix(
   modelId: string,
@@ -227,7 +227,7 @@ export function getBedrockRegionPrefix(
   const effectiveModelId = extractModelIdFromArn(modelId)
 
   for (const prefix of BEDROCK_REGION_PREFIXES) {
-    if (effectiveModelId.startsWith(`${prefix}.ForgeTeam.`)) {
+    if (effectiveModelId.startsWith(`${prefix}.anthropic.`)) {
       return prefix
     }
   }
@@ -237,13 +237,13 @@ export function getBedrockRegionPrefix(
 /**
  * Apply a region prefix to a Bedrock model ID.
  * If the model already has a different region prefix, it will be replaced.
- * If the model is a foundation model (ForgeTeam.*), the prefix will be added.
+ * If the model is a foundation model (anthropic.*), the prefix will be added.
  * If the model is not a Bedrock model, it will be returned as-is.
  *
  * For example:
- * - applyBedrockRegionPrefix("us.ForgeTeam.claude-sonnet-4-5-v1:0", "eu") → "eu.ForgeTeam.claude-sonnet-4-5-v1:0"
- * - applyBedrockRegionPrefix("ForgeTeam.claude-sonnet-4-5-v1:0", "eu") → "eu.ForgeTeam.claude-sonnet-4-5-v1:0"
- * - applyBedrockRegionPrefix("claude-sonnet-4-5-20250929", "eu") → "claude-sonnet-4-5-20250929" (not a Bedrock model)
+ * - applyBedrockRegionPrefix("us.anthropic.Forge-sonnet-4-5-v1:0", "eu") → "eu.anthropic.Forge-sonnet-4-5-v1:0"
+ * - applyBedrockRegionPrefix("anthropic.Forge-sonnet-4-5-v1:0", "eu") → "eu.anthropic.Forge-sonnet-4-5-v1:0"
+ * - applyBedrockRegionPrefix("Forge-sonnet-4-5-20250929", "eu") → "Forge-sonnet-4-5-20250929" (not a Bedrock model)
  */
 export function applyBedrockRegionPrefix(
   modelId: string,
@@ -255,7 +255,7 @@ export function applyBedrockRegionPrefix(
     return modelId.replace(`${existingPrefix}.`, `${prefix}.`)
   }
 
-  // Check if it's a foundation model (ForgeTeam.*) and add the prefix
+  // Check if it's a foundation model (anthropic.*) and add the prefix
   if (isFoundationModel(modelId)) {
     return `${prefix}.${modelId}`
   }
@@ -263,7 +263,3 @@ export function applyBedrockRegionPrefix(
   // Not a Bedrock model format, return as-is
   return modelId
 }
-
-
-
-

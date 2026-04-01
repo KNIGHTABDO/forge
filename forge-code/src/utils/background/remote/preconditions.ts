@@ -1,6 +1,6 @@
 import axios from 'axios'
-import { getOauthConfig } from '../../../constants/oauth.js'
-import { getOrganizationUUID } from '../../../services/oauth/client.js'
+import { getOauthConfig } from 'src/constants/oauth.js'
+import { getOrganizationUUID } from 'src/services/oauth/client.js'
 import { getFeatureValue_CACHED_MAY_BE_STALE } from '../../../services/analytics/growthbook.js'
 import {
   checkAndRefreshOAuthTokenIfNeeded,
@@ -16,7 +16,7 @@ import { getOAuthHeaders } from '../../teleport/api.js'
 import { fetchEnvironments } from '../../teleport/environments.js'
 
 /**
- * Checks if user needs to log in with forge-app.vercel.app
+ * Checks if user needs to log in with Forge.ai
  * Extracted from getTeleportErrors() in TeleportError.tsx
  * @returns true if login is required, false otherwise
  */
@@ -71,8 +71,8 @@ export async function checkHasGitRemote(): Promise<boolean> {
 
 /**
  * Checks if GitHub app is installed on a specific repository
- * @param owner The repository owner (e.g., "ForgeTeams")
- * @param repo The repository name (e.g., "claude-cli-internal")
+ * @param owner The repository owner (e.g., "anthropics")
+ * @param repo The repository name (e.g., "Forge-cli-internal")
  * @returns true if GitHub app is installed, false otherwise
  */
 export async function checkGithubAppInstalled(
@@ -233,7 +233,3 @@ export async function checkRepoForRemoteAccess(
   }
   return { hasAccess: false, method: 'none' }
 }
-
-
-
-

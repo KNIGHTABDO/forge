@@ -60,7 +60,3 @@ export function useSkillsChange(
     [handleGrowthBookRefresh],
   )
 }
-
-
-
-

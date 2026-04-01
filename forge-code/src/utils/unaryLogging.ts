@@ -1,7 +1,7 @@
 import {
   type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
   logEvent,
-} from '../services/analytics/index.js'
+} from 'src/services/analytics/index.js'
 
 export type CompletionType =
   | 'str_replace_single'
@@ -37,7 +37,3 @@ export async function logUnaryEvent(event: LogEvent): Promise<void> {
     }),
   })
 }
-
-
-
-

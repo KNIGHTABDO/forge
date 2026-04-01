@@ -1,10 +1,10 @@
 import { memoize } from 'lodash-es'
-import type { Command } from '../../commands.js'
+import type { Command } from 'src/commands.js'
 import {
   getCommandName,
   getSkillToolCommands,
   getSlashCommandToolSkills,
-} from '../../commands.js'
+} from 'src/commands.js'
 import { COMMAND_NAME_TAG } from '../../constants/xml.js'
 import { stringWidth } from '../../ink/stringWidth.js'
 import {
@@ -239,7 +239,3 @@ export async function getSkillInfo(cwd: string): Promise<{
     }
   }
 }
-
-
-
-

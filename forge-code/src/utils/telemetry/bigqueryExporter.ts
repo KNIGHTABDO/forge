@@ -8,7 +8,7 @@ import {
   type ResourceMetrics,
 } from '@opentelemetry/sdk-metrics'
 import axios from 'axios'
-import { checkMetricsEnabled } from '../../services/api/metricsOptOut.js'
+import { checkMetricsEnabled } from 'src/services/api/metricsOptOut.js'
 import { getIsNonInteractiveSession } from '../../bootstrap/state.js'
 import { getSubscriptionType, isClaudeAISubscriber } from '../auth.js'
 import { checkHasTrustDialogAccepted } from '../config.js'
@@ -44,7 +44,7 @@ export class BigQueryMetricsExporter implements PushMetricExporter {
   private isShutdown = false
 
   constructor(options: { timeout?: number } = {}) {
-    const defaultEndpoint = 'https://api.ForgeTeam.com/api/claude_code/metrics'
+    const defaultEndpoint = 'https://api.anthropic.com/api/claude_code/metrics'
 
     if (
       process.env.USER_TYPE === 'ant' &&
@@ -153,7 +153,7 @@ export class BigQueryMetricsExporter implements PushMetricExporter {
     const attrs = metrics.resource.attributes
 
     const resourceAttributes: Record<string, string> = {
-      'service.name': (attrs['service.name'] as string) || 'claude-code',
+      'service.name': (attrs['service.name'] as string) || 'Forge-code',
       'service.version': (attrs['service.version'] as string) || 'unknown',
       'os.type': (attrs['os.type'] as string) || 'unknown',
       'os.version': (attrs['os.version'] as string) || 'unknown',
@@ -250,7 +250,3 @@ export class BigQueryMetricsExporter implements PushMetricExporter {
     return AggregationTemporality.DELTA
   }
 }
-
-
-
-

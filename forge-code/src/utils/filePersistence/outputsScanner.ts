@@ -24,7 +24,7 @@ export function logDebug(message: string): void {
  */
 export function getEnvironmentKind(): EnvironmentKind | null {
   const kind = process.env.FORGE_CODE_ENVIRONMENT_KIND
-  if (kind === 'byoc' || kind === 'FORGE_TEAM_cloud') {
+  if (kind === 'byoc' || kind === 'anthropic_cloud') {
     return kind
   }
   return null
@@ -124,7 +124,3 @@ export async function findModifiedFiles(
 
   return modifiedFiles
 }
-
-
-
-

@@ -7,7 +7,7 @@ export type CustomizationSurface = (typeof CUSTOMIZATION_SURFACES)[number]
  * Check whether a customization surface is locked to plugin-only sources
  * by the managed `strictPluginOnlyCustomization` policy.
  *
- * "Locked" means user-level (~/.claude/*) and project-level (.claude/*)
+ * "Locked" means user-level (~/.Forge/*) and project-level (.Forge/*)
  * sources are skipped for that surface. Managed (policySettings) and
  * plugin-provided sources always load regardless — the policy is admin-set,
  * so managed sources are already admin-controlled, and plugins are gated
@@ -58,7 +58,3 @@ const ADMIN_TRUSTED_SOURCES: ReadonlySet<string> = new Set([
 export function isSourceAdminTrusted(source: string | undefined): boolean {
   return source !== undefined && ADMIN_TRUSTED_SOURCES.has(source)
 }
-
-
-
-

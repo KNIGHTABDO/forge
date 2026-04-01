@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'http'
 import { createServer, type Server } from 'http'
 import type { AddressInfo } from 'net'
-import { logEvent } from '../../services/analytics/index.js'
+import { logEvent } from 'src/services/analytics/index.js'
 import { getOauthConfig } from '../../constants/oauth.js'
 import { logError } from '../../utils/log.js'
 import { shouldUseClaudeAIAuth } from './client.js'
@@ -209,7 +209,3 @@ export class AuthCodeListener {
     }
   }
 }
-
-
-
-

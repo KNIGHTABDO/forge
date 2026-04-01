@@ -9,8 +9,3 @@ const config = {
 } satisfies Command
 
 export default config
-
-
-
-
-

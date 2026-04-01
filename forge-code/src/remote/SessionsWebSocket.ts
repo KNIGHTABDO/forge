@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto'
 import { getOauthConfig } from '../constants/oauth.js'
-import type { SDKMessage } from '../entrypoints/agentSdkTypes.js'
+import type { SDKControlRequest } from '../entrypoints/agentSdkTypes.js'
 import type {
   SDKControlCancelRequest,
   SDKControlRequest,
@@ -38,7 +38,7 @@ const PERMANENT_CLOSE_CODES = new Set([
 type WebSocketState = 'connecting' | 'connected' | 'closed'
 
 type SessionsMessage =
-  | SDKMessage
+  | SDKControlRequest
   | SDKControlRequest
   | SDKControlResponse
   | SDKControlCancelRequest
@@ -75,9 +75,9 @@ type WebSocketLike = {
  * WebSocket client for connecting to CCR sessions via /v1/sessions/ws/{id}/subscribe
  *
  * Protocol:
- * 1. Connect to wss://api.ForgeTeam.com/v1/sessions/ws/{sessionId}/subscribe?organization_uuid=...
+ * 1. Connect to wss://api.anthropic.com/v1/sessions/ws/{sessionId}/subscribe?organization_uuid=...
  * 2. Send auth message: { type: 'auth', credential: { type: 'oauth', token: '...' } }
- * 3. Receive SDKMessage stream from the session
+ * 3. Receive SDKControlRequest stream from the session
  */
 export class SessionsWebSocket {
   private ws: WebSocketLike | null = null
@@ -114,7 +114,7 @@ export class SessionsWebSocket {
     const accessToken = this.getAccessToken()
     const headers = {
       Authorization: `Bearer ${accessToken}`,
-      'ForgeTeam-version': '2023-06-01',
+      'anthropic-version': '2023-06-01',
     }
 
     if (typeof Bun !== 'undefined') {
@@ -402,7 +402,3 @@ export class SessionsWebSocket {
     }, 500)
   }
 }
-
-
-
-

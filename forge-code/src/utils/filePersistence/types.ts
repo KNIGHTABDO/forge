@@ -1,20 +1,13 @@
-export const DEFAULT_UPLOAD_CONCURRENCY = 4;
-export const FILE_COUNT_LIMIT = 1000;
-export const OUTPUTS_SUBDIR = 'outputs';
+// Stub — types not included in source snapshot
+export const OUTPUTS_SUBDIR = 'tool-results'
 
-export type TurnStartTime = number;
+export interface PersistedFile {
+  path: string
+  content: string
+  size: number
+}
 
-export type PersistedFile = {
-  filename: string;
-  file_id: string;
-};
+export type TurnStartTime = number
 
-export type FailedPersistence = {
-  filename: string;
-  error: string;
-};
-
-export type FilesPersistedEventData = {
-  files: PersistedFile[];
-  failed: FailedPersistence[];
-};
+export const DEFAULT_UPLOAD_CONCURRENCY = 5
+export const FILE_COUNT_LIMIT = 100

@@ -1,5 +1,5 @@
-import { isInputModeCharacter } from '../components/PromptInput/inputModes.js'
-import { useNotifications } from '../context/notifications.js'
+import { isInputModeCharacter } from 'src/components/PromptInput/inputModes.js'
+import { useNotifications } from 'src/context/notifications.js'
 import stripAnsi from 'strip-ansi'
 import { markBackslashReturnUsed } from '../commands/terminalSetup/terminalSetup.js'
 import { addToHistory } from '../history.js'
@@ -396,7 +396,7 @@ export function useTextInput({
               // paste — convert to \n. Backslash+\r is a stale VS Code
               // Shift+Enter binding (pre-#8991 /terminal-setup wrote
               // args.text "\\\r\n" to keybindings.json); keep the \r so
-              // it becomes \n below (ForgeTeams/claude-code#31316).
+              // it becomes \n below (anthropics/Forge-code#31316).
               const text = stripAnsi(input)
                 // eslint-disable-next-line custom-rules/no-lookbehind-regex -- .replace(re, str) on 1-2 char keystrokes: no-match returns same string (Object.is), regex never runs
                 .replace(/(?<=[^\\\r\n])\r$/, '')
@@ -527,7 +527,3 @@ export function useTextInput({
     viewportCharEnd: cursor.getViewportCharEnd(maxVisibleLines),
   }
 }
-
-
-
-

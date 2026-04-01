@@ -1,6 +1,6 @@
 import { basename } from 'path'
 import React from 'react'
-import { logError } from '../utils/log.js'
+import { logError } from 'src/utils/log.js'
 import { useDebounceCallback } from 'usehooks-ts'
 import type { InputEvent, Key } from '../ink.js'
 import {
@@ -283,7 +283,3 @@ export function usePasteHandler({
     isPasting,
   }
 }
-
-
-
-

@@ -196,11 +196,7 @@ export const SOURCES = [
 
 /**
  * The JSON Schema URL for Forge Code settings
- * You can edit the contents at https://github.com/SchemaStore/schemastore/blob/master/src/schemas/json/claude-code-settings.json
+ * You can edit the contents at https://github.com/SchemaStore/schemastore/blob/master/src/schemas/json/Forge-code-settings.json
  */
 export const FORGE_CODE_SETTINGS_SCHEMA_URL =
-  'https://json.schemastore.org/claude-code-settings.json'
-
-
-
-
+  'https://json.schemastore.org/Forge-code-settings.json'

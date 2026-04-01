@@ -93,7 +93,3 @@ export function getPewterLedgerVariant(): PewterLedgerVariant {
   if (raw === 'trim' || raw === 'cut' || raw === 'cap') return raw
   return null
 }
-
-
-
-

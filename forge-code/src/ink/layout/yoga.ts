@@ -11,7 +11,7 @@ import Yoga, {
   PositionType,
   Wrap,
   type Node as YogaNode,
-} from '../../native-ts/yoga-layout/index.js'
+} from 'src/native-ts/yoga-layout/index.js'
 import {
   type LayoutAlign,
   LayoutDisplay,
@@ -306,7 +306,3 @@ export class YogaLayoutNode implements LayoutNode {
 export function createYogaLayoutNode(): LayoutNode {
   return new YogaLayoutNode(Yoga.Node.create())
 }
-
-
-
-

@@ -10,22 +10,22 @@ export type ModelCapabilityOverride =
 
 const TIERS = [
   {
-    modelEnvVar: 'FORGE_TEAM_DEFAULT_OPUS_MODEL',
-    capabilitiesEnvVar: 'FORGE_TEAM_DEFAULT_OPUS_MODEL_SUPPORTED_CAPABILITIES',
+    modelEnvVar: 'ANTHROPIC_DEFAULT_OPUS_MODEL',
+    capabilitiesEnvVar: 'ANTHROPIC_DEFAULT_OPUS_MODEL_SUPPORTED_CAPABILITIES',
   },
   {
-    modelEnvVar: 'FORGE_TEAM_DEFAULT_SONNET_MODEL',
-    capabilitiesEnvVar: 'FORGE_TEAM_DEFAULT_SONNET_MODEL_SUPPORTED_CAPABILITIES',
+    modelEnvVar: 'ANTHROPIC_DEFAULT_SONNET_MODEL',
+    capabilitiesEnvVar: 'ANTHROPIC_DEFAULT_SONNET_MODEL_SUPPORTED_CAPABILITIES',
   },
   {
-    modelEnvVar: 'FORGE_TEAM_DEFAULT_HAIKU_MODEL',
-    capabilitiesEnvVar: 'FORGE_TEAM_DEFAULT_HAIKU_MODEL_SUPPORTED_CAPABILITIES',
+    modelEnvVar: 'ANTHROPIC_DEFAULT_HAIKU_MODEL',
+    capabilitiesEnvVar: 'ANTHROPIC_DEFAULT_HAIKU_MODEL_SUPPORTED_CAPABILITIES',
   },
 ] as const
 
 /**
  * Check whether a 3p model capability override is set for a model that matches one of
- * the pinned FORGE_TEAM_DEFAULT_*_MODEL env vars.
+ * the pinned ANTHROPIC_DEFAULT_*_MODEL env vars.
  */
 export const get3PModelCapabilityOverride = memoize(
   (model: string, capability: ModelCapabilityOverride): boolean | undefined => {
@@ -48,7 +48,3 @@ export const get3PModelCapabilityOverride = memoize(
   },
   (model, capability) => `${model.toLowerCase()}:${capability}`,
 )
-
-
-
-

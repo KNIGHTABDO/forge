@@ -18,7 +18,3 @@ const timeout: CommandSpec = {
 }
 
 export default timeout
-
-
-
-

@@ -2,7 +2,7 @@ import type {
   AsyncHookJSONOutput,
   HookEvent,
   SyncHookJSONOutput,
-} from '../../entrypoints/agentSdkTypes.js'
+} from 'src/entrypoints/agentSdkTypes.js'
 import { logForDebugging } from '../debug.js'
 import type { ShellCommand } from '../ShellCommand.js'
 import { invalidateSessionEnvCache } from '../sessionEnvironment.js'
@@ -307,7 +307,3 @@ export function clearAllAsyncHooks(): void {
   }
   pendingHooks.clear()
 }
-
-
-
-

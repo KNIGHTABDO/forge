@@ -9,7 +9,7 @@ import { execFileNoThrow } from '../execFileNoThrow.js'
 import { getPlatform } from '../platform.js'
 import { which } from '../which.js'
 
-export const CLAUDE_IN_CHROME_MCP_SERVER_NAME = 'claude-in-chrome'
+export const CLAUDE_IN_CHROME_MCP_SERVER_NAME = 'Forge-in-chrome'
 
 // Re-export ChromiumBrowser type for setup.ts
 export type { ChromiumBrowser } from './setupPortable.js'
@@ -356,7 +356,7 @@ export async function detectAvailableBrowser(): Promise<ChromiumBrowser | null> 
           const stats = await stat(appPath)
           if (stats.isDirectory()) {
             logForDebugging(
-              `[Claude in Chrome] Detected browser: ${config.name}`,
+              `[Forge in Chrome] Detected browser: ${config.name}`,
             )
             return browserId
           }
@@ -372,7 +372,7 @@ export async function detectAvailableBrowser(): Promise<ChromiumBrowser | null> 
         for (const binary of config.linux.binaries) {
           if (await which(binary).catch(() => null)) {
             logForDebugging(
-              `[Claude in Chrome] Detected browser: ${config.name}`,
+              `[Forge in Chrome] Detected browser: ${config.name}`,
             )
             return browserId
           }
@@ -391,7 +391,7 @@ export async function detectAvailableBrowser(): Promise<ChromiumBrowser | null> 
             const stats = await stat(dataPath)
             if (stats.isDirectory()) {
               logForDebugging(
-                `[Claude in Chrome] Detected browser: ${config.name}`,
+                `[Forge in Chrome] Detected browser: ${config.name}`,
               )
               return browserId
             }
@@ -433,7 +433,7 @@ export async function openInChrome(url: string): Promise<boolean> {
   const browser = await detectAvailableBrowser()
 
   if (!browser) {
-    logForDebugging('[Claude in Chrome] No compatible browser found')
+    logForDebugging('[Forge in Chrome] No compatible browser found')
     return false
   }
 
@@ -472,7 +472,7 @@ export async function openInChrome(url: string): Promise<boolean> {
  * Get the socket directory path (Unix only)
  */
 export function getSocketDir(): string {
-  return `/tmp/claude-mcp-browser-bridge-${getUsername()}`
+  return `/tmp/Forge-mcp-browser-bridge-${getUsername()}`
 }
 
 /**
@@ -512,7 +512,7 @@ export function getAllSocketPaths(): string[] {
   }
 
   // Legacy fallback paths
-  const legacyName = `claude-mcp-browser-bridge-${getUsername()}`
+  const legacyName = `Forge-mcp-browser-bridge-${getUsername()}`
   const legacyTmpdir = join(tmpdir(), legacyName)
   const legacyTmp = `/tmp/${legacyName}`
 
@@ -527,8 +527,8 @@ export function getAllSocketPaths(): string[] {
 }
 
 function getSocketName(): string {
-  // NOTE: This must match the one used in the Claude in Chrome MCP
-  return `claude-mcp-browser-bridge-${getUsername()}`
+  // NOTE: This must match the one used in the Forge in Chrome MCP
+  return `Forge-mcp-browser-bridge-${getUsername()}`
 }
 
 function getUsername(): string {
@@ -538,7 +538,3 @@ function getUsername(): string {
     return process.env.USER || process.env.USERNAME || 'default'
   }
 }
-
-
-
-

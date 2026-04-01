@@ -177,7 +177,3 @@ export function configureGlobalMTLS(): void {
     )
   }
 }
-
-
-
-

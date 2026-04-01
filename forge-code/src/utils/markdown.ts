@@ -379,7 +379,3 @@ export function padAligned(
   }
   return content + ' '.repeat(padding)
 }
-
-
-
-

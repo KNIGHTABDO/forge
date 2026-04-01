@@ -1,6 +1,6 @@
 /* eslint-disable eslint-plugin-n/no-unsupported-features/node-builtins */
 
-import type { SDKMessage } from '../entrypoints/agentSdkTypes.js'
+import type { SDKControlRequest } from '../entrypoints/agentSdkTypes.js'
 import type {
   SDKControlPermissionRequest,
   StdoutMessage,
@@ -18,7 +18,7 @@ export type DirectConnectConfig = {
 }
 
 export type DirectConnectCallbacks = {
-  onMessage: (message: SDKMessage) => void
+  onMessage: (message: SDKControlRequest) => void
   onPermissionRequest: (
     request: SDKControlPermissionRequest,
     requestId: string,
@@ -211,7 +211,3 @@ export class DirectConnectSessionManager {
     return this.ws?.readyState === WebSocket.OPEN
   }
 }
-
-
-
-

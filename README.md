@@ -1,98 +1,68 @@
-# ⚒️ FORGE — The React Micro-SaaS Engine
-
-FORGE is a high-performance AI deployment engine that transforms single-sentence ideas into modular, persistent, and professional-grade React applications. No boilerplate, no modes, just building.
+<div align="center">
+  <h1>⚒️ FORGE</h1>
+  <p><b>The React Micro-SaaS Engine & Ecosystem</b></p>
+  <p><i>Zero boilerplate. No modes. Just pure, instant building.</i></p>
+</div>
 
 ---
 
-## 🚀 The Forge V3 Orchestration
-Forge V3 moves beyond simple code blocks to a sophisticated **Unified Orchestrator**. We've eliminated the friction of "Modes" (Plan, Build, Fast) in favor of a smooth, conversational development experience that feels like pair-programming with an elite engineer.
+**FORGE** is a high-performance AI deployment engine that transforms single-sentence ideas into modular, persistent, and professional-grade React applications. Moving beyond simple code blocks, Forge bridges a powerful **Web Orchestrator** with an elite **Terminal CLI**, giving you the ultimate toolset for rapid prototyping and local-first engineering.
+
+## 🌟 The Forge Ecosystem
+
+1. **[Forge Web App](#-the-forge-v3-orchestration-web)**: A browser-based AI orchestrator powered by Next.js and Sandpack, featuring a unified conversation/implementation engine and dynamic Delta-Sync multi-file architecture to generate functional React apps instantly.
+2. **[Forge Code CLI](./forge-code/README.md)**: A terminal-native AI pair programmer that lives in your local workspace. Completely rebranded and deeply integrated with modern models like Gemini 3.1 Flash Lite and GitHub Copilot.
+
+---
+
+## 🚀 The Forge V3 Orchestration (Web)
+
+Forge V3 features a sophisticated **Unified Orchestrator**. We've eliminated the friction of traditional "Modes" in favor of a smooth, conversational development experience that feels like pair-programming with an elite engineer.
 
 ### 🧠 Intelligent Context Awareness
-The Orchestrator understands the difference between **Conversation** and **Implementation**. 
+The Orchestrator natively understands the difference between **Conversation** and **Implementation**.
 - Ask for advice or brainstorm ideas → Get a concise, expert text response.
-- Ask to build a feature or fix a bug → Receive precise, incremental code updates instantly.
+- Ask to build a feature or fix a bug → Receive precise, incremental file updates instantly.
 
 ### ⚛️ Incremental Multi-File Architecture
-Forget re-generating the entire app for every small change. Forge V3 uses an advanced **Delta-Sync** strategy:
-- **Modular Components** — Apps are built as collections of functional components (`Navbar.js`, `Charts.js`, `Store.js`).
-- **File-Level Edits** — The AI only outputs files that actually changed, drastically reducing latency and state resets.
-- **State-Based Multi-Page Routing** — Build complex, multi-view applications using native React state routing, ensuring lightning-fast transitions without full page reloads.
+Forget re-generating the entire app for every small change. Forge uses an advanced **Delta-Sync** strategy:
+- **Modular Components** — Apps are strictly built as collections of functional components.
+- **File-Level Edits** — The AI only outputs files that actually changed, drastically reducing latency and layout-shift.
+- **State-Based Multi-Page Routing** — Build complex, multi-view applications using native React state routing, ensuring lightning-fast transitions.
 
 ### 📦 Sandpack V3 Engine
-Forge-built apps live in a professional development sandbox powered by `@codesandbox/sandpack`.
+All Forge-built apps live in a professional development sandbox powered by `@codesandbox/sandpack`.
 - **Dynamic Tailwind Injection** — All components get instant, premium styling via an automated CDN bridge.
-- **Hot Reloading** — See your UI evolve in real-time as the AI streams the code.
-- **Production-Ready CRA Environment** — Uses standard Create React App patterns for seamless handoff.
+- **Hot Reloading** — See your UI evolve in real-time as the AI streams the AST.
+- **Production-Ready CRA Environment** — Uses standard React patterns for seamless handoff to your local env.
 
 ### 🔄 Persistent Developer Sessions
-Your work-primary work is now automatically synchronized to GitHub as a **Developer Session**. 
-- **Auto-Restore** — Refreshing the page? No problem. Forge recovers your full chat history and file tree instantly.
-- **Shareable Draft URLs** — Every session gets a unique path (`?session=sess_xyz`) for easy bookmarking and collaboration.
-- **Atomic Deployment Sync** — When you ship, the entire multi-file project is committed to GitHub in a single atomic transaction.
-
----
-
-## ✨ Core Features
-
-- **Unified Orchestrator** — No modes. Just chat, and Forge implements your intent automatically.
-- **📦 Sandpack Engine v3** — Reliable, cross-browser, hot-reloading preview with Tailwind support.
-- **🏷️ Automated Branding** — Every project gets a short, catchy, and brandable "Smart Title" generated by the AI.
-- **🔄 Session Persistence** — Continuous background auto-saving to your private GitHub session store.
-- **Delta-Sync Updates** — Incremental code delivery for faster builds and better state preservation.
-- **Deep Research Agent (Beta)** — Dedicated standalone conversational route for long-form research with live animated thinking feed, source transparency, and citable reports.
-- **Mobile-First Premium Minimal UI** — High-fidelity responsive interface built with Forge’s vanilla CSS design tokens and dynamic Tailwind support.
-- **Forge Code CLI** — High-performance agentic CLI for local-first engineering tasks, file editing, and advanced orchestration.
-- **Legacy Compatibility** — Built-in support for rendering older FORGE V1/V2 HTML projects.
+Your primary work is automatically synchronized to GitHub as a **Developer Session**.
+- **Auto-Restore** — Refreshing the page? Forge recovers your full chat history and file tree instantly.
+- **Shareable Draft URLs** — Every session gets a unique path (`?session=sess_xyz`) for easy collaboration.
 
 ---
 
 ## 🔎 Deep Research Agent (Beta)
 
-Deep Research is a **fully standalone capability** at `/research/[id]`. It is intentionally separate from `/build` and the one-sentence app creation workflow.
+Deep Research is a **fully standalone capability** available at `/research/[id]`. It is intentionally separate from `/build` and the one-sentence app creation workflow.
 
-### Why it exists
-- **Long-form depth** — Iterative research that can scale toward hundreds of sources for broad coverage.
-- **Conversational operation** — Full-screen chat-style flow with a docked composer, live thinking blocks, and smooth message streaming.
-- **Transparent operation** — Website-by-website analysis state, rolling "learned so far" blocks, and inline live stats.
-- **Citable outputs** — Final reports include inline citation markers and a clickable source appendix.
-
-### How to use
-1. Open **Deep Research (Beta)** from the landing page.
-2. Enter your query in the centered composer, then continue in the docked chat composer.
-3. Review and edit the generated research plan inline, then approve to run.
-4. Pause/resume/stop as needed.
-5. Export the final report as Markdown or print-ready PDF, then ask follow-ups in the same thread.
-
-### Source-depth model
-- The agent performs query fan-out, iterative retrieval, and gap-closing loops.
-- Progress metrics include sources analyzed, token estimate, iterations, unique domains, and depth score.
-- Sessions are persisted via GitHub-backed session storage, enabling resume via `?session=...`.
+- **Long-Form Depth** — Iterative research that scales across hundreds of sources.
+- **Conversational Operation** — Full-screen chat flow with a docked composer, live thinking blocks, and smooth streaming.
+- **Source Transparency** — Website-by-website analysis state, rolling "learned so far" blocks, and inline live stats.
+- **Citable Outputs** — Final reports include inline citation markers, a clickable source appendix, and export options.
 
 ---
 
 ## 💻 Forge Code CLI
 
-Forge Code is the local-first extension of the Forge protocol, providing a powerful terminal interface for advanced engineering tasks.
+**Forge Code** is the local-first extension of the Forge protocol. Designed as a beautiful, React Ink-powered terminal interface, it brings the Forge intelligence directly to your codebase.
 
-### Features
-- **File Manipulation** — Full-speed file reading, writing, and partial editing.
-- **Command Execution** — Permission-gated shell access for runs and builds.
-- **Web Research** — Integration with the Deep Research search protocol.
-- **Headless Mode** — Run Forge as a background agent for scheduled or remote tasks.
+- **Universal Providers**: Natively supports **Gemini 3.1 Flash Lite** and **GitHub Copilot**.
+- **Agentic File Manipulation**: Full-speed file reading, writing, and partial editing right in your local environment.
+- **Background Automation**: Run Forge as a background agent for scheduled tasks or heavy refactoring.
 
-### Quick Start
-```bash
-# Install globally
-npm install -g forge-code
-
-# Keep it updated
-npm update -g forge-code
-
-# Run
-forge-code --help
-```
-
-CLI repository (live): https://github.com/KNIGHTABDO/forge-code
+👉 **[Read the full Forge Code CLI setup and documentation here.](./forge-code/README.md)**
 
 ---
 
@@ -100,16 +70,16 @@ CLI repository (live): https://github.com/KNIGHTABDO/forge-code
 
 | Layer | Technology |
 |-------|-----------|
-| **Framework** | [Next.js 16](https://nextjs.org/) (App Router) |
-| **Logic** | TypeScript + React 19 + [Sandpack](https://sandpack.codesandbox.io/) |
-| **AI Engine** | Google Gemini 3.1 Orchestrator |
-| **Styling** | Vanilla CSS + Dynamic Tailwind CDN |
+| **Core Framework** | [Next.js App Router](https://nextjs.org/) |
+| **Logic & Types** | TypeScript + React 19 + [Sandpack](https://sandpack.codesandbox.io/) |
+| **AI Intelligence** | Gemini 3.1 Flash Lite / GitHub Copilot |
+| **Styling Engine** | Vanilla CSS + Dynamic Tailwind CDN |
 | **Persistence** | GitHub JSON Database & Session API |
-| **UI Assets** | Lucide Icons · Recharts · HSL Modern Theme |
+| **Terminal CLI** | React Ink + Bun + Universal API Shim |
 
 ---
 
-## 🚦 Getting Started
+## 🚦 Getting Started (Web App)
 
 1. **Clone & Install**
 ```bash
@@ -119,29 +89,32 @@ npm install
 ```
 
 2. **Configure Environment**
-Create `.env.local` with your `GEMINI_API_KEY` and `GITHUB_TOKEN`.
+Create `.env.local` using the keys required:
+```env
+GEMINI_API_KEY=your_gemini_key
+GITHUB_TOKEN=your_github_token
+```
 
-3. **Launch**
+3. **Launch the Engine**
 ```bash
 npm run dev
 ```
 
-Visit `localhost:3000` to start forging. Every project you build is automatically saved to your unique session.
+Visit `localhost:3000` to start building. Every project you generate is automatically saved to your unique session endpoint.
 
 ---
 
-## 📂 Project Structure
+## 📂 Repository Structure
 
 - `app/build/` — The unified conversational builder interface.
-- `app/research/[id]/` — Standalone Deep Research Agent (Beta) interface.
-- `app/api/session/` — The background auto-save and state recovery API.
-- `app/api/generate/` — The Orchestrator core logic.
-- `app/api/research/` — Deep research start/status/control/report endpoints.
-- `forge-claude/` — The high-performance agentic CLI source code.
+- `app/research/[id]/` — Standalone Deep Research Agent (Beta).
+- `app/api/` — Background auto-save, state recovery APIs, and generation routes.
+- `forge-code/` — The high-performance agentic Terminal CLI source code.
 - `lib/system-prompt.ts` — The "Brain" containing the V3 Orchestration rules.
-- `lib/research.ts` — Research state machine, web analysis loop, and report synthesis.
-- `components/ToolViewerClient.tsx` — The smart rendering engine for both React & Legacy tools.
+- `components/` — Web app React components handling streaming ASTs and styling.
 
 ---
 
-© 2026 FORGE DIGITAL. Created by [KNIGHTABDO](https://github.com/KNIGHTABDO).
+<div align="center">
+  <p>© 2026 FORGE DIGITAL. Created by <a href="https://github.com/KNIGHTABDO">KNIGHTABDO</a>.</p>
+</div>

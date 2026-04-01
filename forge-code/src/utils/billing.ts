@@ -1,5 +1,5 @@
 import {
-  getForgeTeamApiKey,
+  getAnthropicApiKey,
   getAuthTokenSource,
   getSubscriptionType,
   isClaudeAISubscriber,
@@ -21,7 +21,7 @@ export function hasConsoleBillingAccess(): boolean {
 
   // Check if user has any form of authentication
   const authSource = getAuthTokenSource()
-  const hasApiKey = getForgeTeamApiKey() !== null
+  const hasApiKey = getAnthropicApiKey() !== null
 
   // If user has no authentication at all (logged out), don't show costs
   if (!authSource.hasToken && !hasApiKey) {
@@ -76,7 +76,3 @@ export function hasClaudeAiBillingAccess(): boolean {
     ['admin', 'billing', 'owner', 'primary_owner'].includes(orgRole)
   )
 }
-
-
-
-

@@ -77,8 +77,8 @@ export function createBridgeApiClient(deps: BridgeApiDeps): BridgeApiClient {
     const headers: Record<string, string> = {
       Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
-      'ForgeTeam-version': '2023-06-01',
-      'ForgeTeam-beta': BETA_HEADER,
+      'anthropic-version': '2023-06-01',
+      'anthropic-beta': BETA_HEADER,
       'x-environment-runner-version': deps.runnerVersion,
     }
     const deviceToken = deps.getTrustedDeviceToken?.()
@@ -158,12 +158,12 @@ export function createBridgeApiClient(deps: BridgeApiDeps): BridgeApiClient {
               directory: config.dir,
               branch: config.branch,
               git_repo_url: config.gitRepoUrl,
-              // Advertise session capacity so forge-app.vercel.app/code can show
+              // Advertise session capacity so Forge.ai/code can show
               // "2/4 sessions" badges and only block the picker when
               // actually at capacity. Backends that don't yet accept
               // this field will silently ignore it.
               max_sessions: config.maxSessions,
-              // worker_type lets forge-app.vercel.app filter environments by origin
+              // worker_type lets Forge.ai filter environments by origin
               // (e.g. assistant picker only shows assistant-mode workers).
               // Desktop cowork app sends "cowork"; we send a distinct value.
               metadata: { worker_type: config.workerType },
@@ -471,7 +471,7 @@ function handleErrorStatus(
     case 403:
       throw new BridgeFatalError(
         isExpiredErrorType(errorType)
-          ? 'Remote Control session has expired. Please restart with `forge-code remote-control` or /remote-control.'
+          ? 'Remote Control session has expired. Please restart with `Forge remote-control` or /remote-control.'
           : `${context}: Access denied (403)${detail ? `: ${detail}` : ''}. Check your organization permissions.`,
         403,
         errorType,
@@ -486,7 +486,7 @@ function handleErrorStatus(
     case 410:
       throw new BridgeFatalError(
         detail ??
-          'Remote Control session has expired. Please restart with `forge-code remote-control` or /remote-control.',
+          'Remote Control session has expired. Please restart with `Forge remote-control` or /remote-control.',
         410,
         errorType ?? 'environment_expired',
       )
@@ -537,10 +537,3 @@ function extractErrorTypeFromData(data: unknown): string | undefined {
   }
   return undefined
 }
-
-
-
-
-
-
-

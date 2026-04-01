@@ -125,7 +125,3 @@ export const EnterWorktreeTool: Tool<InputSchema, Output> = buildTool({
     }
   },
 } satisfies ToolDef<InputSchema, Output>)
-
-
-
-

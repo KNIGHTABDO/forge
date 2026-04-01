@@ -5,11 +5,11 @@ import chalk from 'chalk'
 import {
   type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
   logEvent,
-} from './services/analytics/index.js'
-import { getCwd } from './utils/cwd.js'
-import { checkForReleaseNotes } from './utils/releaseNotes.js'
-import { setCwd } from './utils/Shell.js'
-import { initSinks } from './utils/sinks.js'
+} from 'src/services/analytics/index.js'
+import { getCwd } from 'src/utils/cwd.js'
+import { checkForReleaseNotes } from 'src/utils/releaseNotes.js'
+import { setCwd } from 'src/utils/Shell.js'
+import { initSinks } from 'src/utils/sinks.js'
 import {
   getIsNonInteractiveSession,
   getProjectRoot,
@@ -280,7 +280,7 @@ export async function setup(
     clearMemoryFileCaches()
     // Settings cache was populated in init() (via applySafeConfigEnvironmentVariables)
     // and again at captureHooksConfigSnapshot() above, both from the original dir's
-    // .claude/settings.json. Re-read from the worktree and re-capture hooks.
+    // .Forge/settings.json. Re-read from the worktree and re-capture hooks.
     updateHooksConfigSnapshot()
   }
 
@@ -416,12 +416,12 @@ export async function setup(
     if (
       process.env.USER_TYPE === 'ant' &&
       // Skip for Desktop's local agent mode — same trust model as CCR/BYOC
-      // (trusted ForgeTeam-managed launcher intentionally pre-approving everything).
+      // (trusted Anthropic-managed launcher intentionally pre-approving everything).
       // Precedent: permissionSetup.ts:861, applySettingsChange.ts:55 (PR #19116)
       process.env.FORGE_CODE_ENTRYPOINT !== 'local-agent' &&
       // Same for CCD (Forge Code in Desktop) — apps#29127 passes the flag
       // unconditionally to unlock mid-session bypass switching
-      process.env.FORGE_CODE_ENTRYPOINT !== 'claude-desktop'
+      process.env.FORGE_CODE_ENTRYPOINT !== 'Forge-desktop'
     ) {
       // Only await if permission mode is set to bypass
       const [isDocker, hasInternet] = await Promise.all([
@@ -475,10 +475,3 @@ export async function setup(
     // The values will be overwritten when the next session exits.
   }
 }
-
-
-
-
-
-
-

@@ -1,7 +1,7 @@
 import { feature } from 'bun:bundle'
 import memoize from 'lodash-es/memoize.js'
 import { basename } from 'path'
-import type { SettingSource } from '../../utils/settings/constants.js'
+import type { SettingSource } from 'src/utils/settings/constants.js'
 import { z } from 'zod/v4'
 import { isAutoMemoryEnabled } from '../../memdir/paths.js'
 import {
@@ -125,9 +125,9 @@ export type BaseAgentDefinition = {
   memory?: AgentMemoryScope // Persistent memory scope
   isolation?: 'worktree' | 'remote' // Run in an isolated git worktree, or remotely in CCR (ant-only)
   pendingSnapshotUpdate?: { snapshotTimestamp: string }
-  /** Omit CLAUDE.md hierarchy from the agent's userContext. Read-only agents
+  /** Omit Forge.md hierarchy from the agent's userContext. Read-only agents
    * (Explore, Plan) don't need commit/PR/lint guidelines — the main agent has
-   * full CLAUDE.md and interprets their output. Saves ~5-15 Gtok/week across
+   * full Forge.md and interprets their output. Saves ~5-15 Gtok/week across
    * 34M+ Explore spawns. Kill-switch: tengu_slim_subagent_claudemd. */
   omitClaudeMd?: boolean
 }
@@ -753,7 +753,3 @@ export function parseAgentFromMarkdown(
     return null
   }
 }
-
-
-
-

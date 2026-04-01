@@ -1,3 +1,4 @@
-export function snipCompact(text: string): string {
-  return text;
+// Stub — snipCompact not included in source snapshot
+export function snipCompact() {
+  return null
 }

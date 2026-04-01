@@ -128,7 +128,3 @@ export function startMdmRawRead(): void {
 export function getMdmRawReadPromise(): Promise<RawReadResult> | null {
   return rawReadPromise
 }
-
-
-
-

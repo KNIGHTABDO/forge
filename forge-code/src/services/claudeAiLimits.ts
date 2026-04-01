@@ -7,11 +7,12 @@ import { getModelBetas } from '../utils/betas.js'
 import { getGlobalConfig, saveGlobalConfig } from '../utils/config.js'
 import { logError } from '../utils/log.js'
 import { getSmallFastModel } from '../utils/model/model.js'
+import { getAPIProvider } from '../utils/model/providers.js'
 import { isEssentialTrafficOnly } from '../utils/privacyLevel.js'
 import type { AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS } from './analytics/index.js'
 import { logEvent } from './analytics/index.js'
 import { getAPIMetadata } from './api/claude.js'
-import { getForgeTeamClient } from './api/client.js'
+import { getAnthropicClient } from './api/client.js'
 import {
   processRateLimitHeaders,
   shouldProcessRateLimits,
@@ -168,9 +169,9 @@ function extractRawUtilization(headers: globalThis.Headers): RawUtilization {
     ['seven_day', '7d'],
   ] as const) {
     const util = headers.get(
-      `ForgeTeam-ratelimit-unified-${abbrev}-utilization`,
+      `anthropic-ratelimit-unified-${abbrev}-utilization`,
     )
-    const reset = headers.get(`ForgeTeam-ratelimit-unified-${abbrev}-reset`)
+    const reset = headers.get(`anthropic-ratelimit-unified-${abbrev}-reset`)
     if (util !== null && reset !== null) {
       result[key] = { utilization: Number(util), resets_at: Number(reset) }
     }
@@ -198,7 +199,7 @@ export function emitStatusChange(limits: ClaudeAILimits) {
 
 async function makeTestQuery() {
   const model = getSmallFastModel()
-  const ForgeTeam = await getForgeTeamClient({
+  const anthropic = await getAnthropicClient({
     maxRetries: 0,
     model,
     source: 'quota_check',
@@ -206,7 +207,7 @@ async function makeTestQuery() {
   const messages: MessageParam[] = [{ role: 'user', content: 'quota' }]
   const betas = getModelBetas(model)
   // biome-ignore lint/plugin: quota check needs raw response access via asResponse()
-  return ForgeTeam.beta.messages
+  return anthropic.beta.messages
     .create({
       model,
       max_tokens: 1,
@@ -223,6 +224,10 @@ export async function checkQuotaStatus(): Promise<void> {
     return
   }
 
+  if (getAPIProvider() !== 'firstParty') {
+    return
+  }
+
   // Check if we should process rate limits (real subscriber or mock testing)
   if (!shouldProcessRateLimits(isClaudeAISubscriber())) {
     return
@@ -230,7 +235,7 @@ export async function checkQuotaStatus(): Promise<void> {
 
   // In non-interactive mode (-p), the real query follows immediately and
   // extractQuotaStatusFromHeaders() will update limits from its response
-  // headers (claude.ts), so skip this pre-check API call.
+  // headers (Forge.ts), so skip this pre-check API call.
   if (getIsNonInteractiveSession()) {
     return
   }
@@ -261,16 +266,16 @@ function getHeaderBasedEarlyWarning(
     EARLY_WARNING_CLAIM_MAP,
   )) {
     const surpassedThreshold = headers.get(
-      `ForgeTeam-ratelimit-unified-${claimAbbrev}-surpassed-threshold`,
+      `anthropic-ratelimit-unified-${claimAbbrev}-surpassed-threshold`,
     )
 
     // If threshold header is present, user has crossed a warning threshold
     if (surpassedThreshold !== null) {
       const utilizationHeader = headers.get(
-        `ForgeTeam-ratelimit-unified-${claimAbbrev}-utilization`,
+        `anthropic-ratelimit-unified-${claimAbbrev}-utilization`,
       )
       const resetHeader = headers.get(
-        `ForgeTeam-ratelimit-unified-${claimAbbrev}-reset`,
+        `anthropic-ratelimit-unified-${claimAbbrev}-reset`,
       )
 
       const utilization = utilizationHeader
@@ -306,10 +311,10 @@ function getTimeRelativeEarlyWarning(
   const { rateLimitType, claimAbbrev, windowSeconds, thresholds } = config
 
   const utilizationHeader = headers.get(
-    `ForgeTeam-ratelimit-unified-${claimAbbrev}-utilization`,
+    `anthropic-ratelimit-unified-${claimAbbrev}-utilization`,
   )
   const resetHeader = headers.get(
-    `ForgeTeam-ratelimit-unified-${claimAbbrev}-reset`,
+    `anthropic-ratelimit-unified-${claimAbbrev}-reset`,
   )
 
   if (utilizationHeader === null || resetHeader === null) {
@@ -377,22 +382,22 @@ function computeNewLimitsFromHeaders(
   headers: globalThis.Headers,
 ): ClaudeAILimits {
   const status =
-    (headers.get('ForgeTeam-ratelimit-unified-status') as QuotaStatus) ||
+    (headers.get('anthropic-ratelimit-unified-status') as QuotaStatus) ||
     'allowed'
-  const resetsAtHeader = headers.get('ForgeTeam-ratelimit-unified-reset')
+  const resetsAtHeader = headers.get('anthropic-ratelimit-unified-reset')
   const resetsAt = resetsAtHeader ? Number(resetsAtHeader) : undefined
   const unifiedRateLimitFallbackAvailable =
-    headers.get('ForgeTeam-ratelimit-unified-fallback') === 'available'
+    headers.get('anthropic-ratelimit-unified-fallback') === 'available'
 
   // Headers for rate limit type and overage support
   const rateLimitType = headers.get(
-    'ForgeTeam-ratelimit-unified-representative-claim',
+    'anthropic-ratelimit-unified-representative-claim',
   ) as RateLimitType | null
   const overageStatus = headers.get(
-    'ForgeTeam-ratelimit-unified-overage-status',
+    'anthropic-ratelimit-unified-overage-status',
   ) as QuotaStatus | null
   const overageResetsAtHeader = headers.get(
-    'ForgeTeam-ratelimit-unified-overage-reset',
+    'anthropic-ratelimit-unified-overage-reset',
   )
   const overageResetsAt = overageResetsAtHeader
     ? Number(overageResetsAtHeader)
@@ -400,7 +405,7 @@ function computeNewLimitsFromHeaders(
 
   // Reason why overage is disabled (spending cap or wallet empty)
   const overageDisabledReason = headers.get(
-    'ForgeTeam-ratelimit-unified-overage-disabled-reason',
+    'anthropic-ratelimit-unified-overage-disabled-reason',
   ) as OverageDisabledReason | null
 
   // Determine if we're using overage (standard limits rejected but overage allowed)
@@ -441,7 +446,7 @@ function computeNewLimitsFromHeaders(
 function cacheExtraUsageDisabledReason(headers: globalThis.Headers): void {
   // A null reason means extra usage is enabled (no disabled reason header)
   const reason =
-    headers.get('ForgeTeam-ratelimit-unified-overage-disabled-reason') ?? null
+    headers.get('anthropic-ratelimit-unified-overage-disabled-reason') ?? null
   const cached = getGlobalConfig().cachedExtraUsageDisabledReason
   if (cached !== reason) {
     saveGlobalConfig(current => ({
@@ -513,7 +518,3 @@ export function extractQuotaStatusFromError(error: APIError): void {
     logError(e as Error)
   }
 }
-
-
-
-

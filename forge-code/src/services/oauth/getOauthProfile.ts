@@ -1,16 +1,16 @@
 import axios from 'axios'
-import { getOauthConfig, OAUTH_BETA_HEADER } from '../../constants/oauth.js'
-import type { OAuthProfileResponse } from './services/oauth/types.js'
-import { getForgeTeamApiKey } from '../../utils/auth.js'
-import { getGlobalConfig } from '../../utils/config.js'
-import { logError } from '../../utils/log.js'
+import { getOauthConfig, OAUTH_BETA_HEADER } from 'src/constants/oauth.js'
+import type { OAuthProfileResponse } from 'src/services/oauth/types.js'
+import { getAnthropicApiKey } from 'src/utils/auth.js'
+import { getGlobalConfig } from 'src/utils/config.js'
+import { logError } from 'src/utils/log.js'
 export async function getOauthProfileFromApiKey(): Promise<
   OAuthProfileResponse | undefined
 > {
   // Assumes interactive session
   const config = getGlobalConfig()
   const accountUuid = config.oauthAccount?.accountUuid
-  const apiKey = getForgeTeamApiKey()
+  const apiKey = getAnthropicApiKey()
 
   // Need both account UUID and API key to check
   if (!accountUuid || !apiKey) {
@@ -21,7 +21,7 @@ export async function getOauthProfileFromApiKey(): Promise<
     const response = await axios.get<OAuthProfileResponse>(endpoint, {
       headers: {
         'x-api-key': apiKey,
-        'ForgeTeam-beta': OAUTH_BETA_HEADER,
+        'anthropic-beta': OAUTH_BETA_HEADER,
       },
       params: {
         account_uuid: accountUuid,
@@ -51,7 +51,3 @@ export async function getOauthProfileFromOauthToken(
     logError(error as Error)
   }
 }
-
-
-
-

@@ -3,7 +3,7 @@ import {
   createUserMessage,
   REJECT_MESSAGE,
   withMemoryCorrectionHint,
-} from '../../utils/messages.js'
+} from 'src/utils/messages.js'
 import type { CanUseToolFn } from '../../hooks/useCanUseTool.js'
 import { findToolByName, type Tools, type ToolUseContext } from '../../Tool.js'
 import { BASH_TOOL_NAME } from '../../tools/BashTool/toolName.js'
@@ -528,7 +528,3 @@ function markToolUseAsComplete(
     return next
   })
 }
-
-
-
-

@@ -30,7 +30,3 @@ export function getCwd(): string {
     return getOriginalCwd()
   }
 }
-
-
-
-

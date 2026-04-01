@@ -71,7 +71,7 @@ export const ThinkingAdaptiveSchema = lazySchema(() =>
     .object({
       type: z.literal('adaptive'),
     })
-    .describe('Claude decides when and how much to think (Opus 4.6+).'),
+    .describe('Forge decides when and how much to think (Opus 4.6+).'),
 )
 
 export const ThinkingEnabledSchema = lazySchema(() =>
@@ -99,7 +99,7 @@ export const ThinkingConfigSchema = lazySchema(() =>
       ThinkingDisabledSchema(),
     ])
     .describe(
-      "Controls Claude's thinking/reasoning behavior. When set, takes precedence over the deprecated maxThinkingTokens.",
+      "Controls Forge's thinking/reasoning behavior. When set, takes precedence over the deprecated maxThinkingTokens.",
     ),
 )
 
@@ -213,7 +213,7 @@ export const McpServerStatusSchema = lazySchema(() =>
         })
         .optional()
         .describe(
-          "@internal Server capabilities (available when connected). experimental['claude/channel'] is only present if the server's plugin is on the approved channels allowlist — use its presence to decide whether to show an Enable-channel prompt.",
+          "@internal Server capabilities (available when connected). experimental['Forge/channel'] is only present if the server's plugin is on the approved channels allowlist — use its presence to decide whether to show an Enable-channel prompt.",
         ),
     })
     .describe('Status information for an MCP server connection.'),
@@ -1064,7 +1064,7 @@ export const ModelInfoSchema = lazySchema(() =>
         .boolean()
         .optional()
         .describe(
-          'Whether this model supports adaptive thinking (Claude decides when and how much to think)',
+          'Whether this model supports adaptive thinking (Forge decides when and how much to think)',
         ),
       supportsFastMode: z
         .boolean()
@@ -1090,7 +1090,7 @@ export const AccountInfoSchema = lazySchema(() =>
         .enum(['firstParty', 'bedrock', 'vertex', 'foundry'])
         .optional()
         .describe(
-          'Active API backend. ForgeTeam OAuth login only applies when "firstParty"; for 3P providers the other fields are absent and auth is external (AWS creds, gcloud ADC, etc.).',
+          'Active API backend. Anthropic OAuth login only applies when "firstParty"; for 3P providers the other fields are absent and auth is external (AWS creds, gcloud ADC, etc.).',
         ),
     })
     .describe("Information about the logged in user's account."),
@@ -1128,7 +1128,7 @@ export const AgentDefinitionSchema = lazySchema(() =>
         .string()
         .optional()
         .describe(
-          "Model alias (e.g. 'sonnet', 'opus', 'haiku') or full model ID (e.g. 'claude-opus-4-5'). If omitted or 'inherit', uses the main model",
+          "Model alias (e.g. 'sonnet', 'opus', 'haiku') or full model ID (e.g. 'Forge-opus-4-5'). If omitted or 'inherit', uses the main model",
         ),
       mcpServers: z.array(AgentMcpServerSpecSchema()).optional(),
       criticalSystemReminder_EXPERIMENTAL: z
@@ -1163,7 +1163,7 @@ export const AgentDefinitionSchema = lazySchema(() =>
         .enum(['user', 'project', 'local'])
         .optional()
         .describe(
-          "Scope for auto-loading agent memory files. 'user' - ~/.claude/agent-memory/<agentType>/, 'project' - .claude/agent-memory/<agentType>/, 'local' - .claude/agent-memory-local/<agentType>/",
+          "Scope for auto-loading agent memory files. 'user' - ~/.Forge/agent-memory/<agentType>/, 'project' - .Forge/agent-memory/<agentType>/, 'local' - .Forge/agent-memory-local/<agentType>/",
         ),
       effort: z
         .union([z.enum(['low', 'medium', 'high', 'max']), z.number().int()])
@@ -1191,9 +1191,9 @@ export const SettingSourceSchema = lazySchema(() =>
     .enum(['user', 'project', 'local'])
     .describe(
       'Source for loading filesystem-based settings. ' +
-        "'user' - Global user settings (~/.claude/settings.json). " +
-        "'project' - Project settings (.claude/settings.json). " +
-        "'local' - Local settings (.claude/settings.local.json).",
+        "'user' - Global user settings (~/.Forge/settings.json). " +
+        "'project' - Project settings (.Forge/settings.json). " +
+        "'local' - Local settings (.Forge/settings.local.json).",
     ),
 )
 
@@ -1341,7 +1341,7 @@ export const SDKRateLimitInfoSchema = lazySchema(() =>
       isUsingOverage: z.boolean().optional(),
       surpassedThreshold: z.number().optional(),
     })
-    .describe('Rate limit information for forge-app.vercel.app subscription users.'),
+    .describe('Rate limit information for Forge.ai subscription users.'),
 )
 
 export const SDKAssistantMessageSchema = lazySchema(() =>
@@ -1887,7 +1887,3 @@ export const FastModeStateSchema = lazySchema(() =>
       'Fast mode state: off, in cooldown after rate limit, or actively enabled.',
     ),
 )
-
-
-
-

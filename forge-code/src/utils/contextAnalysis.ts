@@ -270,7 +270,3 @@ export function tokenStatsToStatsigMetrics(
 
   return metrics
 }
-
-
-
-

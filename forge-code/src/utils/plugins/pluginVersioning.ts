@@ -118,7 +118,7 @@ export function getGitCommitSha(dirPath: string): Promise<string | null> {
 /**
  * Extract version from a versioned cache path.
  *
- * Given a path like `~/.claude/plugins/cache/marketplace/plugin/1.0.0`,
+ * Given a path like `~/.Forge/plugins/cache/marketplace/plugin/1.0.0`,
  * extracts and returns `1.0.0`.
  *
  * @param installPath - Full path to plugin installation
@@ -155,7 +155,3 @@ export function getVersionFromPath(installPath: string): string | null {
 export function isVersionedPath(path: string): boolean {
   return getVersionFromPath(path) !== null
 }
-
-
-
-

@@ -18,7 +18,3 @@ const wrapAnsi: (
 ) => string = wrapAnsiBun ?? wrapAnsiNpm
 
 export { wrapAnsi }
-
-
-
-

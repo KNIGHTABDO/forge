@@ -38,7 +38,3 @@ export const permissionRuleValueSchema = lazySchema(() =>
     ruleContent: z.string().optional(),
   }),
 )
-
-
-
-

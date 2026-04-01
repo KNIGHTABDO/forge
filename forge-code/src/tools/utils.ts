@@ -3,7 +3,7 @@ import type {
   AttachmentMessage,
   SystemMessage,
   UserMessage,
-} from '../types/message.js'
+} from 'src/types/message.js'
 
 /**
  * Tags user messages with a sourceToolUseID so they stay transient until the tool resolves.
@@ -38,7 +38,3 @@ export function getToolUseIDFromParentMessage(
     ? toolUseBlock.id
     : undefined
 }
-
-
-
-

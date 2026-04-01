@@ -100,7 +100,3 @@ export function readFileSyncWithMetadata(filePath: string): {
 export function readFileSync(filePath: string): string {
   return readFileSyncWithMetadata(filePath).content
 }
-
-
-
-

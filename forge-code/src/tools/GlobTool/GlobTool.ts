@@ -196,7 +196,3 @@ export const GlobTool = buildTool({
     }
   },
 } satisfies ToolDef<InputSchema, Output>)
-
-
-
-

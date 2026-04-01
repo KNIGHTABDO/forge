@@ -5,13 +5,13 @@
  * This component renders nothing - it just registers the cancel keybinding handler.
  */
 import { useCallback, useRef } from 'react'
-import { logEvent } from '../services/analytics/index.js'
-import type { AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS } from '../services/analytics/metadata.js'
+import { logEvent } from 'src/services/analytics/index.js'
+import type { AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS } from 'src/services/analytics/metadata.js'
 import {
   useAppState,
   useAppStateStore,
   useSetAppState,
-} from '../state/AppState.js'
+} from 'src/state/AppState.js'
 import { isVimModeEnabled } from '../components/PromptInput/utils.js'
 import type { ToolUseConfirm } from '../components/permissions/PermissionRequest.js'
 import type { SpinnerMode } from '../components/Spinner/types.js'
@@ -93,7 +93,7 @@ export function CancelRequestHandler(props: CancelRequestHandlerProps): null {
     }
 
     // Priority 1: If there's an active task running, cancel it first
-    // This takes precedence over queue management so users can always interrupt Claude
+    // This takes precedence over queue management so users can always interrupt Forge
     if (abortSignal !== undefined && !abortSignal.aborted) {
       logEvent('tengu_cancel', cancelProps)
       setToolUseConfirmQueue(() => [])
@@ -101,7 +101,7 @@ export function CancelRequestHandler(props: CancelRequestHandlerProps): null {
       return
     }
 
-    // Priority 2: Pop queue when Claude is idle (no running task to cancel)
+    // Priority 2: Pop queue when Forge is idle (no running task to cancel)
     if (hasCommandsInQueue()) {
       if (popCommandFromQueue) {
         popCommandFromQueue()
@@ -274,7 +274,3 @@ export function CancelRequestHandler(props: CancelRequestHandlerProps): null {
 
   return null
 }
-
-
-
-

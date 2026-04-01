@@ -12,22 +12,22 @@ import {
   getTeleportedSessionInfo,
   markFirstTeleportMessageLogged,
   setLastApiCompletionTimestamp,
-} from '../../bootstrap/state.js'
-import type { QueryChainTracking } from '../../Tool.js'
-import { isConnectorTextBlock } from '../../types/connectorText.js'
-import type { AssistantMessage } from '../../types/message.js'
-import { logForDebugging } from '../../utils/debug.js'
-import type { EffortLevel } from '../../utils/effort.js'
-import { logError } from '../../utils/log.js'
-import { getAPIProviderForStatsig } from '../../utils/model/providers.js'
-import type { PermissionMode } from '../../utils/permissions/PermissionMode.js'
-import { jsonStringify } from '../../utils/slowOperations.js'
-import { logOTelEvent } from '../../utils/telemetry/events.js'
+} from 'src/bootstrap/state.js'
+import type { QueryChainTracking } from 'src/Tool.js'
+import { isConnectorTextBlock } from 'src/types/connectorText.js'
+import type { AssistantMessage } from 'src/types/message.js'
+import { logForDebugging } from 'src/utils/debug.js'
+import type { EffortLevel } from 'src/utils/effort.js'
+import { logError } from 'src/utils/log.js'
+import { getAPIProviderForStatsig } from 'src/utils/model/providers.js'
+import type { PermissionMode } from 'src/utils/permissions/PermissionMode.js'
+import { jsonStringify } from 'src/utils/slowOperations.js'
+import { logOTelEvent } from 'src/utils/telemetry/events.js'
 import {
   endLLMRequestSpan,
   isBetaTracingEnabled,
   type Span,
-} from '../../utils/telemetry/sessionTracing.js'
+} from 'src/utils/telemetry/sessionTracing.js'
 import type { NonNullableUsage } from '../../entrypoints/sdk/sdkUtilityTypes.js'
 import { consumeInvokingRequestId } from '../../utils/agentContext.js'
 import {
@@ -93,7 +93,7 @@ const GATEWAY_FINGERPRINTS: Partial<
 }
 
 // Gateways that use provider-owned domains (not self-hosted), so the
-// FORGE_TEAM_BASE_URL hostname is a reliable signal even without a
+// ANTHROPIC_BASE_URL hostname is a reliable signal even without a
 // distinctive response header.
 const GATEWAY_HOST_SUFFIXES: Partial<Record<KnownGateway, string[]>> = {
   // https://docs.databricks.com/aws/en/ai-gateway/
@@ -138,24 +138,24 @@ function detectGateway({
   return undefined
 }
 
-function getForgeTeamEnvMetadata() {
+function getAnthropicEnvMetadata() {
   return {
-    ...(process.env.FORGE_TEAM_BASE_URL
+    ...(process.env.ANTHROPIC_BASE_URL
       ? {
           baseUrl: process.env
-            .FORGE_TEAM_BASE_URL as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
+            .ANTHROPIC_BASE_URL as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
         }
       : {}),
-    ...(process.env.FORGE_TEAM_MODEL
+    ...(process.env.ANTHROPIC_MODEL
       ? {
           envModel: process.env
-            .FORGE_TEAM_MODEL as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
+            .ANTHROPIC_MODEL as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
         }
       : {}),
-    ...(process.env.FORGE_TEAM_SMALL_FAST_MODEL
+    ...(process.env.ANTHROPIC_SMALL_FAST_MODEL
       ? {
           envSmallFastModel: process.env
-            .FORGE_TEAM_SMALL_FAST_MODEL as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
+            .ANTHROPIC_SMALL_FAST_MODEL as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
         }
       : {}),
   }
@@ -228,7 +228,7 @@ export function logAPIQuery({
             previousRequestId as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
         }
       : {}),
-    ...getForgeTeamEnvMetadata(),
+    ...getAnthropicEnvMetadata(),
   })
 }
 
@@ -274,7 +274,7 @@ export function logAPIError({
   const gateway = detectGateway({
     headers:
       error instanceof APIError && error.headers ? error.headers : headers,
-    baseUrl: process.env.FORGE_TEAM_BASE_URL,
+    baseUrl: process.env.ANTHROPIC_BASE_URL,
   })
 
   const errStr = getErrorMessage(error)
@@ -361,7 +361,7 @@ export function logAPIError({
             previousRequestId as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
         }
       : {}),
-    ...getForgeTeamEnvMetadata(),
+    ...getAnthropicEnvMetadata(),
   })
 
   // Log API error event for OTLP
@@ -571,7 +571,7 @@ function logAPISuccess({
         }
       : {}),
     ...(isPostCompaction ? { isPostCompaction } : {}),
-    ...getForgeTeamEnvMetadata(),
+    ...getAnthropicEnvMetadata(),
     timeSinceLastApiCallMs,
   })
 
@@ -640,7 +640,7 @@ export function logAPISuccessAndDuration({
 }): void {
   const gateway = detectGateway({
     headers,
-    baseUrl: process.env.FORGE_TEAM_BASE_URL,
+    baseUrl: process.env.ANTHROPIC_BASE_URL,
   })
 
   let textContentLength: number | undefined
@@ -786,7 +786,3 @@ export function logAPISuccessAndDuration({
     markFirstTeleportMessageLogged()
   }
 }
-
-
-
-

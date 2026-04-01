@@ -61,7 +61,3 @@ export async function fetchUtilization(): Promise<Utilization | null> {
 
   return response.data
 }
-
-
-
-

@@ -59,7 +59,7 @@ export function generatePrompt(): string {
 ## Configurable settings list
 The following settings are available for you to change:
 
-### Global Settings (stored in ~/.claude.json)
+### Global Settings (stored in ~/.Forge.json)
 ${globalSettings.join('\n')}
 
 ### Project Settings (stored in settings.json)
@@ -91,7 +91,3 @@ ${lines.join('\n')}`
 - model - Override the default model (sonnet, opus, haiku, best, or full model ID)`
   }
 }
-
-
-
-

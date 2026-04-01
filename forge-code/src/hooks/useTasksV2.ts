@@ -248,7 +248,3 @@ export function useTasksV2WithCollapseEffect(): Task[] | undefined {
 
   return tasks
 }
-
-
-
-

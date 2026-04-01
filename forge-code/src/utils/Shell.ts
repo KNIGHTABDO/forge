@@ -4,7 +4,7 @@ import { type FileHandle, mkdir, open, realpath } from 'fs/promises'
 import memoize from 'lodash-es/memoize.js'
 import { isAbsolute, resolve } from 'path'
 import { join as posixJoin } from 'path/posix'
-import { logEvent } from '../services/analytics/index.js'
+import { logEvent } from 'src/services/analytics/index.js'
 import {
   getOriginalCwd,
   getSessionId,
@@ -127,7 +127,7 @@ export async function findSuitableShell(): Promise<string> {
   // If no valid shell found, throw a helpful error
   if (!shellPath) {
     const errorMsg =
-      'No suitable shell found. Claude CLI requires a Posix shell environment. ' +
+      'No suitable shell found. Forge CLI requires a Posix shell environment. ' +
       'Please ensure you have a valid shell installed and the SHELL environment variable set.'
     logError(new Error(errorMsg))
     throw new Error(errorMsg)
@@ -232,7 +232,7 @@ export async function exec(
       cwd = fallback
     } catch {
       return createFailedCommand(
-        `Working directory "${cwd}" no longer exists. Please restart Claude from an existing directory.`,
+        `Working directory "${cwd}" no longer exists. Please restart Forge from an existing directory.`,
       )
     }
   }
@@ -472,7 +472,3 @@ export function setCwd(path: string, relativeTo?: string): void {
     }
   }
 }
-
-
-
-

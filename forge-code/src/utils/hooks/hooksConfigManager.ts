@@ -1,5 +1,5 @@
 import memoize from 'lodash-es/memoize.js'
-import type { HookEvent } from '../../entrypoints/agentSdkTypes.js'
+import type { HookEvent } from 'src/entrypoints/agentSdkTypes.js'
 import { getRegisteredHooks } from '../../bootstrap/state.js'
 import type { AppState } from '../../state/AppState.js'
 import {
@@ -81,19 +81,19 @@ export const getHookEventMetadata = memoize(
       UserPromptSubmit: {
         summary: 'When the user submits a prompt',
         description:
-          'Input to command is JSON with original user prompt text.\nExit code 0 - stdout shown to Claude\nExit code 2 - block processing, erase original prompt, and show stderr to user only\nOther exit codes - show stderr to user only',
+          'Input to command is JSON with original user prompt text.\nExit code 0 - stdout shown to Forge\nExit code 2 - block processing, erase original prompt, and show stderr to user only\nOther exit codes - show stderr to user only',
       },
       SessionStart: {
         summary: 'When a new session is started',
         description:
-          'Input to command is JSON with session start source.\nExit code 0 - stdout shown to Claude\nBlocking errors are ignored\nOther exit codes - show stderr to user only',
+          'Input to command is JSON with session start source.\nExit code 0 - stdout shown to Forge\nBlocking errors are ignored\nOther exit codes - show stderr to user only',
         matcherMetadata: {
           fieldToMatch: 'source',
           values: ['startup', 'resume', 'clear', 'compact'],
         },
       },
       Stop: {
-        summary: 'Right before Claude concludes its response',
+        summary: 'Right before Forge concludes its response',
         description:
           'Exit code 0 - stdout/stderr not shown\nExit code 2 - show stderr to model and continue conversation\nOther exit codes - show stderr to user only',
       },
@@ -172,7 +172,7 @@ export const getHookEventMetadata = memoize(
       Setup: {
         summary: 'Repo setup hooks for init and maintenance',
         description:
-          'Input to command is JSON with trigger (init or maintenance).\nExit code 0 - stdout shown to Claude\nBlocking errors are ignored\nOther exit codes - show stderr to user only',
+          'Input to command is JSON with trigger (init or maintenance).\nExit code 0 - stdout shown to Forge\nBlocking errors are ignored\nOther exit codes - show stderr to user only',
         matcherMetadata: {
           fieldToMatch: 'trigger',
           values: ['init', 'maintenance'],
@@ -227,9 +227,9 @@ export const getHookEventMetadata = memoize(
         },
       },
       InstructionsLoaded: {
-        summary: 'When an instruction file (CLAUDE.md or rule) is loaded',
+        summary: 'When an instruction file (Forge.md or rule) is loaded',
         description:
-          'Input to command is JSON with file_path, memory_type (User, Project, Local, Managed), load_reason (session_start, nested_traversal, path_glob_match, include, compact), globs (optional — the paths: frontmatter patterns that matched), trigger_file_path (optional — the file Claude touched that caused the load), and parent_file_path (optional — the file that @-included this one).\nExit code 0 - command completes successfully\nOther exit codes - show stderr to user only\nThis hook is observability-only and does not support blocking.',
+          'Input to command is JSON with file_path, memory_type (User, Project, Local, Managed), load_reason (session_start, nested_traversal, path_glob_match, include, compact), globs (optional — the paths: frontmatter patterns that matched), trigger_file_path (optional — the file Forge touched that caused the load), and parent_file_path (optional — the file that @-included this one).\nExit code 0 - command completes successfully\nOther exit codes - show stderr to user only\nThis hook is observability-only and does not support blocking.',
         matcherMetadata: {
           fieldToMatch: 'load_reason',
           values: [
@@ -398,7 +398,3 @@ export function getMatcherMetadata(
 ): MatcherMetadata | undefined {
   return getHookEventMetadata(toolNames)[event].matcherMetadata
 }
-
-
-
-

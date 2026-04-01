@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { getOauthConfig } from '../constants/oauth.js'
-import type { SDKMessage } from '../entrypoints/agentSdkTypes.js'
+import type { SDKControlRequest } from '../entrypoints/agentSdkTypes.js'
 import { logForDebugging } from '../utils/debug.js'
 import { getOAuthHeaders, prepareApiRequest } from '../utils/teleport/api.js'
 
@@ -8,7 +8,7 @@ export const HISTORY_PAGE_SIZE = 100
 
 export type HistoryPage = {
   /** Chronological order within the page. */
-  events: SDKMessage[]
+  events: SDKControlRequest[]
   /** Oldest event ID in this page → before_id cursor for next-older page. */
   firstId: string | null
   /** true = older events exist. */
@@ -16,7 +16,7 @@ export type HistoryPage = {
 }
 
 type SessionEventsResponse = {
-  data: SDKMessage[]
+  data: SDKControlRequest[]
   has_more: boolean
   first_id: string | null
   last_id: string | null
@@ -36,7 +36,7 @@ export async function createHistoryAuthCtx(
     baseUrl: `${getOauthConfig().BASE_API_URL}/v1/sessions/${sessionId}/events`,
     headers: {
       ...getOAuthHeaders(accessToken),
-      'ForgeTeam-beta': 'ccr-byoc-2025-07-29',
+      'anthropic-beta': 'ccr-byoc-2025-07-29',
       'x-organization-uuid': orgUUID,
     },
   }
@@ -85,10 +85,3 @@ export async function fetchOlderEvents(
 ): Promise<HistoryPage | null> {
   return fetchPage(ctx, { limit, before_id: beforeId }, 'fetchOlderEvents')
 }
-
-
-
-
-
-
-

@@ -19,7 +19,7 @@ const APP_ENUM_TIMEOUT_MS = 1000
 
 /**
  * Enumerate installed apps, timed. Fails soft — if Spotlight is slow or
- * claude-swift throws, the tool description just omits the list. Resolution
+ * Forge-swift throws, the tool description just omits the list. Resolution
  * happens at call time regardless; the model just doesn't get hints.
  */
 async function tryGetInstalledAppNames(): Promise<string[] | undefined> {
@@ -104,7 +104,3 @@ export async function runComputerUseMcpServer(): Promise<void> {
   await server.connect(transport)
   logForDebugging('[Computer Use MCP] MCP server started')
 }
-
-
-
-

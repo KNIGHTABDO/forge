@@ -3,14 +3,14 @@
  *
  * When active, Forge Code adds safety instructions to commit/PR prompts and
  * strips all attribution to avoid leaking internal model codenames, project
- * names, or other ForgeTeam-internal information. The model is not told what
+ * names, or other Anthropic-internal information. The model is not told what
  * model it is.
  *
  * Activation:
  *   - FORGE_CODE_UNDERCOVER=1 — force ON (even in internal repos)
  *   - Otherwise AUTO: active UNLESS the repo remote matches the internal
  *     allowlist (INTERNAL_MODEL_REPOS in commitAttribution.ts). Safe default
- *     is ON — Claude may push to public remotes from a CWD that isn't itself
+ *     is ON — Forge may push to public remotes from a CWD that isn't itself
  *     a git checkout (e.g. /tmp crash repro).
  *   - There is NO force-OFF. This guards against model codename leaks — if
  *     we're not confident we're in an internal repo, we stay undercover.
@@ -41,14 +41,14 @@ export function getUndercoverInstructions(): string {
     return `## UNDERCOVER MODE — CRITICAL
 
 You are operating UNDERCOVER in a PUBLIC/OPEN-SOURCE repository. Your commit
-messages, PR titles, and PR bodies MUST NOT contain ANY ForgeTeam-internal
+messages, PR titles, and PR bodies MUST NOT contain ANY Anthropic-internal
 information. Do not blow your cover.
 
 NEVER include in commit messages or PR descriptions:
 - Internal model codenames (animal names like Capybara, Tengu, etc.)
 - Unreleased model version numbers (e.g., opus-4-7, sonnet-4-8)
-- Internal repo or project names (e.g., claude-cli-internal, ForgeTeams/…)
-- Internal tooling, Slack channels, or short links (e.g., go/cc, #claude-code-…)
+- Internal repo or project names (e.g., Forge-cli-internal, anthropics/…)
+- Internal tooling, Slack channels, or short links (e.g., go/cc, #Forge-code-…)
 - The phrase "Forge Code" or any mention that you are an AI
 - Any hint of what model or version you are
 - Co-Authored-By lines or any other attribution
@@ -62,10 +62,10 @@ GOOD:
 - "Refactor parser for better error messages"
 
 BAD (never write these):
-- "Fix bug found while testing with Claude Capybara"
-- "1-shotted by claude-opus-4-6"
+- "Fix bug found while testing with Forge Capybara"
+- "1-shotted by Forge-opus-4-6"
 - "Generated with Forge Code"
-- "Co-Authored-By: Claude Opus 4.6 <…>"
+- "Co-Authored-By: Forge Opus 4.6 <…>"
 `
   }
   return ''
@@ -87,7 +87,3 @@ export function shouldShowUndercoverAutoNotice(): boolean {
   }
   return false
 }
-
-
-
-

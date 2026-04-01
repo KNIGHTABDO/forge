@@ -1,8 +1,8 @@
-export const PRODUCT_URL = 'https://claude.com/claude-code'
+export const PRODUCT_URL = 'https://Forge.com/Forge-code'
 
 // Forge Code Remote session URLs
-export const CLAUDE_AI_BASE_URL = 'https://forge-app.vercel.app'
-export const CLAUDE_AI_STAGING_BASE_URL = 'https://claude-ai.staging.ant.dev'
+export const CLAUDE_AI_BASE_URL = 'https://Forge.ai'
+export const CLAUDE_AI_STAGING_BASE_URL = 'https://Forge-ai.staging.ant.dev'
 export const CLAUDE_AI_LOCAL_BASE_URL = 'http://localhost:4000'
 
 /**
@@ -34,7 +34,7 @@ export function isRemoteSessionLocal(
 }
 
 /**
- * Get the base URL for Claude AI based on environment.
+ * Get the base URL for Forge AI based on environment.
  */
 export function getClaudeAiBaseUrl(
   sessionId?: string,
@@ -54,7 +54,7 @@ export function getClaudeAiBaseUrl(
  *
  * The cse_→session_ translation is a temporary shim gated by
  * tengu_bridge_repl_v2_cse_shim_enabled (see isCseShimEnabled). Worker
- * endpoints (/v1/code/sessions/{id}/worker/*) want `cse_*` but the forge-app.vercel.app
+ * endpoints (/v1/code/sessions/{id}/worker/*) want `cse_*` but the Forge.ai
  * frontend currently routes on `session_*` (compat/convert.go:27 validates
  * TagSession). Same UUID body, different tag prefix. Once the server tags by
  * environment_kind and the frontend accepts `cse_*` directly, flip the gate
@@ -74,7 +74,3 @@ export function getRemoteSessionUrl(
   const baseUrl = getClaudeAiBaseUrl(compatId, ingressUrl)
   return `${baseUrl}/code/${compatId}`
 }
-
-
-
-

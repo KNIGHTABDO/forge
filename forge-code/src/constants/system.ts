@@ -7,9 +7,9 @@ import { isEnvDefinedFalsy } from '../utils/envUtils.js'
 import { getAPIProvider } from '../utils/model/providers.js'
 import { getWorkload } from '../utils/workloadContext.js'
 
-const DEFAULT_PREFIX = `You are Forge Code, ForgeTeam's official CLI for Claude.`
-const AGENT_SDK_FORGE_CODE_PRESET_PREFIX = `You are Forge Code, ForgeTeam's official CLI for Claude, running within the Claude Agent SDK.`
-const AGENT_SDK_PREFIX = `You are a Claude agent, built on ForgeTeam's Claude Agent SDK.`
+const DEFAULT_PREFIX = `You are Forge Code, Anthropic's official CLI for Forge.`
+const AGENT_SDK_FORGE_CODE_PRESET_PREFIX = `You are Forge Code, Anthropic's official CLI for Forge, running within the Forge Agent SDK.`
+const AGENT_SDK_PREFIX = `You are a Forge agent, built on Anthropic's Forge Agent SDK.`
 
 const CLI_SYSPROMPT_PREFIX_VALUES = [
   DEFAULT_PREFIX,
@@ -64,8 +64,8 @@ function isAttributionHeaderEnabled(): boolean {
  * When NATIVE_CLIENT_ATTESTATION is enabled, includes a `cch=00000` placeholder.
  * Before the request is sent, Bun's native HTTP stack finds this placeholder
  * in the request body and overwrites the zeros with a computed hash. The
- * server verifies this token to confirm the request came from a real Claude
- * Code client. See bun-ForgeTeam/src/http/Attestation.zig for implementation.
+ * server verifies this token to confirm the request came from a real Forge
+ * Code client. See bun-anthropic/src/http/Attestation.zig for implementation.
  *
  * We use a placeholder (instead of injecting from Zig) because same-length
  * replacement avoids Content-Length changes and buffer reallocation.
@@ -88,12 +88,8 @@ export function getAttributionHeader(fingerprint: string): string {
   // fields so old API deploys silently ignore this.
   const workload = getWorkload()
   const workloadPair = workload ? ` cc_workload=${workload};` : ''
-  const header = `x-ForgeTeam-billing-header: cc_version=${version}; cc_entrypoint=${entrypoint};${cch}${workloadPair}`
+  const header = `x-anthropic-billing-header: cc_version=${version}; cc_entrypoint=${entrypoint};${cch}${workloadPair}`
 
   logForDebugging(`attribution header ${header}`)
   return header
 }
-
-
-
-

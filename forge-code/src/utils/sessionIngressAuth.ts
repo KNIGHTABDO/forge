@@ -95,7 +95,7 @@ function getTokenFromFileDescriptor(): string | null {
  *  2. File descriptor (legacy path) — FORGE_CODE_WEBSOCKET_AUTH_FILE_DESCRIPTOR,
  *     read once and cached.
  *  3. Well-known file — CLAUDE_SESSION_INGRESS_TOKEN_FILE env var path, or
- *     /home/claude/.claude/remote/.session_ingress_token. Covers subprocesses
+ *     /home/Forge/.Forge/remote/.session_ingress_token. Covers subprocesses
  *     that can't inherit the FD.
  */
 export function getSessionIngressAuthToken(): string | null {
@@ -138,7 +138,3 @@ export function getSessionIngressAuthHeaders(): Record<string, string> {
 export function updateSessionIngressAuthToken(token: string): void {
   process.env.FORGE_CODE_SESSION_ACCESS_TOKEN = token
 }
-
-
-
-

@@ -24,9 +24,3 @@ const bridge = {
 } satisfies Command
 
 export default bridge
-
-
-
-
-
-

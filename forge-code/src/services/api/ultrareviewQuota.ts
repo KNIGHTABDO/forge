@@ -36,7 +36,3 @@ export async function fetchUltrareviewQuota(): Promise<UltrareviewQuotaResponse 
     return null
   }
 }
-
-
-
-

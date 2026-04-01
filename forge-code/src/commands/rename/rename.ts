@@ -56,7 +56,7 @@ export async function call(
   // Always save the custom title (session name)
   await saveCustomTitle(sessionId, newName, fullPath)
 
-  // Sync title to bridge session on forge-app.vercel.app/code (best-effort, non-blocking).
+  // Sync title to bridge session on Forge.ai/code (best-effort, non-blocking).
   // v2 env-less bridge stores cse_* in replBridgeSessionId —
   // updateBridgeSessionTitle retags internally for the compat endpoint.
   const appState = context.getAppState()
@@ -85,7 +85,3 @@ export async function call(
   onDone(`Session renamed to: ${newName}`, { display: 'system' })
   return null
 }
-
-
-
-

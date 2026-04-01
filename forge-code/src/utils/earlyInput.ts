@@ -2,7 +2,7 @@
  * Early Input Capture
  *
  * This module captures terminal input that is typed before the REPL is fully
- * initialized. Users often type `claude` and immediately start typing their
+ * initialized. Users often type `Forge` and immediately start typing their
  * prompt, but those early keystrokes would otherwise be lost during startup.
  *
  * Usage:
@@ -189,7 +189,3 @@ export function seedEarlyInput(text: string): void {
 export function isCapturingEarlyInput(): boolean {
   return isCapturing
 }
-
-
-
-

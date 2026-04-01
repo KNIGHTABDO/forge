@@ -52,7 +52,3 @@ export function notifyExpectedEscape(): void {
   if (!registered) return
   requireComputerUseSwift().hotkey.notifyExpectedEscape()
 }
-
-
-
-

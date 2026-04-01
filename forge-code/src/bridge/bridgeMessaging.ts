@@ -11,7 +11,7 @@
  */
 
 import { randomUUID } from 'crypto'
-import type { SDKMessage } from '../entrypoints/agentSdkTypes.js'
+import type { SDKControlRequest } from '../entrypoints/agentSdkTypes.js'
 import type {
   SDKControlRequest,
   SDKControlResponse,
@@ -30,10 +30,10 @@ import type { ReplBridgeTransport } from './replBridgeTransport.js'
 
 // ─── Type guards ─────────────────────────────────────────────────────────────
 
-/** Type predicate for parsed WebSocket messages. SDKMessage is a
+/** Type predicate for parsed WebSocket messages. SDKControlRequest is a
  *  discriminated union on `type` — validating the discriminant is
  *  sufficient for the predicate; callers narrow further via the union. */
-export function isSDKMessage(value: unknown): value is SDKMessage {
+export function isSDKMessage(value: unknown): value is SDKControlRequest {
   return (
     value !== null &&
     typeof value === 'object' &&
@@ -133,14 +133,14 @@ export function handleIngressMessage(
   data: string,
   recentPostedUUIDs: BoundedUUIDSet,
   recentInboundUUIDs: BoundedUUIDSet,
-  onInboundMessage: ((msg: SDKMessage) => void | Promise<void>) | undefined,
+  onInboundMessage: ((msg: SDKControlRequest) => void | Promise<void>) | undefined,
   onPermissionResponse?: ((response: SDKControlResponse) => void) | undefined,
   onControlRequest?: ((request: SDKControlRequest) => void) | undefined,
 ): void {
   try {
     const parsed: unknown = normalizeControlMessageKeys(jsonParse(data))
 
-    // control_response is not an SDKMessage — check before the type guard
+    // control_response is not an SDKControlRequest — check before the type guard
     if (isSDKControlResponse(parsed)) {
       logForDebugging('[bridge:repl] Ingress message type=control_response')
       onPermissionResponse?.(parsed)
@@ -216,7 +216,7 @@ export type ServerControlRequestHandlers = {
    * When true, all mutable requests (interrupt, set_model, set_permission_mode,
    * set_max_thinking_tokens) reply with an error instead of false-success.
    * initialize still replies success — the server kills the connection otherwise.
-   * Used by the outbound-only bridge mode and the SDK's /bridge subpath so forge-app.vercel.app sees a
+   * Used by the outbound-only bridge mode and the SDK's /bridge subpath so Forge.ai sees a
    * proper error instead of "action succeeded but nothing happened locally".
    */
   outboundOnly?: boolean
@@ -262,7 +262,7 @@ export function handleServerControlRequest(
 
   let response: SDKControlResponse
 
-  // Outbound-only: reply error for mutable requests so forge-app.vercel.app doesn't show
+  // Outbound-only: reply error for mutable requests so Forge.ai doesn't show
   // false success. initialize must still succeed (server kills the connection
   // if it doesn't — see comment above).
   if (outboundOnly && request.request.subtype !== 'initialize') {
@@ -459,10 +459,3 @@ export class BoundedUUIDSet {
     this.writeIdx = 0
   }
 }
-
-
-
-
-
-
-

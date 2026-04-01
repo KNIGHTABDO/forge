@@ -67,7 +67,3 @@ export async function walkPluginMarkdown(
 
   await scan(rootDir, [])
 }
-
-
-
-

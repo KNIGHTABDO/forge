@@ -1,4 +1,4 @@
-import type { StdoutMessage } from './entrypoints/sdk/controlTypes.js'
+import type { StdoutMessage } from 'src/entrypoints/sdk/controlTypes.js'
 import { CCRClient } from '../cli/transports/ccrClient.js'
 import type { HybridTransport } from '../cli/transports/HybridTransport.js'
 import { SSETransport } from '../cli/transports/SSETransport.js'
@@ -49,7 +49,7 @@ export type ReplBridgeTransport = {
   readonly droppedBatchCount: number
   /**
    * PUT /worker state (v2 only; v1 is a no-op). `requires_action` tells
-   * the backend a permission prompt is pending — forge-app.vercel.app shows the
+   * the backend a permission prompt is pending — Forge.ai shows the
    * "waiting for input" indicator. REPL/daemon callers don't need this
    * (user watches the REPL locally); multi-session worker callers do.
    */
@@ -368,10 +368,3 @@ export async function createV2ReplTransport(opts: {
     },
   }
 }
-
-
-
-
-
-
-

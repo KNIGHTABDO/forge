@@ -1,6 +1,6 @@
 /**
  * Auto mode subcommand handlers — dump default/merged classifier rules and
- * critique user-written rules. Dynamically imported when `claude auto-mode ...` runs.
+ * critique user-written rules. Dynamically imported when `Forge auto-mode ...` runs.
  */
 
 import { errorMessage } from '../../utils/errors.js'
@@ -83,7 +83,7 @@ export async function autoModeCritiqueHandler(options: {
     process.stdout.write(
       'No custom auto mode rules found.\n\n' +
         'Add rules to your settings file under autoMode.{allow, soft_deny, environment}.\n' +
-        'Run `forge-code auto-mode defaults` to see the default rules for reference.\n',
+        'Run `Forge auto-mode defaults` to see the default rules for reference.\n',
     )
     return
   }
@@ -168,10 +168,3 @@ function formatRulesForCritique(
     '\n\n'
   )
 }
-
-
-
-
-
-
-

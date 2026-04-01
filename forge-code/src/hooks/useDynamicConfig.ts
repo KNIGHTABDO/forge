@@ -20,7 +20,3 @@ export function useDynamicConfig<T>(configName: string, defaultValue: T): T {
 
   return configValue
 }
-
-
-
-

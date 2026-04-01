@@ -154,11 +154,11 @@ export function useRemoteSession({
     )
 
     const manager = new RemoteSessionManager(config, {
-      onMessage: sdkMessage => {
-        const parts = [`type=${sdkMessage.type}`]
-        if ('subtype' in sdkMessage) parts.push(`subtype=${sdkMessage.subtype}`)
-        if (sdkMessage.type === 'user') {
-          const c = sdkMessage.message?.content
+      onMessage: SDKControlRequest => {
+        const parts = [`type=${SDKControlRequest.type}`]
+        if ('subtype' in SDKControlRequest) parts.push(`subtype=${SDKControlRequest.subtype}`)
+        if (SDKControlRequest.type === 'user') {
+          const c = SDKControlRequest.message?.content
           parts.push(
             `content=${Array.isArray(c) ? c.map(b => b.type).join(',') : typeof c}`,
           )
@@ -180,75 +180,75 @@ export function useRemoteSession({
         // match — the same uuid can echo more than once (server broadcast +
         // worker echo), and BoundedUUIDSet already caps growth via its ring.
         if (
-          sdkMessage.type === 'user' &&
-          sdkMessage.uuid &&
-          sentUUIDsRef.current.has(sdkMessage.uuid)
+          SDKControlRequest.type === 'user' &&
+          SDKControlRequest.uuid &&
+          sentUUIDsRef.current.has(SDKControlRequest.uuid)
         ) {
           logForDebugging(
-            `[useRemoteSession] Dropping echoed user message ${sdkMessage.uuid}`,
+            `[useRemoteSession] Dropping echoed user message ${SDKControlRequest.uuid}`,
           )
           return
         }
         // Handle init message - extract available slash commands
         if (
-          sdkMessage.type === 'system' &&
-          sdkMessage.subtype === 'init' &&
+          SDKControlRequest.type === 'system' &&
+          SDKControlRequest.subtype === 'init' &&
           onInit
         ) {
           logForDebugging(
-            `[useRemoteSession] Init received with ${sdkMessage.slash_commands.length} slash commands`,
+            `[useRemoteSession] Init received with ${SDKControlRequest.slash_commands.length} slash commands`,
           )
-          onInit(sdkMessage.slash_commands)
+          onInit(SDKControlRequest.slash_commands)
         }
 
         // Track remote subagent lifecycle for the "N in background" counter.
         // All task types (Agent/teammate/workflow/bash) flow through
         // registerTask() → task_started, and complete via task_notification.
         // Return early — these are status signals, not renderable messages.
-        if (sdkMessage.type === 'system') {
-          if (sdkMessage.subtype === 'task_started') {
-            runningTaskIdsRef.current.add(sdkMessage.task_id)
+        if (SDKControlRequest.type === 'system') {
+          if (SDKControlRequest.subtype === 'task_started') {
+            runningTaskIdsRef.current.add(SDKControlRequest.task_id)
             writeTaskCount()
             return
           }
-          if (sdkMessage.subtype === 'task_notification') {
-            runningTaskIdsRef.current.delete(sdkMessage.task_id)
+          if (SDKControlRequest.subtype === 'task_notification') {
+            runningTaskIdsRef.current.delete(SDKControlRequest.task_id)
             writeTaskCount()
             return
           }
-          if (sdkMessage.subtype === 'task_progress') {
+          if (SDKControlRequest.subtype === 'task_progress') {
             return
           }
           // Track compaction state. The CLI emits status='compacting' at
           // the start and status=null when done; compact_boundary also
           // signals completion. Repeated 'compacting' status messages
           // (keep-alive ticks) update the ref but don't append to messages.
-          if (sdkMessage.subtype === 'status') {
+          if (SDKControlRequest.subtype === 'status') {
             const wasCompacting = isCompactingRef.current
-            isCompactingRef.current = sdkMessage.status === 'compacting'
+            isCompactingRef.current = SDKControlRequest.status === 'compacting'
             if (wasCompacting && isCompactingRef.current) {
               return
             }
           }
-          if (sdkMessage.subtype === 'compact_boundary') {
+          if (SDKControlRequest.subtype === 'compact_boundary') {
             isCompactingRef.current = false
           }
         }
 
         // Check if session ended
-        if (isSessionEndMessage(sdkMessage)) {
+        if (isSessionEndMessage(SDKControlRequest)) {
           isCompactingRef.current = false
           setIsLoading(false)
         }
 
         // Clear in-progress tool_use IDs when their tool_result arrives.
-        // Must read the RAW sdkMessage: in non-viewerOnly mode,
+        // Must read the RAW SDKControlRequest: in non-viewerOnly mode,
         // convertSDKMessage returns {type:'ignored'} for user messages, so the
         // delete would never fire post-conversion. Mirrors the add site below
         // and inProcessRunner.ts; without this the set grows unbounded for the
         // session lifetime (BQ: CCR cohort shows 5.2x higher RSS slope).
-        if (setInProgressToolUseIDs && sdkMessage.type === 'user') {
-          const content = sdkMessage.message?.content
+        if (setInProgressToolUseIDs && SDKControlRequest.type === 'user') {
+          const content = SDKControlRequest.message?.content
           if (Array.isArray(content)) {
             const resultIds: string[] = []
             for (const block of content) {
@@ -271,7 +271,7 @@ export function useRemoteSession({
         // renders empty (userFacingName() === ''), actual content is in the
         // tool_result. So we must convert tool_results to render them.
         const converted = convertSDKMessage(
-          sdkMessage,
+          SDKControlRequest,
           config.viewerOnly
             ? { convertToolResults: true, convertUserTextMessages: true }
             : undefined,
@@ -501,7 +501,7 @@ export function useRemoteSession({
       }
 
       // Update the session title after the first message when no initial prompt was provided.
-      // This gives the session a meaningful title on forge-app.vercel.app instead of "Background task".
+      // This gives the session a meaningful title on Forge.ai instead of "Background task".
       // Skip in viewerOnly mode — the remote agent owns the session title.
       if (
         !hasUpdatedTitleRef.current &&
@@ -603,7 +603,3 @@ export function useRemoteSession({
     [isRemoteMode, sendMessage, cancelRequest, disconnect],
   )
 }
-
-
-
-

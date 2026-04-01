@@ -43,7 +43,3 @@ export function shouldFallbackToPrompting(state: DenialTrackingState): boolean {
     state.totalDenials >= DENIAL_LIMITS.maxTotal
   )
 }
-
-
-
-

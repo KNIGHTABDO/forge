@@ -115,15 +115,15 @@ export async function createBashShellProvider(
       // but Node.js needs native Windows paths for file operations.
       const shellCwdFilePath = opts.useSandbox
         ? posixJoin(opts.sandboxTmpDir!, `cwd-${opts.id}`)
-        : posixJoin(shellTmpdir, `claude-${opts.id}-cwd`)
+        : posixJoin(shellTmpdir, `Forge-${opts.id}-cwd`)
       const cwdFilePath = opts.useSandbox
         ? posixJoin(opts.sandboxTmpDir!, `cwd-${opts.id}`)
-        : nativeJoin(tmpdir, `claude-${opts.id}-cwd`)
+        : nativeJoin(tmpdir, `Forge-${opts.id}-cwd`)
 
       // Defensive rewrite: the model sometimes emits Windows CMD-style `2>nul`
       // redirects. In POSIX bash (including Git Bash on Windows), this creates a
       // literal file named `nul` — a reserved device name that breaks git.
-      // See ForgeTeams/claude-code#4928.
+      // See anthropics/Forge-code#4928.
       const normalizedCommand = rewriteWindowsNullRedirect(command)
       const addStdinRedirect = shouldAddStdinRedirect(normalizedCommand)
       let quotedCommand = quoteShellCommand(normalizedCommand, addStdinRedirect)
@@ -209,12 +209,12 @@ export async function createBashShellProvider(
       command: string,
     ): Promise<Record<string, string>> {
       // TMUX SOCKET ISOLATION (DEFERRED):
-      // We initialize Claude's tmux socket ONLY AFTER the Tmux tool has been used
+      // We initialize Forge's tmux socket ONLY AFTER the Tmux tool has been used
       // at least once, OR if the current command appears to use tmux.
       // This defers the startup cost until tmux is actually needed.
       //
       // Once the Tmux tool is used (or a tmux command runs), all subsequent Bash
-      // commands will use Claude's isolated socket via the TMUX env var override.
+      // commands will use Forge's isolated socket via the TMUX env var override.
       //
       // See tmuxSocket.ts for the full isolation architecture documentation.
       const commandUsesTmux = command.includes('tmux')
@@ -226,8 +226,8 @@ export async function createBashShellProvider(
       }
       const claudeTmuxEnv = getClaudeTmuxEnv()
       const env: Record<string, string> = {}
-      // CRITICAL: Override TMUX to isolate ALL tmux commands to Claude's socket.
-      // This is NOT the user's TMUX value - it points to Claude's isolated socket.
+      // CRITICAL: Override TMUX to isolate ALL tmux commands to Forge's socket.
+      // This is NOT the user's TMUX value - it points to Forge's isolated socket.
       // When null (before socket initializes), user's TMUX is preserved.
       if (claudeTmuxEnv) {
         env.TMUX = claudeTmuxEnv
@@ -253,7 +253,3 @@ export async function createBashShellProvider(
     },
   }
 }
-
-
-
-

@@ -1,5 +1,5 @@
 import { dirname, isAbsolute, sep } from 'path'
-import { logEvent } from '../../services/analytics/index.js'
+import { logEvent } from 'src/services/analytics/index.js'
 import { getFeatureValue_CACHED_MAY_BE_STALE } from '../../services/analytics/growthbook.js'
 import { diagnosticTracker } from '../../services/diagnosticTracking.js'
 import { clearDeliveredDiagnosticsForFile } from '../../services/lsp/LSPDiagnosticRegistry.js'
@@ -342,7 +342,7 @@ export const FileEditTool = buildTool({
       }
     }
 
-    // Additional validation for Claude settings files
+    // Additional validation for Forge settings files
     const settingsValidationResult = validateInputForSettingsFileEdit(
       fullFilePath,
       file,
@@ -525,7 +525,7 @@ export const FileEditTool = buildTool({
     })
 
     // 7. Log events
-    if (absoluteFilePath.endsWith(`${sep}CLAUDE.md`)) {
+    if (absoluteFilePath.endsWith(`${sep}Forge.md`)) {
       logEvent('tengu_write_claudemd', {})
     }
     countLinesChanged(patch)
@@ -623,7 +623,3 @@ function readFileForEdit(absoluteFilePath: string): {
     throw e
   }
 }
-
-
-
-

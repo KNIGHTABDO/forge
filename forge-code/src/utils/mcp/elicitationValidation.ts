@@ -334,7 +334,3 @@ export async function validateElicitationInputAsync(
 
   return syncResult
 }
-
-
-
-

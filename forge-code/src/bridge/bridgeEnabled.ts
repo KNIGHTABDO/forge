@@ -16,11 +16,11 @@ import { lt } from '../utils/semver.js'
 /**
  * Runtime check for bridge mode entitlement.
  *
- * Remote Control requires a forge-app.vercel.app subscription (the bridge auths to CCR
- * with the forge-app.vercel.app OAuth token). isClaudeAISubscriber() excludes
+ * Remote Control requires a Forge.ai subscription (the bridge auths to CCR
+ * with the Forge.ai OAuth token). isClaudeAISubscriber() excludes
  * Bedrock/Vertex/Foundry, apiKeyHelper/gateway deployments, env-var API keys,
  * and Console API logins — none of which have the OAuth token CCR needs.
- * See github.com/deshaw/ForgeTeam-issues/issues/24.
+ * See github.com/deshaw/anthropic-issues/issues/24.
  *
  * The `feature('BRIDGE_MODE')` guard ensures the GrowthBook string literal
  * is only referenced when bridge mode is enabled at build time.
@@ -70,13 +70,13 @@ export async function isBridgeEnabledBlocking(): Promise<boolean> {
 export async function getBridgeDisabledReason(): Promise<string | null> {
   if (feature('BRIDGE_MODE')) {
     if (!isClaudeAISubscriber()) {
-      return 'Remote Control requires a forge-app.vercel.app subscription. Run `forge-code auth login` to sign in with your forge-app.vercel.app account.'
+      return 'Remote Control requires a Forge.ai subscription. Run `Forge auth login` to sign in with your Forge.ai account.'
     }
     if (!hasProfileScope()) {
-      return 'Remote Control requires a full-scope login token. Long-lived tokens (from `forge-code setup-token` or FORGE_CODE_OAUTH_TOKEN) are limited to inference-only for security reasons. Run `forge-code auth login` to use Remote Control.'
+      return 'Remote Control requires a full-scope login token. Long-lived tokens (from `Forge setup-token` or FORGE_CODE_OAUTH_TOKEN) are limited to inference-only for security reasons. Run `Forge auth login` to use Remote Control.'
     }
     if (!getOauthAccountInfo()?.organizationUuid) {
-      return 'Unable to determine your organization for Remote Control eligibility. Run `forge-code auth login` to refresh your account information.'
+      return 'Unable to determine your organization for Remote Control eligibility. Run `Forge auth login` to refresh your account information.'
     }
     if (!(await checkGate_CACHED_OR_BLOCKING('tengu_ccr_bridge'))) {
       return 'Remote Control is not yet enabled for your account.'
@@ -133,7 +133,7 @@ export function isEnvLessBridgeEnabled(): boolean {
  * Kill-switch for the `cse_*` → `session_*` client-side retag shim.
  *
  * The shim exists because compat/convert.go:27 validates TagSession and the
- * forge-app.vercel.app frontend routes on `session_*`, while v2 worker endpoints hand out
+ * Forge.ai frontend routes on `session_*`, while v2 worker endpoints hand out
  * `cse_*`. Once the server tags by environment_kind and the frontend accepts
  * `cse_*` directly, flip this to false to make toCompatSessionId a no-op.
  * Defaults to true — the shim stays active until explicitly disabled.
@@ -166,7 +166,7 @@ export function checkBridgeMinVersion(): string | null {
       minVersion: string
     }>('tengu_bridge_min_version', { minVersion: '0.0.0' })
     if (config.minVersion && lt(MACRO.VERSION, config.minVersion)) {
-      return `Your version of Forge Code (${MACRO.VERSION}) is too old for Remote Control.\nVersion ${config.minVersion} or higher is required. Run \`forge-code update\` to update.`
+      return `Your version of Forge Code (${MACRO.VERSION}) is too old for Remote Control.\nVersion ${config.minVersion} or higher is required. Run \`Forge update\` to update.`
     }
   }
   return null
@@ -200,10 +200,3 @@ export function isCcrMirrorEnabled(): boolean {
         getFeatureValue_CACHED_MAY_BE_STALE('tengu_ccr_mirror', false)
     : false
 }
-
-
-
-
-
-
-

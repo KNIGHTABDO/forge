@@ -273,10 +273,3 @@ export class SerialBatchEventUploader<T> {
     })
   }
 }
-
-
-
-
-
-
-

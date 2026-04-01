@@ -23,7 +23,7 @@ type TipMatcher = {
   tip: ValidationTip
 }
 
-const DOCUMENTATION_BASE = 'https://code.claude.com/docs/en'
+const DOCUMENTATION_BASE = 'https://code.Forge.com/docs/en'
 
 const TIP_MATCHERS: TipMatcher[] = [
   {
@@ -162,7 +162,3 @@ export function getValidationTip(context: TipContext): ValidationTip | null {
 
   return tip
 }
-
-
-
-

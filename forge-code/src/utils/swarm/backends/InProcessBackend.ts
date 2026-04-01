@@ -337,7 +337,3 @@ export class InProcessBackend implements TeammateExecutor {
 export function createInProcessBackend(): InProcessBackend {
   return new InProcessBackend()
 }
-
-
-
-

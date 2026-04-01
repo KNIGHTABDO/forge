@@ -31,7 +31,3 @@ export type ShellProvider = {
    */
   getEnvironmentOverrides(command: string): Promise<Record<string, string>>
 }
-
-
-
-

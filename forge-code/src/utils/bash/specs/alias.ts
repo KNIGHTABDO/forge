@@ -12,7 +12,3 @@ const alias: CommandSpec = {
 }
 
 export default alias
-
-
-
-

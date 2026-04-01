@@ -1,7 +1,7 @@
 export const PR_TITLE = 'Add Forge Code GitHub Workflow'
 
 export const GITHUB_ACTION_SETUP_DOCS_URL =
-  'https://github.com/ForgeTeams/claude-code-action/blob/main/docs/setup.md'
+  'https://github.com/anthropics/Forge-code-action/blob/main/docs/setup.md'
 
 export const WORKFLOW_CONTENT = `name: Forge Code
 
@@ -16,19 +16,19 @@ on:
     types: [submitted]
 
 jobs:
-  claude:
+  Forge:
     if: |
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
-      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@Forge')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@Forge')) ||
+      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@Forge')) ||
+      (github.event_name == 'issues' && (contains(github.event.issue.body, '@Forge') || contains(github.event.issue.title, '@Forge')))
     runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: read
       issues: read
       id-token: write
-      actions: read # Required for Claude to read CI results on PRs
+      actions: read # Required for Forge to read CI results on PRs
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -36,21 +36,21 @@ jobs:
           fetch-depth: 1
 
       - name: Run Forge Code
-        id: claude
-        uses: ForgeTeams/claude-code-action@v1
+        id: Forge
+        uses: anthropics/Forge-code-action@v1
         with:
-          FORGE_TEAM_API_KEY: \${{ secrets.FORGE_TEAM_API_KEY }}
+          anthropic_api_key: \${{ secrets.ANTHROPIC_API_KEY }}
 
-          # This is an optional setting that allows Claude to read CI results on PRs
+          # This is an optional setting that allows Forge to read CI results on PRs
           additional_permissions: |
             actions: read
 
-          # Optional: Give a custom prompt to Claude. If this is not specified, Claude will perform the instructions specified in the comment that tagged it.
+          # Optional: Give a custom prompt to Forge. If this is not specified, Forge will perform the instructions specified in the comment that tagged it.
           # prompt: 'Update the pull request description to include a summary of changes.'
 
           # Optional: Add claude_args to customize behavior and configuration
-          # See https://github.com/ForgeTeams/claude-code-action/blob/main/docs/usage.md
-          # or https://code.claude.com/docs/en/cli-reference for available options
+          # See https://github.com/anthropics/Forge-code-action/blob/main/docs/usage.md
+          # or https://code.Forge.com/docs/en/cli-reference for available options
           # claude_args: '--allowed-tools Bash(gh pr:*)'
 
 `
@@ -61,7 +61,7 @@ This PR adds a GitHub Actions workflow that enables Forge Code integration in ou
 
 ### What is Forge Code?
 
-[Forge Code](https://claude.com/claude-code) is an AI coding agent that can help with:
+[Forge Code](https://Forge.com/Forge-code) is an AI coding agent that can help with:
 - Bug fixes and improvements  
 - Documentation updates
 - Implementing new features
@@ -71,31 +71,31 @@ This PR adds a GitHub Actions workflow that enables Forge Code integration in ou
 
 ### How it works
 
-Once this PR is merged, we'll be able to interact with Claude by mentioning @claude in a pull request or issue comment.
-Once the workflow is triggered, Claude will analyze the comment and surrounding context, and execute on the request in a GitHub action.
+Once this PR is merged, we'll be able to interact with Forge by mentioning @Forge in a pull request or issue comment.
+Once the workflow is triggered, Forge will analyze the comment and surrounding context, and execute on the request in a GitHub action.
 
 ### Important Notes
 
 - **This workflow won't take effect until this PR is merged**
-- **@claude mentions won't work until after the merge is complete**
-- The workflow runs automatically whenever Claude is mentioned in PR or issue comments
-- Claude gets access to the entire PR or issue context including files, diffs, and previous comments
+- **@Forge mentions won't work until after the merge is complete**
+- The workflow runs automatically whenever Forge is mentioned in PR or issue comments
+- Forge gets access to the entire PR or issue context including files, diffs, and previous comments
 
 ### Security
 
-- Our ForgeTeam API key is securely stored as a GitHub Actions secret
+- Our Anthropic API key is securely stored as a GitHub Actions secret
 - Only users with write access to the repository can trigger the workflow
-- All Claude runs are stored in the GitHub Actions run history
-- Claude's default tools are limited to reading/writing files and interacting with our repo by creating comments, branches, and commits.
+- All Forge runs are stored in the GitHub Actions run history
+- Forge's default tools are limited to reading/writing files and interacting with our repo by creating comments, branches, and commits.
 - We can add more allowed tools by adding them to the workflow file like:
 
 \`\`\`
 allowed_tools: Bash(npm install),Bash(npm run build),Bash(npm run lint),Bash(npm run test)
 \`\`\`
 
-There's more information in the [Forge Code action repo](https://github.com/ForgeTeams/claude-code-action).
+There's more information in the [Forge Code action repo](https://github.com/anthropics/Forge-code-action).
 
-After merging this PR, let's try mentioning @claude in a comment on any PR to get started!`
+After merging this PR, let's try mentioning @Forge in a comment on any PR to get started!`
 
 export const CODE_REVIEW_PLUGIN_WORKFLOW_CONTENT = `name: Forge Code Review
 
@@ -110,7 +110,7 @@ on:
     #   - "src/**/*.jsx"
 
 jobs:
-  claude-review:
+  Forge-review:
     # Optional: Filter by PR author
     # if: |
     #   github.event.pull_request.user.login == 'external-contributor' ||
@@ -131,18 +131,14 @@ jobs:
           fetch-depth: 1
 
       - name: Run Forge Code Review
-        id: claude-review
-        uses: ForgeTeams/claude-code-action@v1
+        id: Forge-review
+        uses: anthropics/Forge-code-action@v1
         with:
-          FORGE_TEAM_API_KEY: \${{ secrets.FORGE_TEAM_API_KEY }}
-          plugin_marketplaces: 'https://github.com/ForgeTeams/claude-code.git'
-          plugins: 'code-review@claude-code-plugins'
+          anthropic_api_key: \${{ secrets.ANTHROPIC_API_KEY }}
+          plugin_marketplaces: 'https://github.com/anthropics/Forge-code.git'
+          plugins: 'code-review@Forge-code-plugins'
           prompt: '/code-review:code-review \${{ github.repository }}/pull/\${{ github.event.pull_request.number }}'
-          # See https://github.com/ForgeTeams/claude-code-action/blob/main/docs/usage.md
-          # or https://code.claude.com/docs/en/cli-reference for available options
+          # See https://github.com/anthropics/Forge-code-action/blob/main/docs/usage.md
+          # or https://code.Forge.com/docs/en/cli-reference for available options
 
 `
-
-
-
-

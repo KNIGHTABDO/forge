@@ -24,7 +24,3 @@ const feedback = {
 } satisfies Command
 
 export default feedback
-
-
-
-

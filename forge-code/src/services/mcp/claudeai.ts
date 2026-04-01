@@ -1,14 +1,15 @@
 import axios from 'axios'
 import memoize from 'lodash-es/memoize.js'
-import { getOauthConfig } from '../../constants/oauth.js'
+import { getOauthConfig } from 'src/constants/oauth.js'
 import {
   type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
   logEvent,
-} from '../../services/analytics/index.js'
-import { getClaudeAIOAuthTokens } from '../../utils/auth.js'
-import { getGlobalConfig, saveGlobalConfig } from '../../utils/config.js'
-import { logForDebugging } from '../../utils/debug.js'
-import { isEnvDefinedFalsy } from '../../utils/envUtils.js'
+} from 'src/services/analytics/index.js'
+import { getClaudeAIOAuthTokens } from 'src/utils/auth.js'
+import { getGlobalConfig, saveGlobalConfig } from 'src/utils/config.js'
+import { logForDebugging } from 'src/utils/debug.js'
+import { isEnvDefinedFalsy } from 'src/utils/envUtils.js'
+import { getAPIProvider } from 'src/utils/model/providers.js'
 import { clearMcpAuthCache } from './client.js'
 import { normalizeNameForMCP } from './normalization.js'
 import type { ScopedMcpServerConfig } from './types.js'
@@ -31,14 +32,23 @@ const FETCH_TIMEOUT_MS = 5000
 const MCP_SERVERS_BETA_HEADER = 'mcp-servers-2025-12-04'
 
 /**
- * Fetches MCP server configurations from forge-app.vercel.app org configs.
- * These servers are managed by the organization via forge-app.vercel.app.
+ * Fetches MCP server configurations from Forge.ai org configs.
+ * These servers are managed by the organization via Forge.ai.
  *
  * Results are memoized for the session lifetime (fetch once per CLI session).
  */
 export const fetchClaudeAIMcpConfigsIfEligible = memoize(
   async (): Promise<Record<string, ScopedMcpServerConfig>> => {
     try {
+      if (getAPIProvider() !== 'firstParty') {
+        logForDebugging('[claudeai-mcp] Skipped: non-first-party provider')
+        logEvent('tengu_claudeai_mcp_eligibility', {
+          state:
+            'non_first_party_provider' as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
+        })
+        return {}
+      }
+
       if (isEnvDefinedFalsy(process.env.ENABLE_CLAUDEAI_MCP_SERVERS)) {
         logForDebugging('[claudeai-mcp] Disabled via env var')
         logEvent('tengu_claudeai_mcp_eligibility', {
@@ -59,10 +69,10 @@ export const fetchClaudeAIMcpConfigsIfEligible = memoize(
       }
 
       // Check for user:mcp_servers scope directly instead of isClaudeAISubscriber().
-      // In non-interactive mode, isClaudeAISubscriber() returns false when FORGE_TEAM_API_KEY
+      // In non-interactive mode, isClaudeAISubscriber() returns false when ANTHROPIC_API_KEY
       // is set (even with valid OAuth tokens) because preferThirdPartyAuthentication() causes
-      // isForgeTeamAuthEnabled() to return false. Checking the scope directly allows users
-      // with both API keys and OAuth tokens to access forge-app.vercel.app MCPs in print mode.
+      // isAnthropicAuthEnabled() to return false. Checking the scope directly allows users
+      // with both API keys and OAuth tokens to access Forge.ai MCPs in print mode.
       if (!tokens.scopes?.includes('user:mcp_servers')) {
         logForDebugging(
           `[claudeai-mcp] Missing user:mcp_servers scope (scopes=${tokens.scopes?.join(',') || 'none'})`,
@@ -83,8 +93,8 @@ export const fetchClaudeAIMcpConfigsIfEligible = memoize(
         headers: {
           Authorization: `Bearer ${tokens.accessToken}`,
           'Content-Type': 'application/json',
-          'ForgeTeam-beta': MCP_SERVERS_BETA_HEADER,
-          'ForgeTeam-version': '2023-06-01',
+          'anthropic-beta': MCP_SERVERS_BETA_HEADER,
+          'anthropic-version': '2023-06-01',
         },
         timeout: FETCH_TIMEOUT_MS,
       })
@@ -97,7 +107,7 @@ export const fetchClaudeAIMcpConfigsIfEligible = memoize(
       const usedNormalizedNames = new Set<string>()
 
       for (const server of response.data.data) {
-        const baseName = `forge-app.vercel.app ${server.display_name}`
+        const baseName = `Forge.ai ${server.display_name}`
 
         // Try without suffix first, then increment until we find an unused normalized name
         let finalName = baseName
@@ -144,7 +154,7 @@ export function clearClaudeAIMcpConfigsCache(): void {
 }
 
 /**
- * Record that a forge-app.vercel.app connector successfully connected. Idempotent.
+ * Record that a Forge.ai connector successfully connected. Idempotent.
  *
  * Gates the "N connectors unavailable/need auth" startup notifications: a
  * connector that was working yesterday and is now failed is a state change
@@ -162,7 +172,3 @@ export function markClaudeAiMcpConnected(name: string): void {
 export function hasClaudeAiMcpEverConnected(name: string): boolean {
   return (getGlobalConfig().claudeAiMcpEverConnected ?? []).includes(name)
 }
-
-
-
-

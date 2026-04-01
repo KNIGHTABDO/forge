@@ -13,7 +13,3 @@ export default {
   },
   load: () => import('./remote-env.js'),
 } satisfies Command
-
-
-
-

@@ -68,11 +68,11 @@ export function checkMockRateLimitError(
   // 1. Status is rejected AND
   // 2. Either no overage headers OR overage is also rejected
   // 3. For Opus-specific limits, only throw if actually using an Opus model
-  const status = mockHeaders['ForgeTeam-ratelimit-unified-status']
+  const status = mockHeaders['anthropic-ratelimit-unified-status']
   const overageStatus =
-    mockHeaders['ForgeTeam-ratelimit-unified-overage-status']
+    mockHeaders['anthropic-ratelimit-unified-overage-status']
   const rateLimitType =
-    mockHeaders['ForgeTeam-ratelimit-unified-representative-claim']
+    mockHeaders['anthropic-ratelimit-unified-representative-claim']
 
   // Check if this is an Opus-specific rate limit
   const isOpusLimit = rateLimitType === 'seven_day_opus'
@@ -142,7 +142,3 @@ export function isMockRateLimitError(error: APIError): boolean {
  * Check if /mock-limits command is currently active (for UI purposes)
  */
 export { shouldProcessMockLimits }
-
-
-
-

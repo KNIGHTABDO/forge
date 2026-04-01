@@ -9,7 +9,3 @@ const mobile = {
 } satisfies Command
 
 export default mobile
-
-
-
-

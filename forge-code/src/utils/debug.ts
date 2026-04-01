@@ -1,7 +1,7 @@
 import { appendFile, mkdir, symlink, unlink } from 'fs/promises'
 import memoize from 'lodash-es/memoize.js'
 import { dirname, join } from 'path'
-import { getSessionId } from '../bootstrap/state.js'
+import { getSessionId } from 'src/bootstrap/state.js'
 
 import { type BufferedWriter, createBufferedWriter } from './bufferedWriter.js'
 import { registerCleanup } from './cleanupRegistry.js'
@@ -237,7 +237,7 @@ export function getDebugLogPath(): string {
 
 /**
  * Updates the latest debug log symlink to point to the current debug log file.
- * Creates or updates a symlink at ~/.claude/debug/latest
+ * Creates or updates a symlink at ~/.Forge/debug/latest
  */
 const updateLatestDebugLogSymlink = memoize(async (): Promise<void> => {
   try {
@@ -266,7 +266,3 @@ export function logAntError(context: string, error: unknown): void {
     })
   }
 }
-
-
-
-

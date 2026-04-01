@@ -294,7 +294,3 @@ export function addPermissionRulesToSettings(
     return false
   }
 }
-
-
-
-

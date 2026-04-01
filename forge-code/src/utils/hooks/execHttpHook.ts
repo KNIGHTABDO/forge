@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { HookEvent } from '../../entrypoints/agentSdkTypes.js'
+import type { HookEvent } from 'src/entrypoints/agentSdkTypes.js'
 import { createCombinedAbortSignal } from '../combinedAbortSignal.js'
 import { logForDebugging } from '../debug.js'
 import { errorMessage } from '../errors.js'
@@ -240,7 +240,3 @@ export async function execHttpHook(
     return { ok: false, body: '', error: errorMsg }
   }
 }
-
-
-
-

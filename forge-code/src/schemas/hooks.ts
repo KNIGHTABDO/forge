@@ -8,7 +8,7 @@
  * Both files now import from this shared location instead of each other.
  */
 
-import { HOOK_EVENTS, type HookEvent } from '../entrypoints/agentSdkTypes.js'
+import { HOOK_EVENTS, type HookEvent } from 'src/entrypoints/agentSdkTypes.js'
 import { z } from 'zod/v4'
 import { lazySchema } from '../utils/lazySchema.js'
 import { SHELL_TYPES } from '../utils/shell/shellProvider.js'
@@ -82,7 +82,7 @@ function buildHookSchemas() {
       .string()
       .optional()
       .describe(
-        'Model to use for this prompt hook (e.g., "claude-sonnet-4-6"). If not specified, uses the default small fast model.',
+        'Model to use for this prompt hook (e.g., "Forge-sonnet-4-6"). If not specified, uses the default small fast model.',
       ),
     statusMessage: z
       .string()
@@ -150,7 +150,7 @@ function buildHookSchemas() {
       .string()
       .optional()
       .describe(
-        'Model to use for this agent hook (e.g., "claude-sonnet-4-6"). If not specified, uses Haiku.',
+        'Model to use for this agent hook (e.g., "Forge-sonnet-4-6"). If not specified, uses Haiku.',
       ),
     statusMessage: z
       .string()
@@ -220,7 +220,3 @@ export type AgentHook = Extract<HookCommand, { type: 'agent' }>
 export type HttpHook = Extract<HookCommand, { type: 'http' }>
 export type HookMatcher = z.infer<ReturnType<typeof HookMatcherSchema>>
 export type HooksSettings = Partial<Record<HookEvent, HookMatcher[]>>
-
-
-
-

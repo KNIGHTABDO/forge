@@ -10,7 +10,3 @@ const mcp = {
 } satisfies Command
 
 export default mcp
-
-
-
-

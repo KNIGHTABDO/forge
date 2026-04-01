@@ -17,9 +17,3 @@ const clear = {
 } satisfies Command
 
 export default clear
-
-
-
-
-
-

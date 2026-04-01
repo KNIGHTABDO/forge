@@ -5,8 +5,8 @@ import {
   useAppState,
   useAppStateStore,
   useSetAppState,
-} from '../../state/AppState.js'
-import type { ToolPermissionContext } from '../../Tool.js'
+} from 'src/state/AppState.js'
+import type { ToolPermissionContext } from 'src/Tool.js'
 import { getIsRemoteMode } from '../../bootstrap/state.js'
 import {
   createDisabledBypassPermissionsContext,
@@ -153,7 +153,3 @@ export function useKickOffCheckAndDisableAutoModeIfNeeded(): void {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mainLoopModel, mainLoopModelForSession, fastMode])
 }
-
-
-
-

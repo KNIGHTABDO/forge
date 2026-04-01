@@ -96,9 +96,9 @@ export function calculateOptimalLeftWidth(
  */
 export function formatWelcomeMessage(username: string | null): string {
   if (!username || username.length > MAX_USERNAME_LENGTH) {
-    return 'Welcome back to Forge!'
+    return 'Welcome to Forge Code'
   }
-  return `Welcome back to Forge, ${username}!`
+  return `Welcome back, ${username}`
 }
 
 /**
@@ -245,17 +245,17 @@ export function getLogoDisplayData(): {
   billingType: string
   agentName: string | undefined
 } {
-  const version = process.env.DEMO_VERSION ?? MACRO.VERSION
+  const version = process.env.DEMO_VERSION ?? MACRO.DISPLAY_VERSION ?? MACRO.VERSION
   const serverUrl = getDirectConnectServerUrl()
   const displayPath = process.env.DEMO_VERSION
-    ? '/code/claude'
+    ? '/code/Forge'
     : getDisplayPath(getCwd())
   const cwd = serverUrl
     ? `${displayPath} in ${serverUrl.replace(/^https?:\/\//, '')}`
     : displayPath
   const billingType = isClaudeAISubscriber()
     ? getSubscriptionName()
-    : 'Usage-based Billing'
+    : 'API Usage Billing'
   const agentName = getInitialSettings().agent
 
   return {
@@ -348,7 +348,3 @@ export function getRecentReleaseNotesSync(maxItems: number): string[] {
   // Return raw notes without filtering or premature truncation
   return allNotes.slice(0, maxItems)
 }
-
-
-
-

@@ -23,16 +23,16 @@ const MAX_RELEASE_NOTES_SHOWN = 5
  * The flow is:
  * 1. User updates to a new version
  * 2. We fetch the changelog in the background and store it in config
- * 3. Next time the user starts Claude, the cached changelog is available immediately
+ * 3. Next time the user starts Forge, the cached changelog is available immediately
  */
 export const CHANGELOG_URL =
-  'https://github.com/ForgeTeams/claude-code/blob/main/CHANGELOG.md'
+  'https://github.com/anthropics/Forge-code/blob/main/CHANGELOG.md'
 const RAW_CHANGELOG_URL =
-  'https://raw.githubusercontent.com/ForgeTeams/claude-code/refs/heads/main/CHANGELOG.md'
+  'https://raw.githubusercontent.com/anthropics/Forge-code/refs/heads/main/CHANGELOG.md'
 
 /**
  * Get the path for the cached changelog file.
- * The changelog is stored at ~/.claude/cache/changelog.md
+ * The changelog is stored at ~/.Forge/cache/changelog.md
  */
 function getChangelogCachePath(): string {
   return join(getClaudeConfigHomeDir(), 'cache', 'changelog.md')
@@ -358,7 +358,3 @@ export function checkForReleaseNotesSync(
     releaseNotes,
   }
 }
-
-
-
-

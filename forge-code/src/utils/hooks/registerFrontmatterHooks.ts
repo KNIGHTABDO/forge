@@ -1,5 +1,5 @@
-import { HOOK_EVENTS, type HookEvent } from '../../entrypoints/agentSdkTypes.js'
-import type { AppState } from '../../state/AppState.js'
+import { HOOK_EVENTS, type HookEvent } from 'src/entrypoints/agentSdkTypes.js'
+import type { AppState } from 'src/state/AppState.js'
 import { logForDebugging } from '../debug.js'
 import type { HooksSettings } from '../settings/types.js'
 import { addSessionHook } from './sessionHooks.js'
@@ -65,7 +65,3 @@ export function registerFrontmatterHooks(
     )
   }
 }
-
-
-
-

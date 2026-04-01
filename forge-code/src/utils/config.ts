@@ -131,7 +131,7 @@ export type ProjectConfig = {
     sessionId: string
     hookBased?: boolean
   }
-  /** Spawn mode for `claude remote-control` multi-session. Set by first-run dialog or `w` toggle. */
+  /** Spawn mode for `Forge remote-control` multi-session. Set by first-run dialog or `w` toggle. */
   remoteControlSpawnMode?: 'same-dir' | 'worktree'
 }
 
@@ -200,12 +200,12 @@ export type GlobalConfig = {
   lastOnboardingVersion?: string
   // Tracks the last version for which release notes were seen, used for managing release notes
   lastReleaseNotesSeen?: string
-  // Timestamp when changelog was last fetched (content stored in ~/.claude/cache/changelog.md)
+  // Timestamp when changelog was last fetched (content stored in ~/.Forge/cache/changelog.md)
   changelogLastFetched?: number
-  // @deprecated - Migrated to ~/.claude/cache/changelog.md. Keep for migration support.
+  // @deprecated - Migrated to ~/.Forge/cache/changelog.md. Keep for migration support.
   cachedChangelog?: string
   mcpServers?: Record<string, McpServerConfig>
-  // forge-app.vercel.app MCP connectors that have successfully connected at least once.
+  // Forge.ai MCP connectors that have successfully connected at least once.
   // Used to gate "connector unavailable" / "needs auth" startup notifications:
   // a connector the user has actually used is worth flagging when it breaks,
   // but an org-configured connector that's been needs-auth since day one is
@@ -372,7 +372,7 @@ export type GlobalConfig = {
   // First start time tracking
   firstStartTime?: string // ISO timestamp when Forge Code was first started on this machine
 
-  messageIdleNotifThresholdMs: number // How long the user has to have been idle to get a notification that Claude is done generating
+  messageIdleNotifThresholdMs: number // How long the user has to have been idle to get a notification that Forge is done generating
 
   githubActionSetupCount?: number // Number of times the user has set up the GitHub Action
   slackAppInstallCount?: number // Number of times the user has clicked to install the Slack app
@@ -468,7 +468,7 @@ export type GlobalConfig = {
   // Key: "owner/repo" (lowercase), Value: array of absolute paths where repo is cloned
   githubRepoPaths?: Record<string, string[]>
 
-  // Terminal emulator to launch for claude-cli:// deep links. Captured from
+  // Terminal emulator to launch for Forge-cli:// deep links. Captured from
   // TERM_PROGRAM during interactive sessions since the deep link handler runs
   // headless (LaunchServices/xdg) with no TERM_PROGRAM set.
   deepLinkTerminal?: string
@@ -491,9 +491,9 @@ export type GlobalConfig = {
   officialMarketplaceAutoInstallLastAttemptTime?: number // Timestamp of last attempt
   officialMarketplaceAutoInstallNextRetryTime?: number // Earliest time to retry again
 
-  // Claude in Chrome settings
-  hasCompletedClaudeInChromeOnboarding?: boolean // Whether Claude in Chrome onboarding has been shown
-  claudeInChromeDefaultEnabled?: boolean // Whether Claude in Chrome is enabled by default (undefined means platform default)
+  // Forge in Chrome settings
+  hasCompletedClaudeInChromeOnboarding?: boolean // Whether Forge in Chrome onboarding has been shown
+  claudeInChromeDefaultEnabled?: boolean // Whether Forge in Chrome is enabled by default (undefined means platform default)
   cachedChromeExtensionInstalled?: boolean // Cached result of whether Chrome extension is installed
 
   // Chrome extension pairing state (persisted across sessions)
@@ -507,7 +507,7 @@ export type GlobalConfig = {
   lspRecommendationNeverPlugins?: string[] // Plugin IDs to never suggest
   lspRecommendationIgnoredCount?: number // Track ignored recommendations (stops after 5)
 
-  // Forge Code hint protocol state (<claude-code-hint /> tags from CLIs/SDKs).
+  // Forge Code hint protocol state (<Forge-code-hint /> tags from CLIs/SDKs).
   // Nested by hint type so future types (docs, mcp, ...) slot in without new
   // top-level keys.
   claudeCodeHints?: {
@@ -565,7 +565,7 @@ export type GlobalConfig = {
 
   // Disk cache for /api/claude_code/organizations/metrics_enabled.
   // Org-level settings change rarely; persisting across processes avoids a
-  // cold API call on every `claude -p` invocation.
+  // cold API call on every `Forge -p` invocation.
   metricsStatusCache?: {
     enabled: boolean
     timestamp: number
@@ -832,6 +832,14 @@ export function saveGlobalConfig(
       writeThroughGlobalConfigCache(written)
     }
   } catch (error) {
+    const code = getErrnoCode(error)
+    if (code === 'EACCES' || code === 'EPERM' || code === 'EROFS') {
+      logForDebugging(
+        `Skipping global config write due to permission error: ${error}`,
+        { level: 'error' },
+      )
+      return
+    }
     logForDebugging(`Failed to save config with lock: ${error}`, {
       level: 'error',
     })
@@ -877,7 +885,7 @@ let configCacheHits = 0
 let configCacheMisses = 0
 // Session-total count of actual disk writes to the global config file.
 // Exposed for ant-only dev diagnostics (see inc-4552) so anomalous write
-// rates surface in the UI before they corrupt ~/.claude.json.
+// rates surface in the UI before they corrupt ~/.Forge.json.
 let globalConfigWriteCount = 0
 
 export function getGlobalConfigWriteCount(): number {
@@ -1178,7 +1186,7 @@ function saveConfigWithLock<A extends object>(
     const lockTime = Date.now() - startTime
     if (lockTime > 100) {
       logForDebugging(
-        'Lock acquisition took longer than expected - another Claude instance may be running',
+        'Lock acquisition took longer than expected - another Forge instance may be running',
       )
       logEvent('tengu_config_lock_contention', {
         lock_time_ms: lockTime,
@@ -1216,7 +1224,7 @@ function saveConfigWithLock<A extends object>(
     const currentConfig = getConfig(file, createDefault)
     if (file === getGlobalClaudeFile() && wouldLoseAuthState(currentConfig)) {
       logForDebugging(
-        'saveConfigWithLock: re-read config is missing auth that cache has; refusing to write to avoid wiping ~/.claude.json. See GH #3117.',
+        'saveConfigWithLock: re-read config is missing auth that cache has; refusing to write to avoid wiping ~/.Forge.json. See GH #3117.',
         { level: 'error' },
       )
       logEvent('tengu_config_auth_loss_prevented', {})
@@ -1240,7 +1248,7 @@ function saveConfigWithLock<A extends object>(
 
     // Create timestamped backup of existing config before writing
     // We keep multiple backups to prevent data loss if a reset/corrupted config
-    // overwrites a good backup. Backups are stored in ~/.claude/backups/ to
+    // overwrites a good backup. Backups are stored in ~/.Forge/backups/ to
     // keep the home directory clean.
     try {
       const fileBase = basename(file)
@@ -1357,7 +1365,7 @@ export function enableConfigs(): void {
 
 /**
  * Returns the directory where config backup files are stored.
- * Uses ~/.claude/backups/ to keep the home directory clean.
+ * Uses ~/.Forge/backups/ to keep the home directory clean.
  */
 function getConfigBackupDir(): string {
   return join(getClaudeConfigHomeDir(), 'backups')
@@ -1365,7 +1373,7 @@ function getConfigBackupDir(): string {
 
 /**
  * Find the most recent backup file for a given config file.
- * Checks ~/.claude/backups/ first, then falls back to the legacy location
+ * Checks ~/.Forge/backups/ first, then falls back to the legacy location
  * (next to the config file) for backwards compatibility.
  * Returns the full path to the most recent backup, or null if none exist.
  */
@@ -1454,7 +1462,7 @@ function getConfig<A>(
       const backupPath = findMostRecentBackup(file)
       if (backupPath) {
         process.stderr.write(
-          `\nClaude configuration file not found at: ${file}\n` +
+          `\nForge configuration file not found at: ${file}\n` +
             `A backup file exists at: ${backupPath}\n` +
             `You can manually restore it by running: cp "${backupPath}" "${file}"\n\n`,
         )
@@ -1501,7 +1509,7 @@ function getConfig<A>(
       }
 
       process.stderr.write(
-        `\nClaude configuration file at ${file} is corrupted: ${error.message}\n`,
+        `\nForge configuration file at ${file} is corrupted: ${error.message}\n`,
       )
 
       // Try to backup the corrupted config file (only if not already backed up)
@@ -1781,13 +1789,13 @@ export function getMemoryPath(memoryType: MemoryType): string {
 
   switch (memoryType) {
     case 'User':
-      return join(getClaudeConfigHomeDir(), 'CLAUDE.md')
+      return join(getClaudeConfigHomeDir(), 'Forge.md')
     case 'Local':
-      return join(cwd, 'CLAUDE.local.md')
+      return join(cwd, 'Forge.local.md')
     case 'Project':
-      return join(cwd, 'CLAUDE.md')
+      return join(cwd, 'Forge.md')
     case 'Managed':
-      return join(getManagedFilePath(), 'CLAUDE.md')
+      return join(getManagedFilePath(), 'Forge.md')
     case 'AutoMem':
       return getAutoMemEntrypoint()
   }
@@ -1799,7 +1807,7 @@ export function getMemoryPath(memoryType: MemoryType): string {
 }
 
 export function getManagedClaudeRulesDir(): string {
-  return join(getManagedFilePath(), '.claude', 'rules')
+  return join(getManagedFilePath(), '.Forge', 'rules')
 }
 
 export function getUserClaudeRulesDir(): string {
@@ -1815,7 +1823,3 @@ export function _setGlobalConfigCacheForTesting(
   globalConfigCache.config = config
   globalConfigCache.mtime = config ? Date.now() : 0
 }
-
-
-
-

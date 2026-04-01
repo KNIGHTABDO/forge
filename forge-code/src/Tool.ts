@@ -214,10 +214,10 @@ export type ToolUseContext = {
   }) => void
   nestedMemoryAttachmentTriggers?: Set<string>
   /**
-   * CLAUDE.md paths already injected as nested_memory attachments this
+   * Forge.md paths already injected as nested_memory attachments this
    * session. Dedup for memoryFilesToAttachments — readFileState is an LRU
    * that evicts entries in busy sessions, so its .has() check alone can
-   * re-inject the same CLAUDE.md dozens of times.
+   * re-inject the same Forge.md dozens of times.
    */
   loadedNestedMemoryPaths?: Set<string>
   dynamicSkillDirTriggers?: Set<string>
@@ -443,7 +443,7 @@ export type Tool<
   /**
    * When true, this tool is never deferred — its full schema appears in the
    * initial prompt even when ToolSearch is enabled. For MCP tools, set via
-   * `_meta['ForgeTeam/alwaysLoad']`. Use for tools the model must see on
+   * `_meta['anthropic/alwaysLoad']`. Use for tools the model must see on
    * turn 1 without a ToolSearch round-trip.
    */
   readonly alwaysLoad?: boolean
@@ -456,7 +456,7 @@ export type Tool<
   readonly name: string
   /**
    * Maximum size in characters for tool result before it gets persisted to disk.
-   * When exceeded, the result is saved to a file and Claude receives a preview
+   * When exceeded, the result is saved to a file and Forge receives a preview
    * with the file path instead of the full content.
    *
    * Set to Infinity for tools whose output must never be persisted (e.g. Read,
@@ -790,10 +790,3 @@ export function buildTool<D extends AnyToolDef>(def: D): BuiltTool<D> {
     ...def,
   } as BuiltTool<D>
 }
-
-
-
-
-
-
-

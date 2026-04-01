@@ -17,24 +17,23 @@ export type Step = {
 }
 
 export function getSteps(): Step[] {
-  const hasForgeMd = getFsImplementation().existsSync(join(getCwd(), 'FORGE.md'))
   const hasClaudeMd = getFsImplementation().existsSync(
-    join(getCwd(), 'CLAUDE.md'),
+    join(getCwd(), 'Forge.md'),
   )
   const isWorkspaceDirEmpty = isDirEmpty(getCwd())
 
   return [
     {
       key: 'workspace',
-      text: 'Ask Claude to create a new app or clone a repository',
+      text: 'Ask Forge to create a new app or clone a repository',
       isComplete: false,
       isCompletable: true,
       isEnabled: isWorkspaceDirEmpty,
     },
     {
       key: 'claudemd',
-      text: 'Run /init to create a FORGE.md file with project instructions',
-      isComplete: hasForgeMd || hasClaudeMd,
+      text: 'Run /init to create a Forge.md file with instructions for Forge',
+      isComplete: hasClaudeMd,
       isCompletable: true,
       isEnabled: !isWorkspaceDirEmpty,
     },
@@ -82,10 +81,3 @@ export function incrementProjectOnboardingSeenCount(): void {
     projectOnboardingSeenCount: current.projectOnboardingSeenCount + 1,
   }))
 }
-
-
-
-
-
-
-

@@ -107,7 +107,3 @@ export function validateAgent(
     warnings,
   }
 }
-
-
-
-

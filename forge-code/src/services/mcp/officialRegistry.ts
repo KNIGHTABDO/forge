@@ -37,7 +37,7 @@ export async function prefetchOfficialMcpUrls(): Promise<void> {
 
   try {
     const response = await axios.get<RegistryResponse>(
-      'https://api.ForgeTeam.com/mcp-registry/v0/servers?version=latest&visibility=commercial',
+      'https://api.anthropic.com/mcp-registry/v0/servers?version=latest&visibility=commercial',
       { timeout: 5000 },
     )
 
@@ -70,7 +70,3 @@ export function isOfficialMcpUrl(normalizedUrl: string): boolean {
 export function resetOfficialMcpUrlsForTesting(): void {
   officialUrls = undefined
 }
-
-
-
-

@@ -1,10 +1,10 @@
 import { feature } from 'bun:bundle'
-import type { ForgeTeam } from '@anthropic-ai/sdk'
+import type { Anthropic } from '@anthropic-ai/sdk'
 import {
   getSystemPrompt,
   SYSTEM_PROMPT_DYNAMIC_BOUNDARY,
-} from '../constants/prompts.js'
-import { microcompactMessages } from '../services/compact/microCompact.js'
+} from 'src/constants/prompts.js'
+import { microcompactMessages } from 'src/services/compact/microCompact.js'
 import { getSdkBetas } from '../bootstrap/state.js'
 import { getCommandName } from '../commands.js'
 import { getSystemContext } from '../context.js'
@@ -75,8 +75,8 @@ const MANUAL_COMPACT_BUFFER_NAME = 'Compact buffer'
 export const TOOL_TOKEN_COUNT_OVERHEAD = 500
 
 async function countTokensWithFallback(
-  messages: ForgeTeam.Beta.Messages.BetaMessageParam[],
-  tools: ForgeTeam.Beta.Messages.BetaToolUnion[],
+  messages: Anthropic.Beta.Messages.BetaMessageParam[],
+  tools: Anthropic.Beta.Messages.BetaToolUnion[],
 ): Promise<number | null> {
   try {
     const result = await countMessagesTokensWithAPI(messages, tools)
@@ -321,7 +321,7 @@ async function countMemoryFileTokens(): Promise<{
   memoryFileDetails: MemoryFile[]
   claudeMdTokens: number
 }> {
-  // Simple mode disables CLAUDE.md loading, so don't report tokens for them
+  // Simple mode disables Forge.md loading, so don't report tokens for them
   if (isEnvTruthy(process.env.FORGE_CODE_SIMPLE)) {
     return { memoryFileDetails: [], claudeMdTokens: 0 }
   }
@@ -1074,7 +1074,7 @@ export async function analyzeContextUsage(
     cats.push({
       name: 'Memory files',
       tokens: claudeMdTokens,
-      color: 'claude',
+      color: 'Forge',
     })
   }
 
@@ -1380,7 +1380,3 @@ export async function analyzeContextUsage(
     apiUsage,
   }
 }
-
-
-
-

@@ -1,5 +1,5 @@
 import { feature } from 'bun:bundle'
-import { markPostCompaction } from '../../bootstrap/state.js'
+import { markPostCompaction } from 'src/bootstrap/state.js'
 import { getSdkBetas } from '../../bootstrap/state.js'
 import type { QuerySource } from '../../constants/querySource.js'
 import type { ToolUseContext } from '../../Tool.js'
@@ -349,7 +349,3 @@ export async function autoCompactIfNeeded(
     return { wasCompacted: false, consecutiveFailures: nextFailures }
   }
 }
-
-
-
-

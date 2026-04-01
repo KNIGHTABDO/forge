@@ -1,4 +1,4 @@
-import type { ValidationResult } from '../../Tool.js'
+import type { ValidationResult } from 'src/Tool.js'
 import { isClaudeSettingsPath } from '../permissions/filesystem.js'
 import { validateSettingsFileContent } from './validation.js'
 
@@ -16,7 +16,7 @@ export function validateInputForSettingsFileEdit(
   originalContent: string,
   getUpdatedContent: () => string,
 ): Extract<ValidationResult, { result: false }> | null {
-  // Only validate Claude settings files
+  // Only validate Forge settings files
   if (!isClaudeSettingsPath(filePath)) {
     return null
   }
@@ -43,7 +43,3 @@ export function validateInputForSettingsFileEdit(
 
   return null
 }
-
-
-
-

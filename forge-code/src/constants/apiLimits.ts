@@ -1,7 +1,7 @@
 /**
- * ForgeTeam API Limits
+ * Anthropic API Limits
  *
- * These constants define server-side limits enforced by the ForgeTeam API.
+ * These constants define server-side limits enforced by the Anthropic API.
  * Keep this file dependency-free to prevent circular imports.
  *
  * Last verified: 2025-12-22
@@ -92,7 +92,3 @@ export const PDF_AT_MENTION_INLINE_THRESHOLD = 10
  * We validate client-side to provide a clear error message.
  */
 export const API_MAX_MEDIA_PER_REQUEST = 100
-
-
-
-

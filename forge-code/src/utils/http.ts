@@ -5,7 +5,7 @@
 import axios from 'axios'
 import { OAUTH_BETA_HEADER } from '../constants/oauth.js'
 import {
-  getForgeTeamApiKey,
+  getAnthropicApiKey,
   getClaudeAIOAuthTokens,
   handleOAuth401Error,
   isClaudeAISubscriber,
@@ -13,7 +13,7 @@ import {
 import { getClaudeCodeUserAgent } from './userAgent.js'
 import { getWorkload } from './workloadContext.js'
 
-// WARNING: We rely on `claude-cli` in the user agent for log filtering.
+// WARNING: We rely on `Forge-cli` in the user agent for log filtering.
 // Please do NOT change this without making sure that logging also gets updated!
 export function getUserAgent(): string {
   const agentSdkVersion = process.env.CLAUDE_AGENT_SDK_VERSION
@@ -27,11 +27,11 @@ export function getUserAgent(): string {
   // Turn-/process-scoped workload tag for cron-initiated requests. 1P-only
   // observability — proxies strip HTTP headers; QoS routing uses cc_workload
   // in the billing-header attribution block instead (see constants/system.ts).
-  // getForgeTeamClient (client.ts:98) calls this per-request inside withRetry,
+  // getAnthropicClient (client.ts:98) calls this per-request inside withRetry,
   // so the read picks up the same setWorkload() value as getAttributionHeader.
   const workload = getWorkload()
   const workloadSuffix = workload ? `, workload/${workload}` : ''
-  return `claude-cli/${MACRO.VERSION} (${process.env.USER_TYPE}, ${process.env.FORGE_CODE_ENTRYPOINT ?? 'cli'}${agentSdkVersion}${clientApp}${workloadSuffix})`
+  return `Forge-cli/${MACRO.VERSION} (${process.env.USER_TYPE}, ${process.env.FORGE_CODE_ENTRYPOINT ?? 'cli'}${agentSdkVersion}${clientApp}${workloadSuffix})`
 }
 
 export function getMCPUserAgent(): string {
@@ -46,15 +46,15 @@ export function getMCPUserAgent(): string {
     parts.push(`client-app/${process.env.CLAUDE_AGENT_SDK_CLIENT_APP}`)
   }
   const suffix = parts.length > 0 ? ` (${parts.join(', ')})` : ''
-  return `claude-code/${MACRO.VERSION}${suffix}`
+  return `Forge-code/${MACRO.VERSION}${suffix}`
 }
 
-// User-Agent for WebFetch requests to arbitrary sites. `Claude-User` is
-// ForgeTeam's publicly documented agent for user-initiated fetches (what site
-// operators match in robots.txt); the claude-code suffix lets them distinguish
-// local CLI traffic from forge-app.vercel.app server-side fetches.
+// User-Agent for WebFetch requests to arbitrary sites. `Forge-User` is
+// Anthropic's publicly documented agent for user-initiated fetches (what site
+// operators match in robots.txt); the Forge-code suffix lets them distinguish
+// local CLI traffic from Forge.ai server-side fetches.
 export function getWebFetchUserAgent(): string {
-  return `Claude-User (${getClaudeCodeUserAgent()}; +https://support.ForgeTeam.com/)`
+  return `Forge-User (${getClaudeCodeUserAgent()}; +https://support.anthropic.com/)`
 }
 
 export type AuthHeaders = {
@@ -78,13 +78,13 @@ export function getAuthHeaders(): AuthHeaders {
     return {
       headers: {
         Authorization: `Bearer ${oauthTokens.accessToken}`,
-        'ForgeTeam-beta': OAUTH_BETA_HEADER,
+        'anthropic-beta': OAUTH_BETA_HEADER,
       },
     }
   }
   // TODO: this will fail if the API key is being set to an LLM Gateway key
-  // should we try to query keychain / credentials for a valid ForgeTeam key?
-  const apiKey = getForgeTeamApiKey()
+  // should we try to query keychain / credentials for a valid Anthropic key?
+  const apiKey = getAnthropicApiKey()
   if (!apiKey) {
     return {
       headers: {},
@@ -134,7 +134,3 @@ export async function withOAuth401Retry<T>(
     return await request()
   }
 }
-
-
-
-

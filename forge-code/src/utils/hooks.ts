@@ -54,7 +54,7 @@ import {
 import {
   logEvent,
   type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
-} from '../services/analytics/index.js'
+} from 'src/services/analytics/index.js'
 import { logOTelEvent } from './telemetry/events.js'
 import { ALLOWED_OFFICIAL_MARKETPLACE_NAMES } from './plugins/schemas.js'
 import {
@@ -106,11 +106,11 @@ import type {
   ExitReason,
   SyncHookJSONOutput,
   AsyncHookJSONOutput,
-} from '../entrypoints/agentSdkTypes.js'
+} from 'src/entrypoints/agentSdkTypes.js'
 import type { StatusLineCommandInput } from '../types/statusLine.js'
 import type { ElicitResult } from '@modelcontextprotocol/sdk/types.js'
 import type { FileSuggestionCommandInput } from '../types/fileSuggestion.js'
-import type { HookResultMessage } from '../types/message.js'
+import type { HookResultMessage } from 'src/types/message.js'
 import chalk from 'chalk'
 import type {
   HookMatcher,
@@ -268,7 +268,7 @@ function executeInBackground({
  * Checks if a hook should be skipped due to lack of workspace trust.
  *
  * ALL hooks require workspace trust because they execute arbitrary commands from
- * .claude/settings.json. This is a defense-in-depth security measure.
+ * .Forge/settings.json. This is a defense-in-depth security measure.
  *
  * Context: Hooks are captured via captureHooksConfigSnapshot() before the trust
  * dialog is shown. While most hooks won't execute until after trust is established
@@ -4320,15 +4320,15 @@ export function hasInstructionsLoadedHook(): boolean {
 }
 
 /**
- * Execute InstructionsLoaded hooks when an instruction file (CLAUDE.md or
- * .claude/rules/*.md) is loaded into context. Fire-and-forget — this hook is
+ * Execute InstructionsLoaded hooks when an instruction file (Forge.md or
+ * .Forge/rules/*.md) is loaded into context. Fire-and-forget — this hook is
  * for observability/audit only and does not support blocking.
  *
  * Dispatch sites:
  * - Eager load at session start (getMemoryFiles in claudemd.ts)
  * - Eager reload after compaction (getMemoryFiles cache cleared by
  *   runPostCompactCleanup; next call reports load_reason: 'compact')
- * - Lazy load when Claude touches a file that triggers nested CLAUDE.md or
+ * - Lazy load when Forge touches a file that triggers nested Forge.md or
  *   conditional rules with paths: frontmatter (memoryFilesToAttachments in
  *   attachments.ts)
  */
@@ -5020,7 +5020,3 @@ function getHookDefinitionsForTelemetry(
     return { type: 'unknown' }
   })
 }
-
-
-
-

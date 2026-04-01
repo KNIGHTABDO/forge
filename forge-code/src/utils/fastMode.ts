@@ -1,6 +1,6 @@
 import axios from 'axios'
-import { getOauthConfig, OAUTH_BETA_HEADER } from '../constants/oauth.js'
-import { getFeatureValue_CACHED_MAY_BE_STALE } from '../services/analytics/growthbook.js'
+import { getOauthConfig, OAUTH_BETA_HEADER } from 'src/constants/oauth.js'
+import { getFeatureValue_CACHED_MAY_BE_STALE } from 'src/services/analytics/growthbook.js'
 import {
   getIsNonInteractiveSession,
   getKairosActive,
@@ -11,7 +11,7 @@ import {
   logEvent,
 } from '../services/analytics/index.js'
 import {
-  getForgeTeamApiKey,
+  getAnthropicApiKey,
   getClaudeAIOAuthTokens,
   handleOAuth401Error,
   hasProfileScope,
@@ -36,6 +36,9 @@ import {
 import { createSignal } from './signal.js'
 
 export function isFastModeEnabled(): boolean {
+  if (getAPIProvider() !== 'firstParty') {
+    return false
+  }
   return !isEnvTruthy(process.env.FORGE_CODE_DISABLE_FAST_MODE)
 }
 
@@ -70,6 +73,10 @@ function getDisabledReasonMessage(
 }
 
 export function getFastModeUnavailableReason(): string | null {
+  if (getAPIProvider() !== 'firstParty') {
+    return 'Fast mode is not available on third-party providers'
+  }
+
   if (!isFastModeEnabled()) {
     return 'Fast mode is not available'
   }
@@ -90,7 +97,7 @@ export function getFastModeUnavailableReason(): string | null {
     !isInBundledMode() &&
     getFeatureValue_CACHED_MAY_BE_STALE('tengu_marble_sandcastle', false)
   ) {
-    return 'Fast mode requires the native binary · Install from: https://forge-app.vercel.app'
+    return 'Fast mode requires the native binary · Install from: https://Forge.com/product/Forge-code'
   }
 
   // Not available in the SDK unless explicitly opted in via --settings.
@@ -107,13 +114,6 @@ export function getFastModeUnavailableReason(): string | null {
       logForDebugging(`Fast mode unavailable: ${reason}`)
       return reason
     }
-  }
-
-  // Only available for 1P (not Bedrock/Vertex/Foundry)
-  if (getAPIProvider() !== 'firstParty') {
-    const reason = 'Fast mode is not available on Bedrock, Vertex, or Foundry'
-    logForDebugging(`Fast mode unavailable: ${reason}`)
-    return reason
   }
 
   if (orgStatus.status === 'disabled') {
@@ -140,7 +140,7 @@ export function getFastModeUnavailableReason(): string | null {
 }
 
 // @[MODEL LAUNCH]: Update supported Fast Mode models.
-export const FAST_MODE_MODEL_DISPLAY = 'Reasoning profile'
+export const FAST_MODE_MODEL_DISPLAY = 'Opus 4.6'
 
 export function getFastModeModel(): string {
   return 'opus' + (isOpus1mMergeEnabled() ? '[1m]' : '')
@@ -372,7 +372,7 @@ async function fetchFastModeStatus(
     'accessToken' in auth
       ? {
           Authorization: `Bearer ${auth.accessToken}`,
-          'ForgeTeam-beta': OAUTH_BETA_HEADER,
+          'anthropic-beta': OAUTH_BETA_HEADER,
         }
       : { 'x-api-key': auth.apiKey }
 
@@ -424,7 +424,7 @@ export async function prefetchFastModeStatus(): Promise<void> {
   // Service key OAuth sessions lack user:profile scope → endpoint 403s.
   // Resolve orgStatus from cache and bail before burning the throttle window.
   // API key auth is unaffected.
-  const apiKey = getForgeTeamApiKey()
+  const apiKey = getAnthropicApiKey()
   const hasUsableOAuth =
     getClaudeAIOAuthTokens()?.accessToken && hasProfileScope()
   if (!hasUsableOAuth && !apiKey) {
@@ -530,7 +530,3 @@ export async function prefetchFastModeStatus(): Promise<void> {
   inflightPrefetch = doFetch()
   return inflightPrefetch
 }
-
-
-
-

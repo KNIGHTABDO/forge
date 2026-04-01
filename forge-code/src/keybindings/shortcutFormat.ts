@@ -61,7 +61,3 @@ export function getShortcutDisplay(
   }
   return resolved
 }
-
-
-
-

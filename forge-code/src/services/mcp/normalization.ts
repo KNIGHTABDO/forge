@@ -3,14 +3,14 @@
  * This file has no dependencies to avoid circular imports.
  */
 
-// forge-app.vercel.app server names are prefixed with this string
-const CLAUDEAI_SERVER_PREFIX = 'forge-app.vercel.app '
+// Forge.ai server names are prefixed with this string
+const CLAUDEAI_SERVER_PREFIX = 'Forge.ai '
 
 /**
  * Normalize server names to be compatible with the API pattern ^[a-zA-Z0-9_-]{1,64}$
  * Replaces any invalid characters (including dots and spaces) with underscores.
  *
- * For forge-app.vercel.app servers (names starting with "forge-app.vercel.app "), also collapses
+ * For Forge.ai servers (names starting with "Forge.ai "), also collapses
  * consecutive underscores and strips leading/trailing underscores to prevent
  * interference with the __ delimiter used in MCP tool names.
  */
@@ -21,7 +21,3 @@ export function normalizeNameForMCP(name: string): string {
   }
   return normalized
 }
-
-
-
-

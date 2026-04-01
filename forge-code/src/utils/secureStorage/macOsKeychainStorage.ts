@@ -229,7 +229,3 @@ export function isMacOsKeychainLocked(): boolean {
   }
   return keychainLockedCache
 }
-
-
-
-

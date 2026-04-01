@@ -20,7 +20,7 @@ export const getManagedFilePath = memoize(function (): string {
     case 'windows':
       return 'C:\\Program Files\\ClaudeCode'
     default:
-      return '/etc/claude-code'
+      return '/etc/Forge-code'
   }
 })
 
@@ -32,7 +32,3 @@ export const getManagedFilePath = memoize(function (): string {
 export const getManagedSettingsDropInDir = memoize(function (): string {
   return join(getManagedFilePath(), 'managed-settings.d')
 })
-
-
-
-

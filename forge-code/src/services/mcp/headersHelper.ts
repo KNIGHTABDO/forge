@@ -62,7 +62,7 @@ export async function getMcpHeadersFromHelper(
       shell: true,
       timeout: 10000,
       // Pass server context so one helper script can serve multiple MCP servers
-      // (git credential-helper style). See deshaw/ForgeTeam-issues#28.
+      // (git credential-helper style). See deshaw/anthropic-issues#28.
       env: {
         ...process.env,
         FORGE_CODE_MCP_SERVER_NAME: serverName,
@@ -136,7 +136,3 @@ export async function getMcpServerHeaders(
     ...dynamicHeaders,
   }
 }
-
-
-
-

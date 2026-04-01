@@ -85,7 +85,7 @@ export async function submitTranscriptShare(
     }
 
     const response = await axios.post(
-      'https://api.ForgeTeam.com/api/FORGE_CODE_shared_session_transcripts',
+      'https://api.anthropic.com/api/FORGE_CODE_shared_session_transcripts',
       { content, appearance_id: appearanceId },
       {
         headers,
@@ -110,7 +110,3 @@ export async function submitTranscriptShare(
     return { success: false }
   }
 }
-
-
-
-

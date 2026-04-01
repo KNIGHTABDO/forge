@@ -1,5 +1,5 @@
-import type { Notification } from '../context/notifications.js'
-import type { TodoList } from '../utils/todo/types.js'
+import type { Notification } from 'src/context/notifications.js'
+import type { TodoList } from 'src/utils/todo/types.js'
 import type { BridgePermissionCallbacks } from '../bridge/bridgePermissionCallbacks.js'
 import type { Command } from '../commands.js'
 import type { ChannelPermissionCallbacks } from '../services/mcp/channelPermissions.js'
@@ -116,7 +116,7 @@ export type AppState = DeepImmutable<{
   kairosEnabled: boolean
   // Remote session URL for --remote mode (shown in footer indicator)
   remoteSessionUrl: string | undefined
-  // Remote session WS state (`claude assistant` viewer). 'connected' means the
+  // Remote session WS state (`Forge assistant` viewer). 'connected' means the
   // live event stream is open; 'reconnecting' = transient WS drop, backoff
   // in progress; 'disconnected' = permanent close or reconnects exhausted.
   remoteConnectionStatus:
@@ -124,7 +124,7 @@ export type AppState = DeepImmutable<{
     | 'connected'
     | 'reconnecting'
     | 'disconnected'
-  // `claude assistant`: count of background tasks (Agent calls, teammates,
+  // `Forge assistant`: count of background tasks (Agent calls, teammates,
   // workflows) running inside the REMOTE daemon child. Event-sourced from
   // system/task_started and system/task_notification on the WS. The local
   // AppState.tasks is always empty in viewer mode — the tasks live in a
@@ -138,13 +138,13 @@ export type AppState = DeepImmutable<{
   replBridgeOutboundOnly: boolean
   // Always-on bridge: env registered + session created (= "Ready")
   replBridgeConnected: boolean
-  // Always-on bridge: ingress WebSocket is open (= "Connected" - user on forge-app.vercel.app)
+  // Always-on bridge: ingress WebSocket is open (= "Connected" - user on Forge.ai)
   replBridgeSessionActive: boolean
   // Always-on bridge: poll loop is in error backoff (= "Reconnecting")
   replBridgeReconnecting: boolean
   // Always-on bridge: connect URL for Ready state (?bridge=envId)
   replBridgeConnectUrl: string | undefined
-  // Always-on bridge: session URL on forge-app.vercel.app (set when connected)
+  // Always-on bridge: session URL on Forge.ai (set when connected)
   replBridgeSessionUrl: string | undefined
   // Always-on bridge: IDs for debugging (shown in dialog when --verbose)
   replBridgeEnvironmentId: string | undefined
@@ -567,7 +567,3 @@ export function getDefaultAppState(): AppState {
     fastMode: false,
   }
 }
-
-
-
-

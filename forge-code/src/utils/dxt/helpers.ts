@@ -1,11 +1,11 @@
-import type { McpbManifest } from '@ant-ai/mcpb'
+import type { McpbManifest } from '@anthropic-ai/mcpb'
 import { errorMessage } from '../errors.js'
 import { jsonParse } from '../slowOperations.js'
 
 /**
  * Parses and validates a DXT manifest from a JSON object.
  *
- * Lazy-imports @ant-ai/mcpb: that package uses zod v3 which eagerly
+ * Lazy-imports @anthropic-ai/mcpb: that package uses zod v3 which eagerly
  * creates 24 .bind(this) closures per schema instance (~300 instances between
  * schemas.js and schemas-loose.js). Deferring the import keeps ~700KB of bound
  * closures out of the startup heap for sessions that never touch .dxt/.mcpb.
@@ -13,7 +13,7 @@ import { jsonParse } from '../slowOperations.js'
 export async function validateManifest(
   manifestJson: unknown,
 ): Promise<McpbManifest> {
-  const { McpbManifestSchema } = await import('@ant-ai/mcpb')
+  const { McpbManifestSchema } = await import('@anthropic-ai/mcpb')
   const parseResult = McpbManifestSchema.safeParse(manifestJson)
 
   if (!parseResult.success) {
@@ -86,7 +86,3 @@ export function generateExtensionId(
     ? `${prefix}.${sanitizedAuthor}.${sanitizedName}`
     : `${sanitizedAuthor}.${sanitizedName}`
 }
-
-
-
-

@@ -177,7 +177,3 @@ export function useMultipleChoiceState(): MultipleChoiceState {
     setTextInputMode,
   }
 }
-
-
-
-

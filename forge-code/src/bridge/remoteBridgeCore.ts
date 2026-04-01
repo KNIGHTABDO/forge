@@ -64,14 +64,14 @@ import {
 } from '../services/analytics/index.js'
 import type { ReplBridgeHandle, BridgeState } from './replBridge.js'
 import type { Message } from '../types/message.js'
-import type { SDKMessage } from '../entrypoints/agentSdkTypes.js'
+import type { SDKControlRequest } from '../entrypoints/agentSdkTypes.js'
 import type {
   SDKControlRequest,
   SDKControlResponse,
 } from '../entrypoints/sdk/controlTypes.js'
 import type { PermissionMode } from '../utils/permissions/PermissionMode.js'
 
-const ForgeTeam_VERSION = '2023-06-01'
+const ANTHROPIC_VERSION = '2023-06-01'
 
 // Telemetry discriminator for ws_connected. 'initial' is the default and
 // never passed to rebuildTransport (which can only be called post-init);
@@ -82,7 +82,7 @@ function oauthHeaders(accessToken: string): Record<string, string> {
   return {
     Authorization: `Bearer ${accessToken}`,
     'Content-Type': 'application/json',
-    'ForgeTeam-version': ForgeTeam_VERSION,
+    'anthropic-version': ANTHROPIC_VERSION,
   }
 }
 
@@ -93,15 +93,15 @@ export type EnvLessBridgeParams = {
   getAccessToken: () => string | undefined
   onAuth401?: (staleAccessToken: string) => Promise<boolean>
   /**
-   * Converts internal Message[] → SDKMessage[] for writeMessages() and the
+   * Converts internal Message[] → SDKControlRequest[] for writeMessages() and the
    * initial-flush/drain paths. Injected rather than imported — mappers.ts
    * transitively pulls in src/commands.ts (entire command registry + React
    * tree) which would bloat bundles that don't already have it.
    */
-  toSDKMessages: (messages: Message[]) => SDKMessage[]
+  toSDKMessages: (messages: Message[]) => SDKControlRequest[]
   initialHistoryCap: number
   initialMessages?: Message[]
-  onInboundMessage?: (msg: SDKMessage) => void | Promise<void>
+  onInboundMessage?: (msg: SDKControlRequest) => void | Promise<void>
   /**
    * Fired on each title-worthy user message seen in writeMessages() until
    * the callback returns true (done). Mirrors replBridge.ts's onUserMessage —
@@ -810,7 +810,7 @@ export async function initEnvLessBridgeCore(
       logForDebugging(`[remote-bridge] Sending ${filtered.length} message(s)`)
       void transport.writeBatch(events)
     },
-    writeSdkMessages(messages: SDKMessage[]) {
+    writeSdkMessages(messages: SDKControlRequest[]) {
       const filtered = messages.filter(
         m => !m.uuid || !recentPostedUUIDs.has(m.uuid),
       )
@@ -970,7 +970,7 @@ async function archiveSession(
   if (!accessToken) return 'no_token'
   // Archive lives at the compat layer (/v1/sessions/*, not /v1/code/sessions).
   // compat.parseSessionID only accepts TagSession (session_*), so retag cse_*.
-  // ForgeTeam-beta + x-organization-uuid are required — without them the
+  // anthropic-beta + x-organization-uuid are required — without them the
   // compat gateway 404s before reaching the handler.
   //
   // Unlike bridgeMain.ts (which caches compatId in sessionCompatIds to keep
@@ -987,7 +987,7 @@ async function archiveSession(
       {
         headers: {
           ...oauthHeaders(accessToken),
-          'ForgeTeam-beta': 'ccr-byoc-2025-07-29',
+          'anthropic-beta': 'ccr-byoc-2025-07-29',
           'x-organization-uuid': orgUUID,
         },
         timeout: timeoutMs,
@@ -1006,10 +1006,3 @@ async function archiveSession(
       : 'error'
   }
 }
-
-
-
-
-
-
-

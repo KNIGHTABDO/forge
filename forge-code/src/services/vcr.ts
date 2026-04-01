@@ -4,8 +4,8 @@ import { mkdir, readFile, writeFile } from 'fs/promises'
 import isPlainObject from 'lodash-es/isPlainObject.js'
 import mapValues from 'lodash-es/mapValues.js'
 import { dirname, join } from 'path'
-import { addToTotalSessionCost } from '../cost-tracker.js'
-import { calculateUSDCost } from '../utils/modelCost.js'
+import { addToTotalSessionCost } from 'src/cost-tracker.js'
+import { calculateUSDCost } from 'src/utils/modelCost.js'
 import type {
   AssistantMessage,
   Message,
@@ -132,7 +132,7 @@ export async function withVCR(
 
   if (env.isCI && !isEnvTruthy(process.env.VCR_RECORD)) {
     throw new Error(
-      `ForgeTeam API fixture missing: ${filename}. Re-run tests with VCR_RECORD=1, then commit the result. Input messages:\n${jsonStringify(dehydratedInput, null, 2)}`,
+      `Anthropic API fixture missing: ${filename}. Re-run tests with VCR_RECORD=1, then commit the result. Input messages:\n${jsonStringify(dehydratedInput, null, 2)}`,
     )
   }
 
@@ -404,7 +404,3 @@ export async function withTokenCountVCR(
   }))
   return result.tokenCount
 }
-
-
-
-

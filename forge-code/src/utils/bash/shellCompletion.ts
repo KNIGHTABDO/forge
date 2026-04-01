@@ -1,4 +1,4 @@
-import type { SuggestionItem } from '../../components/PromptInput/PromptInputFooterSuggestions.js'
+import type { SuggestionItem } from 'src/components/PromptInput/PromptInputFooterSuggestions.js'
 import {
   type ParseEntry,
   quote,
@@ -257,7 +257,3 @@ export async function getShellCompletions(
     return [] // Silent fail
   }
 }
-
-
-
-

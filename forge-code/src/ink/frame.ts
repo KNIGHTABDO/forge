@@ -122,7 +122,3 @@ export function shouldClearScreen(
 
   return undefined
 }
-
-
-
-

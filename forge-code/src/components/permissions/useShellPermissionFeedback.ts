@@ -146,7 +146,3 @@ export function useShellPermissionFeedback({
     handleFocus,
   }
 }
-
-
-
-

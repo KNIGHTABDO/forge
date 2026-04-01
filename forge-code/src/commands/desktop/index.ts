@@ -15,7 +15,7 @@ const desktop = {
   name: 'desktop',
   aliases: ['app'],
   description: 'Continue the current session in Forge Desktop',
-  availability: ['claude-ai'],
+  availability: ['Forge-ai'],
   isEnabled: isSupportedPlatform,
   get isHidden() {
     return !isSupportedPlatform()
@@ -24,7 +24,3 @@ const desktop = {
 } satisfies Command
 
 export default desktop
-
-
-
-

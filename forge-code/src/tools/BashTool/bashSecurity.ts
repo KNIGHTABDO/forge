@@ -1,4 +1,4 @@
-import { logEvent } from '../../services/analytics/index.js'
+import { logEvent } from 'src/services/analytics/index.js'
 import { extractHeredocs } from '../../utils/bash/heredoc.js'
 import { ParsedCommand } from '../../utils/bash/ParsedCommand.js'
 import {
@@ -2590,7 +2590,3 @@ export async function bashCommandIsSafeAsync_DEPRECATED(
     message: 'Command passed all security checks',
   }
 }
-
-
-
-

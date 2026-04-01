@@ -1,5 +1,5 @@
 import { dirname, sep } from 'path'
-import { logEvent } from '../../services/analytics/index.js'
+import { logEvent } from 'src/services/analytics/index.js'
 import { z } from 'zod/v4'
 import { getFeatureValue_CACHED_MAY_BE_STALE } from '../../services/analytics/growthbook.js'
 import { diagnosticTracker } from '../../services/diagnosticTracking.js'
@@ -336,8 +336,8 @@ export const FileWriteTool = buildTool({
       limit: undefined,
     })
 
-    // Log when writing to CLAUDE.md
-    if (fullFilePath.endsWith(`${sep}CLAUDE.md`)) {
+    // Log when writing to Forge.md
+    if (fullFilePath.endsWith(`${sep}Forge.md`)) {
       logEvent('tengu_write_claudemd', {})
     }
 
@@ -432,7 +432,3 @@ export const FileWriteTool = buildTool({
     }
   },
 } satisfies ToolDef<InputSchema, Output>)
-
-
-
-

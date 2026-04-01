@@ -21,9 +21,9 @@ import { isEnvTruthy } from '../envUtils.js'
 import { sideQuery } from '../sideQuery.js'
 import { getAllSocketPaths, getSecureSocketPath } from './common.js'
 
-const EXTENSION_DOWNLOAD_URL = 'https://forge-app.vercel.app/chrome'
+const EXTENSION_DOWNLOAD_URL = 'https://Forge.ai/chrome'
 const BUG_REPORT_URL =
-  'https://github.com/ForgeTeams/claude-code/issues/new?labels=bug,claude-in-chrome'
+  'https://github.com/anthropics/Forge-code/issues/new?labels=bug,Forge-in-chrome'
 
 // String metadata keys safe to forward to analytics. Keys like error_message
 // are excluded because they could contain page content or user data.
@@ -102,18 +102,18 @@ export function createChromeContext(
     }
   }
   return {
-    serverName: 'Claude in Chrome',
+    serverName: 'Forge in Chrome',
     logger,
     socketPath: getSecureSocketPath(),
     getSocketPaths: getAllSocketPaths,
-    clientTypeId: 'claude-code',
+    clientTypeId: 'Forge-code',
     onAuthenticationError: () => {
       logger.warn(
-        'Authentication error occurred. Please ensure you are logged into the Claude browser extension with the same forge-app.vercel.app account as Forge Code.',
+        'Authentication error occurred. Please ensure you are logged into the Forge browser extension with the same Forge.ai account as Forge Code.',
       )
     },
     onToolCallDisconnected: () => {
-      return `Browser extension is not connected. Please ensure the Claude browser extension is installed and running (${EXTENSION_DOWNLOAD_URL}), and that you are logged into forge-app.vercel.app with the same account as Forge Code. If this is your first time connecting to Chrome, you may need to restart Chrome for the installation to take effect. If you continue to experience issues, please report a bug: ${BUG_REPORT_URL}`
+      return `Browser extension is not connected. Please ensure the Forge browser extension is installed and running (${EXTENSION_DOWNLOAD_URL}), and that you are logged into Forge.ai with the same account as Forge Code. If this is your first time connecting to Chrome, you may need to restart Chrome for the installation to take effect. If you continue to experience issues, please report a bug: ${BUG_REPORT_URL}`
     },
     onExtensionPaired: (deviceId: string, name: string) => {
       saveGlobalConfig(config => {
@@ -160,15 +160,15 @@ export function createChromeContext(
     // ListTools also filters browser_task + lightning_turn out, so external
     // users never see the tools advertised. Three independent gates.
     //
-    // Types inlined: ForgeTeamMessagesRequest/Response live in
+    // Types inlined: AnthropicMessagesRequest/Response live in
     // @ant/claude-for-chrome-mcp@0.4.0 which isn't published yet. CI installs
-    // 0.3.0. The callForgeTeamMessages field is also 0.4.0-only, but spreading
+    // 0.3.0. The callAnthropicMessages field is also 0.4.0-only, but spreading
     // an extra property into ClaudeForChromeContext is fine against either
     // version — 0.3.0 sees an unknown field (allowed in spread), 0.4.0 sees a
     // structurally-matching one. Once 0.4.0 is published, this can switch to
     // the package's exported types and the dep can be bumped.
     ...(process.env.USER_TYPE === 'ant' && {
-      callForgeTeamMessages: async (req: {
+      callAnthropicMessages: async (req: {
         model: string
         max_tokens: number
         system: string
@@ -269,9 +269,9 @@ export async function runClaudeInChromeMcpServer(): Promise<void> {
   process.stdin.on('end', () => void shutdownAndExit())
   process.stdin.on('error', () => void shutdownAndExit())
 
-  logForDebugging('[Claude in Chrome] Starting MCP server')
+  logForDebugging('[Forge in Chrome] Starting MCP server')
   await server.connect(transport)
-  logForDebugging('[Claude in Chrome] MCP server started')
+  logForDebugging('[Forge in Chrome] MCP server started')
 }
 
 class DebugLogger implements Logger {
@@ -291,7 +291,3 @@ class DebugLogger implements Logger {
     logForDebugging(format(message, ...args), { level: 'error' })
   }
 }
-
-
-
-

@@ -13,7 +13,3 @@ import {
 export function useCommandQueue(): readonly QueuedCommand[] {
   return useSyncExternalStore(subscribeToCommandQueue, getCommandQueueSnapshot)
 }
-
-
-
-

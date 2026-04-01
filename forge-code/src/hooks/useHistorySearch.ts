@@ -301,7 +301,3 @@ export function useHistorySearch(
     handleKeyDown,
   }
 }
-
-
-
-

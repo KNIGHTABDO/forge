@@ -7,7 +7,7 @@
  *
  * Eligibility:
  * - Console users (API key): All eligible
- * - OAuth users (forge-app.vercel.app): Only Enterprise/C4E and Team subscribers are eligible
+ * - OAuth users (Forge.ai): Only Enterprise/C4E and Team subscribers are eligible
  * - API fails open (non-blocking) - if fetch fails, continues without remote settings
  * - API returns empty settings for users without managed settings
  */
@@ -18,7 +18,7 @@ import { open, unlink } from 'fs/promises'
 import { getOauthConfig, OAUTH_BETA_HEADER } from '../../constants/oauth.js'
 import {
   checkAndRefreshOAuthTokenIfNeeded,
-  getForgeTeamApiKeyWithSource,
+  getAnthropicApiKeyWithSource,
   getClaudeAIOAuthTokens,
 } from '../../utils/auth.js'
 import { registerCleanup } from '../../utils/cleanupRegistry.js'
@@ -169,9 +169,9 @@ function getRemoteSettingsAuthHeaders(): {
 } {
   // Try API key first (for Console users)
   // Skip apiKeyHelper to avoid circular dependency with getSettings()
-  // Wrap in try-catch because getForgeTeamApiKeyWithSource throws in CI/test environments
+  // Wrap in try-catch because getAnthropicApiKeyWithSource throws in CI/test environments
   try {
-    const { key: apiKey } = getForgeTeamApiKeyWithSource({
+    const { key: apiKey } = getAnthropicApiKeyWithSource({
       skipRetrievingKeyFromApiKeyHelper: true,
     })
     if (apiKey) {
@@ -185,13 +185,13 @@ function getRemoteSettingsAuthHeaders(): {
     // No API key available - continue to check OAuth
   }
 
-  // Fall back to OAuth tokens (for forge-app.vercel.app users)
+  // Fall back to OAuth tokens (for Forge.ai users)
   const oauthTokens = getClaudeAIOAuthTokens()
   if (oauthTokens?.accessToken) {
     return {
       headers: {
         Authorization: `Bearer ${oauthTokens.accessToken}`,
-        'ForgeTeam-beta': OAUTH_BETA_HEADER,
+        'anthropic-beta': OAUTH_BETA_HEADER,
       },
     }
   }
@@ -636,7 +636,3 @@ export function stopBackgroundPolling(): void {
     pollingIntervalId = null
   }
 }
-
-
-
-

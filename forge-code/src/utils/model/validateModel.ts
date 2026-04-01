@@ -41,8 +41,8 @@ export async function validateModel(
     return { valid: true }
   }
 
-  // Check if it matches FORGE_TEAM_CUSTOM_MODEL_OPTION (pre-validated by the user)
-  if (normalizedModel === process.env.FORGE_TEAM_CUSTOM_MODEL_OPTION) {
+  // Check if it matches ANTHROPIC_CUSTOM_MODEL_OPTION (pre-validated by the user)
+  if (normalizedModel === process.env.ANTHROPIC_CUSTOM_MODEL_OPTION) {
     return { valid: true }
   }
 
@@ -157,7 +157,3 @@ function get3PFallbackSuggestion(model: string): string | undefined {
   }
   return undefined
 }
-
-
-
-

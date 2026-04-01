@@ -3,7 +3,7 @@ import { join } from 'path'
 import { getFsImplementation } from '../utils/fsOperations.js'
 import type { IdeType } from './ide.js'
 
-const PLUGIN_PREFIX = 'claude-code-jetbrains-plugin'
+const PLUGIN_PREFIX = 'Forge-code-jetbrains-plugin'
 
 // Map of IDE names to their directory patterns
 const ideNameToDirMap: { [key: string]: string[] } = {
@@ -189,7 +189,3 @@ export function isJetBrainsPluginInstalledCachedSync(
 ): boolean {
   return pluginInstalledCache.get(ideType) ?? false
 }
-
-
-
-

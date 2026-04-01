@@ -202,7 +202,3 @@ export const SPINNER_VERBS = [
   'Zesting',
   'Zigzagging',
 ]
-
-
-
-

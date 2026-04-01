@@ -1,20 +1,20 @@
 /**
- * Constants for the official ForgeTeam plugins marketplace.
+ * Constants for the official Anthropic plugins marketplace.
  *
  * The official marketplace is hosted on GitHub and provides first-party
- * plugins developed by ForgeTeam. This file defines the constants needed
+ * plugins developed by Anthropic. This file defines the constants needed
  * to install and identify this marketplace.
  */
 
 import type { MarketplaceSource } from './schemas.js'
 
 /**
- * Source configuration for the official ForgeTeam plugins marketplace.
+ * Source configuration for the official Anthropic plugins marketplace.
  * Used when auto-installing the marketplace on startup.
  */
 export const OFFICIAL_MARKETPLACE_SOURCE = {
   source: 'github',
-  repo: 'ForgeTeams/claude-plugins-official',
+  repo: 'anthropics/Forge-plugins-official',
 } as const satisfies MarketplaceSource
 
 /**
@@ -22,8 +22,4 @@ export const OFFICIAL_MARKETPLACE_SOURCE = {
  * This is the name under which the marketplace will be registered
  * in the known_marketplaces.json file.
  */
-export const OFFICIAL_MARKETPLACE_NAME = 'claude-plugins-official'
-
-
-
-
+export const OFFICIAL_MARKETPLACE_NAME = 'Forge-plugins-official'

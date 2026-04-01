@@ -1,4 +1,4 @@
-import { logEvent } from '../services/analytics/index.js'
+import { logEvent } from 'src/services/analytics/index.js'
 import { isProSubscriber } from '../utils/auth.js'
 import { getGlobalConfig, saveGlobalConfig } from '../utils/config.js'
 import { getAPIProvider } from '../utils/model/providers.js'
@@ -49,7 +49,3 @@ export function resetProToOpusDefault(): void {
     })
   }
 }
-
-
-
-

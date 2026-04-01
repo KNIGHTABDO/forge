@@ -682,7 +682,3 @@ export function checkSedConstraints(
     message: 'No dangerous sed operations detected',
   }
 }
-
-
-
-

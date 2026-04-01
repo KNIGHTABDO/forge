@@ -122,7 +122,3 @@ export async function checkAndRestoreTerminalBackup(): Promise<RestoreResult> {
     return { status: 'failed', backupPath }
   }
 }
-
-
-
-

@@ -5,8 +5,8 @@ import { isEnvTruthy } from '../../utils/envUtils.js'
 const upgrade = {
   type: 'local-jsx',
   name: 'upgrade',
-  description: 'Upgrade plan for higher rate limits and stronger Reasoning profile access',
-  availability: ['claude-ai'],
+  description: 'Upgrade to Max for higher rate limits and more Opus',
+  availability: ['Forge-ai'],
   isEnabled: () =>
     !isEnvTruthy(process.env.DISABLE_UPGRADE_COMMAND) &&
     getSubscriptionType() !== 'enterprise',
@@ -14,7 +14,3 @@ const upgrade = {
 } satisfies Command
 
 export default upgrade
-
-
-
-

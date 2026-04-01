@@ -1,4 +1,4 @@
-import { getFeatureValue_CACHED_MAY_BE_STALE } from '../../services/analytics/growthbook.js'
+import { getFeatureValue_CACHED_MAY_BE_STALE } from 'src/services/analytics/growthbook.js'
 import type { EffortLevel } from '../effort.js'
 
 export type AntModel = {
@@ -62,7 +62,3 @@ export function resolveAntModel(
     m => m.alias === model || lower.includes(m.model.toLowerCase()),
   )
 }
-
-
-
-

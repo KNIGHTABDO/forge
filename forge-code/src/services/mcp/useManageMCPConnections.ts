@@ -40,7 +40,7 @@ import reject from 'lodash-es/reject.js'
 import {
   type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
   logEvent,
-} from '../../services/analytics/index.js'
+} from 'src/services/analytics/index.js'
 import {
   dedupClaudeAiMcpServers,
   doesEnterpriseMcpConfigExist,
@@ -48,10 +48,10 @@ import {
   getClaudeCodeMcpConfigs,
   isMcpServerDisabled,
   setMcpServerEnabled,
-} from '../../services/mcp/config.js'
-import type { AppState } from '../../state/AppState.js'
-import type { PluginError } from '../../types/plugin.js'
-import { logForDebugging } from '../../utils/debug.js'
+} from 'src/services/mcp/config.js'
+import type { AppState } from 'src/state/AppState.js'
+import type { PluginError } from 'src/types/plugin.js'
+import { logForDebugging } from 'src/utils/debug.js'
 import { getAllowedChannels } from '../../bootstrap/state.js'
 import { useNotifications } from '../../context/notifications.js'
 import {
@@ -184,7 +184,7 @@ export function useManageMCPConnections(
       // ship without this. Checked at mount; mid-session flips need restart.
       // If off, callbacks never go into AppState → interactiveHandler sees
       // undefined → never sends → intercept has nothing pending → "yes tbxkq"
-      // flows to Claude as normal chat. One gate, full disable.
+      // flows to Forge as normal chat. One gate, full disable.
       if (!isChannelPermissionRelayEnabled()) return
       setAppState(prev => {
         if (prev.channelPermissionCallbacks === callbacks) return prev
@@ -467,7 +467,7 @@ export function useManageMCPConnections(
             }
           }
 
-          // Channel push: notifications/claude/channel → enqueue().
+          // Channel push: notifications/Forge/channel → enqueue().
           // Gate decides whether to register the handler; connection stays
           // up either way (allowedMcpServers controls that).
           if (feature('KAIROS') || feature('KAIROS_CHANNELS')) {
@@ -510,7 +510,7 @@ export function useManageMCPConnections(
                     const { content, meta } = notification.params
                     logMCPDebug(
                       client.name,
-                      `notifications/claude/channel: ${content.slice(0, 80)}`,
+                      `notifications/Forge/channel: ${content.slice(0, 80)}`,
                     )
                     logEvent('tengu_mcp_channel_message', {
                       content_length: content.length,
@@ -532,13 +532,13 @@ export function useManageMCPConnections(
                 )
                 // Permission-reply handler — separate event, separate
                 // capability. Only registers if the server declares
-                // claude/channel/permission (same opt-in check as the send
+                // Forge/channel/permission (same opt-in check as the send
                 // path in interactiveHandler.ts). Server parses the user's
                 // reply and emits {request_id, behavior}; no regex on our
                 // side, text in the general channel can't accidentally match.
                 if (
                   client.capabilities?.experimental?.[
-                    'claude/channel/permission'
+                    'Forge/channel/permission'
                   ] !== undefined
                 ) {
                   client.client.setNotificationHandler(
@@ -553,7 +553,7 @@ export function useManageMCPConnections(
                         ) ?? false
                       logMCPDebug(
                         client.name,
-                        `notifications/claude/channel/permission: ${request_id} → ${behavior} (${resolved ? 'matched pending' : 'no pending entry — stale or unknown ID'})`,
+                        `notifications/Forge/channel/permission: ${request_id} → ${behavior} (${resolved ? 'matched pending' : 'no pending entry — stale or unknown ID'})`,
                       )
                     },
                   )
@@ -566,7 +566,7 @@ export function useManageMCPConnections(
                 // the gate says skip but the earlier handler keeps enqueuing.
                 // Map.delete — safe when never registered.
                 client.client.removeNotificationHandler(
-                  'notifications/claude/channel',
+                  'notifications/Forge/channel',
                 )
                 client.client.removeNotificationHandler(
                   CHANNEL_PERMISSION_METHOD,
@@ -597,7 +597,7 @@ export function useManageMCPConnections(
                     gate.kind === 'disabled'
                       ? 'Channels are not currently available'
                       : gate.kind === 'auth'
-                        ? 'Channels require forge-app.vercel.app authentication · run /login'
+                        ? 'Channels require Forge.ai authentication · run /login'
                         : gate.kind === 'policy'
                           ? 'Channels are not enabled for your org · have an administrator set channelsEnabled: true in managed settings'
                           : gate.reason
@@ -766,7 +766,7 @@ export function useManageMCPConnections(
   // Re-runs on session change (/clear) and on /reload-plugins (pluginReconnectKey).
   // On plugin reload, also disconnects stale plugin MCP servers (scope 'dynamic')
   // that no longer appear in configs — prevents ghost tools from disabled plugins.
-  // Skip forge-app.vercel.app dedup here to avoid blocking on the network fetch; the connect
+  // Skip Forge.ai dedup here to avoid blocking on the network fetch; the connect
   // useEffect below runs immediately after and dedups before connecting.
   const sessionId = getSessionId()
   useEffect(() => {
@@ -854,12 +854,12 @@ export function useManageMCPConnections(
   ])
 
   // Load MCP configs and connect to servers
-  // Two-phase loading: Forge Code configs first (fast), then forge-app.vercel.app configs (may be slow)
+  // Two-phase loading: Forge Code configs first (fast), then Forge.ai configs (may be slow)
   useEffect(() => {
     let cancelled = false
 
     async function loadAndConnectMcpConfigs() {
-      // Clear forge-app.vercel.app MCP cache so we fetch fresh configs with current auth
+      // Clear Forge.ai MCP cache so we fetch fresh configs with current auth
       // state. This is important when authVersion changes (e.g., after login/
       // logout). Kick off the fetch now so it overlaps with loadAllPlugins()
       // inside getClaudeCodeMcpConfigs; it's awaited only at the dedup step.
@@ -873,7 +873,7 @@ export function useManageMCPConnections(
       }
 
       // Phase 1: Load Forge Code configs. Plugin MCP servers that duplicate a
-      // --mcp-config entry or a forge-app.vercel.app connector are suppressed here so they
+      // --mcp-config entry or a Forge.ai connector are suppressed here so they
       // don't connect alongside the connector in Phase 2.
       const { servers: claudeCodeConfigs, errors: mcpErrors } =
         isStrictMcpConfig
@@ -901,7 +901,7 @@ export function useManageMCPConnections(
         )
       })
 
-      // Phase 2: Await forge-app.vercel.app configs (started above; memoized — no second fetch)
+      // Phase 2: Await Forge.ai configs (started above; memoized — no second fetch)
       let claudeaiConfigs: Record<string, ScopedMcpServerConfig> = {}
       if (!isStrictMcpConfig) {
         claudeaiConfigs = filterMcpServersByPolicy(
@@ -909,8 +909,8 @@ export function useManageMCPConnections(
         ).allowed
         if (cancelled) return
 
-        // Suppress forge-app.vercel.app connectors that duplicate an enabled manual server.
-        // Keys never collide (`slack` vs `forge-app.vercel.app Slack`) so the merge below
+        // Suppress Forge.ai connectors that duplicate an enabled manual server.
+        // Keys never collide (`slack` vs `Forge.ai Slack`) so the merge below
         // won't catch this — need content-based dedup by URL signature.
         if (Object.keys(claudeaiConfigs).length > 0) {
           const { servers: dedupedClaudeAi } = dedupClaudeAiMcpServers(
@@ -921,7 +921,7 @@ export function useManageMCPConnections(
         }
 
         if (Object.keys(claudeaiConfigs).length > 0) {
-          // Add forge-app.vercel.app servers as pending immediately so they show up in UI
+          // Add Forge.ai servers as pending immediately so they show up in UI
           setAppState(prevState => {
             const existingServerNames = new Set(
               prevState.mcp.clients.map(c => c.name),
@@ -957,7 +957,7 @@ export function useManageMCPConnections(
           ).catch(error => {
             logMCPError(
               'useManageMcpConnections',
-              `Failed to get forge-app.vercel.app MCP resources: ${errorMessage(error)}`,
+              `Failed to get Forge.ai MCP resources: ${errorMessage(error)}`,
             )
           })
         }
@@ -1139,7 +1139,3 @@ function getTransportDisplayName(type: string): string {
       return 'SSE'
   }
 }
-
-
-
-

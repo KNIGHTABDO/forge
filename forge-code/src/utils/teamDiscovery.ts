@@ -1,7 +1,7 @@
 /**
  * Team Discovery - Utilities for discovering teams and teammate status
  *
- * Scans ~/.claude/teams/ to find teams where the current session is the leader.
+ * Scans ~/.Forge/teams/ to find teams where the current session is the leader.
  * Used by the Teams UI in the footer to show team status.
  */
 
@@ -79,7 +79,3 @@ export function getTeammateStatuses(teamName: string): TeammateStatus[] {
 }
 
 // Note: For time formatting, use formatRelativeTimeAgo from '../utils/format.js'
-
-
-
-

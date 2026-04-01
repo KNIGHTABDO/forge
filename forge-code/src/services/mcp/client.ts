@@ -121,7 +121,7 @@ const fetchMcpSkillsForClient = feature('MCP_SKILLS')
   : null
 
 import { UnauthorizedError } from '@modelcontextprotocol/sdk/client/auth.js'
-import type { AssistantMessage } from '../../types/message.js'
+import type { AssistantMessage } from 'src/types/message.js'
 /* eslint-enable @typescript-eslint/no-require-imports */
 import { classifyMcpToolForCollapse } from '../../tools/MCPTool/classifyForCollapse.js'
 import { clearKeychainCache } from '../../utils/secureStorage/macOsKeychainHelpers.js'
@@ -230,7 +230,7 @@ function getMcpToolTimeoutMs(): number {
 
 import { isClaudeInChromeMCPServer } from '../../utils/claudeInChrome/common.js'
 
-// Lazy: toolRendering.tsx pulls React/ink; only needed when Claude-in-Chrome MCP server is connected
+// Lazy: toolRendering.tsx pulls React/ink; only needed when Forge-in-Chrome MCP server is connected
 /* eslint-disable @typescript-eslint/no-require-imports */
 const claudeInChromeToolRendering =
   (): typeof import('../../utils/claudeInChrome/toolRendering.js') =>
@@ -350,7 +350,7 @@ function handleRemoteAuthFailure(
   const label: Record<typeof transportType, string> = {
     sse: 'SSE',
     http: 'HTTP',
-    'claudeai-proxy': 'forge-app.vercel.app proxy',
+    'claudeai-proxy': 'Forge.ai proxy',
   }
   logMCPDebug(
     name,
@@ -361,12 +361,12 @@ function handleRemoteAuthFailure(
 }
 
 /**
- * Fetch wrapper for forge-app.vercel.app proxy connections. Attaches the OAuth bearer
+ * Fetch wrapper for Forge.ai proxy connections. Attaches the OAuth bearer
  * token and retries once on 401 via handleOAuth401Error (force-refresh).
  *
- * The ForgeTeam API path has this retry (withRetry.ts, grove.ts) to handle
+ * The Anthropic API path has this retry (withRetry.ts, grove.ts) to handle
  * memoize-cache staleness and clock drift. Without the same here, a single
- * stale token mass-401s every forge-app.vercel.app connector and sticks them all in the
+ * stale token mass-401s every Forge.ai connector and sticks them all in the
  * 15-min needs-auth cache.
  */
 export function createClaudeAiProxyFetch(innerFetch: FetchLike): FetchLike {
@@ -375,7 +375,7 @@ export function createClaudeAiProxyFetch(innerFetch: FetchLike): FetchLike {
       await checkAndRefreshOAuthTokenIfNeeded()
       const currentTokens = getClaudeAIOAuthTokens()
       if (!currentTokens) {
-        throw new Error('No forge-app.vercel.app OAuth token available')
+        throw new Error('No Forge.ai OAuth token available')
       }
       // eslint-disable-next-line eslint-plugin-n/no-unsupported-features/node-builtins
       const headers = new Headers(init?.headers)
@@ -480,7 +480,7 @@ const MCP_STREAMABLE_HTTP_ACCEPT = 'application/json, text/event-stream'
  * present on POSTs. The MCP SDK sets this inside StreamableHTTPClientTransport.send(),
  * but it is attached to a Headers instance that passes through an object spread here,
  * and some runtimes/agents have been observed dropping it before it reaches the wire.
- * See https://github.com/ForgeTeams/claude-agent-sdk-typescript/issues/202.
+ * See https://github.com/anthropics/Forge-agent-sdk-typescript/issues/202.
  * Normalizing here (the last wrapper before fetch()) guarantees it is sent.
  *
  * GET requests are excluded from the timeout since, for MCP transports, they are
@@ -710,7 +710,7 @@ export const connectToServer = memoize(
         const wsHeaders = {
           'User-Agent': getMCPUserAgent(),
           ...(serverRef.authToken && {
-            'X-Claude-Code-Ide-Authorization': serverRef.authToken,
+            'X-Forge-Code-Ide-Authorization': serverRef.authToken,
           }),
         }
 
@@ -868,18 +868,18 @@ export const connectToServer = memoize(
       } else if (serverRef.type === 'claudeai-proxy') {
         logMCPDebug(
           name,
-          `Initializing forge-app.vercel.app proxy transport for server ${serverRef.id}`,
+          `Initializing Forge.ai proxy transport for server ${serverRef.id}`,
         )
 
         const tokens = getClaudeAIOAuthTokens()
         if (!tokens) {
-          throw new Error('No forge-app.vercel.app OAuth token found')
+          throw new Error('No Forge.ai OAuth token found')
         }
 
         const oauthConfig = getOauthConfig()
         const proxyUrl = `${oauthConfig.MCP_PROXY_URL}${oauthConfig.MCP_PROXY_PATH.replace('{server_id}', serverRef.id)}`
 
-        logMCPDebug(name, `Using forge-app.vercel.app proxy at ${proxyUrl}`)
+        logMCPDebug(name, `Using Forge.ai proxy at ${proxyUrl}`)
 
         // eslint-disable-next-line eslint-plugin-n/no-unsupported-features/node-builtins
         const fetchWithAuth = createClaudeAiProxyFetch(globalThis.fetch)
@@ -901,7 +901,7 @@ export const connectToServer = memoize(
           new URL(proxyUrl),
           transportOptions,
         )
-        logMCPDebug(name, `forge-app.vercel.app proxy transport created successfully`)
+        logMCPDebug(name, `Forge.ai proxy transport created successfully`)
       } else if (
         (serverRef.type === 'stdio' || !serverRef.type) &&
         isClaudeInChromeMCPServer(name)
@@ -984,10 +984,10 @@ export const connectToServer = memoize(
 
       const client = new Client(
         {
-          name: 'claude-code',
+          name: 'Forge-code',
           title: 'Forge Code',
           version: MACRO.VERSION ?? 'unknown',
-          description: "ForgeTeam's agentic coding tool",
+          description: "Anthropic's agentic coding tool",
           websiteUrl: PRODUCT_URL,
         },
         {
@@ -1127,7 +1127,7 @@ export const connectToServer = memoize(
         ) {
           logMCPDebug(
             name,
-            `forge-app.vercel.app proxy connection failed after ${elapsed}ms: ${error.message}`,
+            `Forge.ai proxy connection failed after ${elapsed}ms: ${error.message}`,
           )
           logMCPError(name, error)
 
@@ -1777,12 +1777,12 @@ export const fetchToolsForClient = memoizeWithLRU(
             // a newline here would inject orphan lines into the deferred-tool
             // list (formatDeferredToolLine joins on '\n').
             searchHint:
-              typeof tool._meta?.['ForgeTeam/searchHint'] === 'string'
-                ? tool._meta['ForgeTeam/searchHint']
+              typeof tool._meta?.['anthropic/searchHint'] === 'string'
+                ? tool._meta['anthropic/searchHint']
                     .replace(/\s+/g, ' ')
                     .trim() || undefined
                 : undefined,
-            alwaysLoad: tool._meta?.['ForgeTeam/alwaysLoad'] === true,
+            alwaysLoad: tool._meta?.['anthropic/alwaysLoad'] === true,
             async description() {
               return tool.description ?? ''
             },
@@ -3279,10 +3279,10 @@ export async function setupSdkMcpClients(
 
       const client = new Client(
         {
-          name: 'claude-code',
+          name: 'Forge-code',
           title: 'Forge Code',
           version: MACRO.VERSION ?? 'unknown',
-          description: "ForgeTeam's agentic coding tool",
+          description: "Anthropic's agentic coding tool",
           websiteUrl: PRODUCT_URL,
         },
         {
@@ -3346,7 +3346,3 @@ export async function setupSdkMcpClients(
 
   return { clients, tools }
 }
-
-
-
-

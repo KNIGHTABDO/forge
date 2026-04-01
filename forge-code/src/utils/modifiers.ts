@@ -1,28 +1,22 @@
 export type ModifierKey = 'shift' | 'command' | 'control' | 'option'
 
-let prewarmed = false
-
 /**
  * Pre-warm the native module by loading it in advance.
- * Call this early to avoid delay on first use.
+ *
+ * NOTE: The `modifiers-napi` package is an Anthropic-internal native addon
+ * that is not shipped with the open-source build. All calls are no-ops here
+ * to avoid supply-chain risk from unverified npm packages with the same name.
  */
 export function prewarmModifiers(): void {
-  if (prewarmed || process.platform !== 'darwin') {
-    return
-  }
-  prewarmed = true
-  // Mock prewarm on Windows/Non-Darwin since NAPI is missing
-  return
+  // No-op in open-source build — native modifier detection is not available.
 }
 
 /**
  * Check if a specific modifier key is currently pressed (synchronous).
+ *
+ * Always returns false in the open-source build since the native addon
+ * is not available.
  */
 export function isModifierPressed(_modifier: ModifierKey): boolean {
-  // Always return false on non-darwin platforms as the native module is missing.
   return false
 }
-
-
-
-

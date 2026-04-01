@@ -1,31 +1,31 @@
 import chalk from 'chalk'
-import { logEvent } from '../services/analytics/index.js'
+import { logEvent } from 'src/services/analytics/index.js'
 import {
   getLatestVersion,
   type InstallStatus,
   installGlobalPackage,
-} from '../utils/autoUpdater.js'
-import { regenerateCompletionCache } from '../utils/completionCache.js'
+} from 'src/utils/autoUpdater.js'
+import { regenerateCompletionCache } from 'src/utils/completionCache.js'
 import {
   getGlobalConfig,
   type InstallMethod,
   saveGlobalConfig,
-} from '../utils/config.js'
-import { logForDebugging } from '../utils/debug.js'
-import { getDoctorDiagnostic } from '../utils/doctorDiagnostic.js'
-import { gracefulShutdown } from '../utils/gracefulShutdown.js'
+} from 'src/utils/config.js'
+import { logForDebugging } from 'src/utils/debug.js'
+import { getDoctorDiagnostic } from 'src/utils/doctorDiagnostic.js'
+import { gracefulShutdown } from 'src/utils/gracefulShutdown.js'
 import {
   installOrUpdateClaudePackage,
   localInstallationExists,
-} from '../utils/localInstaller.js'
+} from 'src/utils/localInstaller.js'
 import {
   installLatest as installLatestNative,
   removeInstalledSymlink,
-} from '../utils/nativeInstaller/index.js'
-import { getPackageManager } from '../utils/nativeInstaller/packageManagers.js'
-import { writeToStdout } from '../utils/process.js'
-import { gte } from '../utils/semver.js'
-import { getInitialSettings } from '../utils/settings/settings.js'
+} from 'src/utils/nativeInstaller/index.js'
+import { getPackageManager } from 'src/utils/nativeInstaller/packageManagers.js'
+import { writeToStdout } from 'src/utils/process.js'
+import { gte } from 'src/utils/semver.js'
+import { getInitialSettings } from 'src/utils/settings/settings.js'
 
 export async function update() {
   logEvent('tengu_update_check', {})
@@ -64,7 +64,7 @@ export async function update() {
       logForDebugging(`update: Warning detected: ${warning.issue}`)
 
       // Don't skip PATH warnings - they're always relevant
-      // The user needs to know that 'which claude' points elsewhere
+      // The user needs to know that 'which Forge' points elsewhere
       logForDebugging(`update: Showing warning: ${warning.issue}`)
 
       writeToStdout(chalk.yellow(`Warning: ${warning.issue}\n`))
@@ -120,45 +120,45 @@ export async function update() {
     writeToStdout('\n')
 
     if (packageManager === 'homebrew') {
-      writeToStdout('Claude is managed by Homebrew.\n')
+      writeToStdout('Forge is managed by Homebrew.\n')
       const latest = await getLatestVersion(channel)
       if (latest && !gte(MACRO.VERSION, latest)) {
         writeToStdout(`Update available: ${MACRO.VERSION} → ${latest}\n`)
         writeToStdout('\n')
         writeToStdout('To update, run:\n')
-        writeToStdout(chalk.bold('  brew upgrade claude-code') + '\n')
+        writeToStdout(chalk.bold('  brew upgrade Forge-code') + '\n')
       } else {
-        writeToStdout('Claude is up to date!\n')
+        writeToStdout('Forge is up to date!\n')
       }
     } else if (packageManager === 'winget') {
-      writeToStdout('Claude is managed by winget.\n')
+      writeToStdout('Forge is managed by winget.\n')
       const latest = await getLatestVersion(channel)
       if (latest && !gte(MACRO.VERSION, latest)) {
         writeToStdout(`Update available: ${MACRO.VERSION} → ${latest}\n`)
         writeToStdout('\n')
         writeToStdout('To update, run:\n')
         writeToStdout(
-          chalk.bold('  winget upgrade ForgeTeam.ClaudeCode') + '\n',
+          chalk.bold('  winget upgrade Anthropic.ClaudeCode') + '\n',
         )
       } else {
-        writeToStdout('Claude is up to date!\n')
+        writeToStdout('Forge is up to date!\n')
       }
     } else if (packageManager === 'apk') {
-      writeToStdout('Claude is managed by apk.\n')
+      writeToStdout('Forge is managed by apk.\n')
       const latest = await getLatestVersion(channel)
       if (latest && !gte(MACRO.VERSION, latest)) {
         writeToStdout(`Update available: ${MACRO.VERSION} → ${latest}\n`)
         writeToStdout('\n')
         writeToStdout('To update, run:\n')
-        writeToStdout(chalk.bold('  apk upgrade claude-code') + '\n')
+        writeToStdout(chalk.bold('  apk upgrade Forge-code') + '\n')
       } else {
-        writeToStdout('Claude is up to date!\n')
+        writeToStdout('Forge is up to date!\n')
       }
     } else {
       // pacman, deb, and rpm don't get specific commands because they each have
       // multiple frontends (pacman: yay/paru/makepkg, deb: apt/apt-get/aptitude/nala,
       // rpm: dnf/yum/zypper)
-      writeToStdout('Claude is managed by a package manager.\n')
+      writeToStdout('Forge is managed by a package manager.\n')
       writeToStdout('Please use your package manager to update.\n')
     }
 
@@ -225,7 +225,7 @@ export async function update() {
           : ''
         writeToStdout(
           chalk.yellow(
-            `Another Claude process${pidInfo} is currently running. Please try again in a moment.`,
+            `Another Forge process${pidInfo} is currently running. Please try again in a moment.`,
           ) + '\n',
         )
         await gracefulShutdown(0)
@@ -252,7 +252,7 @@ export async function update() {
     } catch (error) {
       process.stderr.write('Error: Failed to install native update\n')
       process.stderr.write(String(error) + '\n')
-      process.stderr.write('Try running "claude doctor" for diagnostics\n')
+      process.stderr.write('Try running "Forge doctor" for diagnostics\n')
       await gracefulShutdown(1)
     }
   }
@@ -283,7 +283,7 @@ export async function update() {
     process.stderr.write('  • Network connectivity issues\n')
     process.stderr.write('  • npm registry is unreachable\n')
     process.stderr.write('  • Corporate proxy/firewall blocking npm\n')
-    if (MACRO.PACKAGE_URL && !MACRO.PACKAGE_URL.startsWith('@ForgeTeam')) {
+    if (MACRO.PACKAGE_URL && !MACRO.PACKAGE_URL.startsWith('@anthropic')) {
       process.stderr.write(
         '  • Internal/development build not published to npm\n',
       )
@@ -295,8 +295,8 @@ export async function update() {
     const packageName =
       MACRO.PACKAGE_URL ||
       (process.env.USER_TYPE === 'ant'
-        ? '@anthropic-ai/claude-cli'
-        : '@anthropic-ai/claude-code')
+        ? '@anthropic-ai/Forge-cli'
+        : '@anthropic-ai/Forge-code')
     process.stderr.write(
       `  • Manually check: npm view ${packageName} version\n`,
     )
@@ -386,12 +386,12 @@ export async function update() {
       if (useLocalUpdate) {
         process.stderr.write('Try manually updating with:\n')
         process.stderr.write(
-          `  cd ~/.forge-code/local && npm update ${MACRO.PACKAGE_URL}\n`,
+          `  cd ~/.Forge/local && npm update ${MACRO.PACKAGE_URL}\n`,
         )
       } else {
         process.stderr.write('Try running with sudo or fix npm permissions\n')
         process.stderr.write(
-          'Or consider using native installation with: forge-code install\n',
+          'Or consider using native installation with: Forge install\n',
         )
       }
       await gracefulShutdown(1)
@@ -401,11 +401,11 @@ export async function update() {
       if (useLocalUpdate) {
         process.stderr.write('Try manually updating with:\n')
         process.stderr.write(
-          `  cd ~/.forge-code/local && npm update ${MACRO.PACKAGE_URL}\n`,
+          `  cd ~/.Forge/local && npm update ${MACRO.PACKAGE_URL}\n`,
         )
       } else {
         process.stderr.write(
-          'Or consider using native installation with: forge-code install\n',
+          'Or consider using native installation with: Forge install\n',
         )
       }
       await gracefulShutdown(1)
@@ -420,10 +420,3 @@ export async function update() {
   }
   await gracefulShutdown(0)
 }
-
-
-
-
-
-
-

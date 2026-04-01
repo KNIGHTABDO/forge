@@ -61,7 +61,3 @@ export function useTeammateViewAutoExit(): void {
     setAppState,
   ])
 }
-
-
-
-

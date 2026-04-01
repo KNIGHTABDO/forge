@@ -2,7 +2,7 @@ import { normalizeLanguageForSTT } from '../../hooks/useVoice.js'
 import { getShortcutDisplay } from '../../keybindings/shortcutFormat.js'
 import { logEvent } from '../../services/analytics/index.js'
 import type { LocalCommandCall } from '../../types/command.js'
-import { isForgeTeamAuthEnabled } from '../../utils/auth.js'
+import { isAnthropicAuthEnabled } from '../../utils/auth.js'
 import { getGlobalConfig, saveGlobalConfig } from '../../utils/config.js'
 import { settingsChangeDetector } from '../../utils/settings/changeDetector.js'
 import {
@@ -18,11 +18,11 @@ export const call: LocalCommandCall = async () => {
   if (!isVoiceModeEnabled()) {
     // Differentiate: OAuth-less users get an auth hint, everyone else
     // gets nothing (command shouldn't be reachable when the kill-switch is on).
-    if (!isForgeTeamAuthEnabled()) {
+    if (!isAnthropicAuthEnabled()) {
       return {
         type: 'text' as const,
         value:
-          'Voice mode requires a forge-app.vercel.app account. Please run /login to sign in.',
+          'Voice mode requires a Forge.ai account. Please run /login to sign in.',
       }
     }
     return {
@@ -75,7 +75,7 @@ export const call: LocalCommandCall = async () => {
     return {
       type: 'text' as const,
       value:
-        'Voice mode requires a forge-app.vercel.app account. Please run /login to sign in.',
+        'Voice mode requires a Forge.ai account. Please run /login to sign in.',
     }
   }
 
@@ -148,7 +148,3 @@ export const call: LocalCommandCall = async () => {
     value: `Voice mode enabled. Hold ${key} to record.${langNote}`,
   }
 }
-
-
-
-

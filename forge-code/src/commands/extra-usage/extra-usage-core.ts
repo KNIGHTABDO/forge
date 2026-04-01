@@ -30,7 +30,7 @@ export async function runExtraUsage(): Promise<ExtraUsageResult> {
   const hasBillingAccess = hasClaudeAiBillingAccess()
 
   if (!hasBillingAccess && isTeamOrEnterprise) {
-    // Mirror apps/claude-ai useHasUnlimitedOverage(): if overage is enabled
+    // Mirror apps/Forge-ai useHasUnlimitedOverage(): if overage is enabled
     // with no monthly cap, there is nothing to request. On fetch error, fall
     // through and let the user ask (matching web's "err toward show" behavior).
     let extraUsage: ExtraUsage | null | undefined
@@ -102,8 +102,8 @@ export async function runExtraUsage(): Promise<ExtraUsageResult> {
   }
 
   const url = isTeamOrEnterprise
-    ? 'https://forge-app.vercel.app/admin-settings/usage'
-    : 'https://forge-app.vercel.app/settings/usage'
+    ? 'https://Forge.ai/admin-settings/usage'
+    : 'https://Forge.ai/settings/usage'
 
   try {
     const opened = await openBrowser(url)
@@ -116,7 +116,3 @@ export async function runExtraUsage(): Promise<ExtraUsageResult> {
     }
   }
 }
-
-
-
-

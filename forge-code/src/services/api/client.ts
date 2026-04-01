@@ -1,22 +1,21 @@
-import ForgeTeam, { type ClientOptions } from '@anthropic-ai/sdk'
+import Anthropic, { type ClientOptions } from '@anthropic-ai/sdk'
 import { randomUUID } from 'crypto'
-import type { GoogleAuth } from 'google-auth-library'
 import {
   checkAndRefreshOAuthTokenIfNeeded,
-  getForgeTeamApiKey,
+  getAnthropicApiKey,
   getApiKeyFromApiKeyHelper,
   getClaudeAIOAuthTokens,
   isClaudeAISubscriber,
   refreshAndGetAwsCredentials,
   refreshGcpCredentialsIfNeeded,
-} from '../../utils/auth.js'
-import { getUserAgent } from '../../utils/http.js'
-import { getSmallFastModel } from '../../utils/model/model.js'
+} from 'src/utils/auth.js'
+import { getUserAgent } from 'src/utils/http.js'
+import { getSmallFastModel } from 'src/utils/model/model.js'
 import {
   getAPIProvider,
-  isFirstPartyForgeTeamBaseUrl,
-} from '../../utils/model/providers.js'
-import { getProxyFetchOptions } from '../../utils/proxy.js'
+  isFirstPartyAnthropicBaseUrl,
+} from 'src/utils/model/providers.js'
+import { getProxyFetchOptions } from 'src/utils/proxy.js'
 import {
   getIsNonInteractiveSession,
   getSessionId,
@@ -29,38 +28,43 @@ import {
   isEnvTruthy,
 } from '../../utils/envUtils.js'
 
+const importRuntimeModule = new Function(
+  'specifier',
+  'return import(specifier)',
+) as (specifier: string) => Promise<any>
+
 /**
  * Environment variables for different client types:
  *
  * Direct API:
- * - FORGE_TEAM_API_KEY: Required for direct API access
+ * - ANTHROPIC_API_KEY: Required for direct API access
  *
  * AWS Bedrock:
  * - AWS credentials configured via aws-sdk defaults
  * - AWS_REGION or AWS_DEFAULT_REGION: Sets the AWS region for all models (default: us-east-1)
- * - FORGE_TEAM_SMALL_FAST_MODEL_AWS_REGION: Optional. Override AWS region specifically for the small fast model (Haiku)
+ * - ANTHROPIC_SMALL_FAST_MODEL_AWS_REGION: Optional. Override AWS region specifically for the small fast model (Haiku)
  *
  * Foundry (Azure):
- * - FORGE_TEAM_FOUNDRY_RESOURCE: Your Azure resource name (e.g., 'my-resource')
- *   For the full endpoint: https://{resource}.services.ai.azure.com/ForgeTeam/v1/messages
- * - FORGE_TEAM_FOUNDRY_BASE_URL: Optional. Alternative to resource - provide full base URL directly
+ * - ANTHROPIC_FOUNDRY_RESOURCE: Your Azure resource name (e.g., 'my-resource')
+ *   For the full endpoint: https://{resource}.services.ai.azure.com/anthropic/v1/messages
+ * - ANTHROPIC_FOUNDRY_BASE_URL: Optional. Alternative to resource - provide full base URL directly
  *   (e.g., 'https://my-resource.services.ai.azure.com')
  *
  * Authentication (one of the following):
- * - FORGE_TEAM_FOUNDRY_API_KEY: Your Microsoft Foundry API key (if using API key auth)
+ * - ANTHROPIC_FOUNDRY_API_KEY: Your Microsoft Foundry API key (if using API key auth)
  * - Azure AD authentication: If no API key is provided, uses DefaultAzureCredential
  *   which supports multiple auth methods (environment variables, managed identity,
  *   Azure CLI, etc.). See: https://docs.microsoft.com/en-us/javascript/api/@azure/identity
  *
  * Vertex AI:
  * - Model-specific region variables (highest priority):
- *   - VERTEX_REGION_CLAUDE_3_5_HAIKU: Region for Claude 3.5 Haiku model
- *   - VERTEX_REGION_CLAUDE_HAIKU_4_5: Region for Claude Haiku 4.5 model
- *   - VERTEX_REGION_CLAUDE_3_5_SONNET: Region for Claude 3.5 Sonnet model
- *   - VERTEX_REGION_CLAUDE_3_7_SONNET: Region for Claude 3.7 Sonnet model
+ *   - VERTEX_REGION_CLAUDE_3_5_HAIKU: Region for Forge 3.5 Haiku model
+ *   - VERTEX_REGION_CLAUDE_HAIKU_4_5: Region for Forge Haiku 4.5 model
+ *   - VERTEX_REGION_CLAUDE_3_5_SONNET: Region for Forge 3.5 Sonnet model
+ *   - VERTEX_REGION_CLAUDE_3_7_SONNET: Region for Forge 3.7 Sonnet model
  * - CLOUD_ML_REGION: Optional. The default GCP region to use for all models
  *   If specific model region not specified above
- * - FORGE_TEAM_VERTEX_PROJECT_ID: Required. Your GCP project ID
+ * - ANTHROPIC_VERTEX_PROJECT_ID: Required. Your GCP project ID
  * - Standard GCP credentials configured via google-auth-library
  *
  * Priority for determining region:
@@ -74,18 +78,18 @@ function createStderrLogger(): ClientOptions['logger'] {
   return {
     error: (msg, ...args) =>
       // biome-ignore lint/suspicious/noConsole:: intentional console output -- SDK logger must use console
-      console.error('[ForgeTeam SDK ERROR]', msg, ...args),
+      console.error('[Anthropic SDK ERROR]', msg, ...args),
     // biome-ignore lint/suspicious/noConsole:: intentional console output -- SDK logger must use console
-    warn: (msg, ...args) => console.error('[ForgeTeam SDK WARN]', msg, ...args),
+    warn: (msg, ...args) => console.error('[Anthropic SDK WARN]', msg, ...args),
     // biome-ignore lint/suspicious/noConsole:: intentional console output -- SDK logger must use console
-    info: (msg, ...args) => console.error('[ForgeTeam SDK INFO]', msg, ...args),
+    info: (msg, ...args) => console.error('[Anthropic SDK INFO]', msg, ...args),
     debug: (msg, ...args) =>
       // biome-ignore lint/suspicious/noConsole:: intentional console output -- SDK logger must use console
-      console.error('[ForgeTeam SDK DEBUG]', msg, ...args),
+      console.error('[Anthropic SDK DEBUG]', msg, ...args),
   }
 }
 
-export async function getForgeTeamClient({
+export async function getAnthropicClient({
   apiKey,
   maxRetries,
   model,
@@ -97,7 +101,7 @@ export async function getForgeTeamClient({
   model?: string
   fetchOverride?: ClientOptions['fetch']
   source?: string
-}): Promise<ForgeTeam> {
+}): Promise<Anthropic> {
   const containerId = process.env.FORGE_CODE_CONTAINER_ID
   const remoteSessionId = process.env.FORGE_CODE_REMOTE_SESSION_ID
   const clientApp = process.env.CLAUDE_AGENT_SDK_CLIENT_APP
@@ -105,11 +109,11 @@ export async function getForgeTeamClient({
   const defaultHeaders: { [key: string]: string } = {
     'x-app': 'cli',
     'User-Agent': getUserAgent(),
-    'X-Claude-Code-Session-Id': getSessionId(),
+    'X-Forge-Code-Session-Id': getSessionId(),
     ...customHeaders,
-    ...(containerId ? { 'x-claude-remote-container-id': containerId } : {}),
+    ...(containerId ? { 'x-Forge-remote-container-id': containerId } : {}),
     ...(remoteSessionId
-      ? { 'x-claude-remote-session-id': remoteSessionId }
+      ? { 'x-Forge-remote-session-id': remoteSessionId }
       : {}),
     // SDK consumers can identify their app/library for backend analytics
     ...(clientApp ? { 'x-client-app': clientApp } : {}),
@@ -117,7 +121,7 @@ export async function getForgeTeamClient({
 
   // Log API client configuration for HFI debugging
   logForDebugging(
-    `[API:request] Creating client, FORGE_TEAM_CUSTOM_HEADERS present: ${!!process.env.FORGE_TEAM_CUSTOM_HEADERS}, has Authorization header: ${!!customHeaders['Authorization']}`,
+    `[API:request] Creating client, ANTHROPIC_CUSTOM_HEADERS present: ${!!process.env.ANTHROPIC_CUSTOM_HEADERS}, has Authorization header: ${!!customHeaders['Authorization']}`,
   )
 
   // Add additional protection header if enabled via env var
@@ -125,14 +129,14 @@ export async function getForgeTeamClient({
     process.env.FORGE_CODE_ADDITIONAL_PROTECTION,
   )
   if (additionalProtectionEnabled) {
-    defaultHeaders['x-ForgeTeam-additional-protection'] = 'true'
+    defaultHeaders['x-anthropic-additional-protection'] = 'true'
   }
 
   logForDebugging('[API:auth] OAuth token check starting')
   await checkAndRefreshOAuthTokenIfNeeded()
   logForDebugging('[API:auth] OAuth token check complete')
 
-  if (!isClaudeAISubscriber()) {
+  if (!isClaudeAISubscriber() && !isEnvTruthy(process.env.FORGE_CODE_USE_OPENAI) && !isEnvTruthy(process.env.FORGE_CODE_USE_GEMINI) && !isEnvTruthy(process.env.FORGE_CODE_USE_BEDROCK) && !isEnvTruthy(process.env.FORGE_CODE_USE_GCP) && !isEnvTruthy(process.env.FORGE_CODE_USE_AZURE)) {
     await configureApiKeyHeaders(defaultHeaders, getIsNonInteractiveSession())
   }
 
@@ -144,22 +148,30 @@ export async function getForgeTeamClient({
     timeout: parseInt(process.env.API_TIMEOUT_MS || String(600 * 1000), 10),
     dangerouslyAllowBrowser: true,
     fetchOptions: getProxyFetchOptions({
-      forForgeTeamApi: true,
+      forAnthropicAPI: true,
     }) as ClientOptions['fetchOptions'],
     ...(resolvedFetch && {
       fetch: resolvedFetch,
     }),
   }
+  if (isEnvTruthy(process.env.FORGE_CODE_USE_OPENAI) || isEnvTruthy(process.env.FORGE_CODE_USE_GEMINI)) {
+    const { createOpenAIShimClient } = await import('./openaiShim.js')
+    return createOpenAIShimClient({
+      defaultHeaders,
+      maxRetries,
+      timeout: parseInt(process.env.API_TIMEOUT_MS || String(600 * 1000), 10),
+    }) as unknown as Anthropic
+  }
   if (isEnvTruthy(process.env.FORGE_CODE_USE_BEDROCK)) {
-    const { ForgeTeamBedrock } = await import('@anthropic-ai/bedrock-sdk')
+    const { AnthropicBedrock } = await import('@anthropic-ai/bedrock-sdk')
     // Use region override for small fast model if specified
     const awsRegion =
       model === getSmallFastModel() &&
-      process.env.FORGE_TEAM_SMALL_FAST_MODEL_AWS_REGION
-        ? process.env.FORGE_TEAM_SMALL_FAST_MODEL_AWS_REGION
+      process.env.ANTHROPIC_SMALL_FAST_MODEL_AWS_REGION
+        ? process.env.ANTHROPIC_SMALL_FAST_MODEL_AWS_REGION
         : getAWSRegion()
 
-    const bedrockArgs: ConstructorParameters<typeof ForgeTeamBedrock>[0] = {
+    const bedrockArgs: ConstructorParameters<typeof AnthropicBedrock>[0] = {
       ...ARGS,
       awsRegion,
       ...(isEnvTruthy(process.env.FORGE_CODE_SKIP_BEDROCK_AUTH) && {
@@ -186,14 +198,16 @@ export async function getForgeTeamClient({
       }
     }
     // we have always been lying about the return type - this doesn't support batching or models
-    return new ForgeTeamBedrock(bedrockArgs) as unknown as ForgeTeam
+    return new AnthropicBedrock(bedrockArgs) as unknown as Anthropic
   }
   if (isEnvTruthy(process.env.FORGE_CODE_USE_FOUNDRY)) {
-    const { ForgeTeamFoundry } = await import('@anthropic-ai/foundry-sdk')
+    const { AnthropicFoundry } = await importRuntimeModule(
+      '@anthropic-ai/foundry-sdk',
+    )
     // Determine Azure AD token provider based on configuration
-    // SDK reads FORGE_TEAM_FOUNDRY_API_KEY by default
+    // SDK reads ANTHROPIC_FOUNDRY_API_KEY by default
     let azureADTokenProvider: (() => Promise<string>) | undefined
-    if (!process.env.FORGE_TEAM_FOUNDRY_API_KEY) {
+    if (!process.env.ANTHROPIC_FOUNDRY_API_KEY) {
       if (isEnvTruthy(process.env.FORGE_CODE_SKIP_FOUNDRY_AUTH)) {
         // Mock token provider for testing/proxy scenarios (similar to Vertex mock GoogleAuth)
         azureADTokenProvider = () => Promise.resolve('')
@@ -202,7 +216,7 @@ export async function getForgeTeamClient({
         const {
           DefaultAzureCredential: AzureCredential,
           getBearerTokenProvider,
-        } = await import('@azure/identity')
+        } = await importRuntimeModule('@azure/identity')
         azureADTokenProvider = getBearerTokenProvider(
           new AzureCredential(),
           'https://cognitiveservices.azure.com/.default',
@@ -210,13 +224,13 @@ export async function getForgeTeamClient({
       }
     }
 
-    const foundryArgs: ConstructorParameters<typeof ForgeTeamFoundry>[0] = {
+    const foundryArgs = {
       ...ARGS,
       ...(azureADTokenProvider && { azureADTokenProvider }),
       ...(isDebugToStdErr() && { logger: createStderrLogger() }),
     }
     // we have always been lying about the return type - this doesn't support batching or models
-    return new ForgeTeamFoundry(foundryArgs) as unknown as ForgeTeam
+    return new AnthropicFoundry(foundryArgs) as unknown as Anthropic
   }
   if (isEnvTruthy(process.env.FORGE_CODE_USE_VERTEX)) {
     // Refresh GCP credentials if gcpAuthRefresh is configured and credentials are expired
@@ -225,12 +239,12 @@ export async function getForgeTeamClient({
       await refreshGcpCredentialsIfNeeded()
     }
 
-    const [{ ForgeTeamVertex }, { GoogleAuth }] = await Promise.all([
-      import('@anthropic-ai/vertex-sdk'),
-      import('google-auth-library'),
+    const [{ AnthropicVertex }, { GoogleAuth }] = await Promise.all([
+      importRuntimeModule('@anthropic-ai/vertex-sdk'),
+      importRuntimeModule('google-auth-library'),
     ])
     // TODO: Cache either GoogleAuth instance or AuthClient to improve performance
-    // Currently we create a new GoogleAuth instance for every getForgeTeamClient() call
+    // Currently we create a new GoogleAuth instance for every getAnthropicClient() call
     // This could cause repeated authentication flows and metadata server checks
     // However, caching needs careful handling of:
     // - Credential refresh/expiration
@@ -269,10 +283,14 @@ export async function getForgeTeamClient({
           getClient: () => ({
             getRequestHeaders: () => ({}),
           }),
-        } as unknown as GoogleAuth)
+        } as {
+          getClient: () => {
+            getRequestHeaders: () => Record<string, string>
+          }
+        })
       : new GoogleAuth({
           scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-          // Only use FORGE_TEAM_VERTEX_PROJECT_ID as last resort fallback
+          // Only use ANTHROPIC_VERTEX_PROJECT_ID as last resort fallback
           // This prevents the 12-second metadata server timeout when:
           // - No project env vars are set AND
           // - No credential keyfile is specified AND
@@ -283,23 +301,23 @@ export async function getForgeTeamClient({
           ...(hasProjectEnvVar || hasKeyFile
             ? {}
             : {
-                projectId: process.env.FORGE_TEAM_VERTEX_PROJECT_ID,
+                projectId: process.env.ANTHROPIC_VERTEX_PROJECT_ID,
               }),
         })
 
-    const vertexArgs: ConstructorParameters<typeof ForgeTeamVertex>[0] = {
+    const vertexArgs = {
       ...ARGS,
       region: getVertexRegionForModel(model),
       googleAuth,
       ...(isDebugToStdErr() && { logger: createStderrLogger() }),
     }
     // we have always been lying about the return type - this doesn't support batching or models
-    return new ForgeTeamVertex(vertexArgs) as unknown as ForgeTeam
+    return new AnthropicVertex(vertexArgs) as unknown as Anthropic
   }
 
   // Determine authentication method based on available tokens
-  const clientConfig: ConstructorParameters<typeof ForgeTeam>[0] = {
-    apiKey: isClaudeAISubscriber() ? null : apiKey || getForgeTeamApiKey(),
+  const clientConfig: ConstructorParameters<typeof Anthropic>[0] = {
+    apiKey: isClaudeAISubscriber() ? null : apiKey || getAnthropicApiKey(),
     authToken: isClaudeAISubscriber()
       ? getClaudeAIOAuthTokens()?.accessToken
       : undefined,
@@ -312,7 +330,7 @@ export async function getForgeTeamClient({
     ...(isDebugToStdErr() && { logger: createStderrLogger() }),
   }
 
-  return new ForgeTeam(clientConfig)
+  return new Anthropic(clientConfig)
 }
 
 async function configureApiKeyHeaders(
@@ -320,7 +338,7 @@ async function configureApiKeyHeaders(
   isNonInteractiveSession: boolean,
 ): Promise<void> {
   const token =
-    process.env.FORGE_TEAM_AUTH_TOKEN ||
+    process.env.ANTHROPIC_AUTH_TOKEN ||
     (await getApiKeyFromApiKeyHelper(isNonInteractiveSession))
   if (token) {
     headers['Authorization'] = `Bearer ${token}`
@@ -329,7 +347,7 @@ async function configureApiKeyHeaders(
 
 function getCustomHeaders(): Record<string, string> {
   const customHeaders: Record<string, string> = {}
-  const customHeadersEnv = process.env.FORGE_TEAM_CUSTOM_HEADERS
+  const customHeadersEnv = process.env.ANTHROPIC_CUSTOM_HEADERS
 
   if (!customHeadersEnv) return customHeaders
 
@@ -364,7 +382,7 @@ function buildFetch(
   // Only send to the first-party API — Bedrock/Vertex/Foundry don't log it
   // and unknown headers risk rejection by strict proxies (inc-4029 class).
   const injectClientRequestId =
-    getAPIProvider() === 'firstParty' && isFirstPartyForgeTeamBaseUrl()
+    getAPIProvider() === 'firstParty' && isFirstPartyAnthropicBaseUrl()
   return (input, init) => {
     // eslint-disable-next-line eslint-plugin-n/no-unsupported-features/node-builtins
     const headers = new Headers(init?.headers)
@@ -387,7 +405,3 @@ function buildFetch(
     return inner(input, { ...init, headers })
   }
 }
-
-
-
-

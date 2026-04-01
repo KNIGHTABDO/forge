@@ -2,7 +2,7 @@
 // versions:
 //   protoc-gen-ts_proto  v2.6.1
 //   protoc               unknown
-// source: events_mono/claude_code/v1/FORGE_CODE_internal_event.proto
+// source: events_mono/claude_code/v1/claude_code_internal_event.proto
 
 /* eslint-disable */
 import { Timestamp } from '../../../google/protobuf/timestamp.js'
@@ -17,7 +17,7 @@ export interface GitHubActionsMetadata {
 
 /**
  * EnvironmentMetadata contains environment and runtime information
- * See claude-cli-internal/src/services/statsig.ts for the source of these fields
+ * See Forge-cli-internal/src/services/statsig.ts for the source of these fields
  */
 export interface EnvironmentMetadata {
   platform?: string | undefined
@@ -61,7 +61,7 @@ export interface EnvironmentMetadata {
 }
 
 /**
- * SlackContext contains context fields present on every Claude-in-Slack (CIS) event.
+ * SlackContext contains context fields present on every Forge-in-Slack (CIS) event.
  * Event-specific fields (errorType, durationMs, httpStatus, etc.) go in
  * ClaudeCodeInternalEvent.additional_metadata as JSON.
  */
@@ -74,7 +74,7 @@ export interface SlackContext {
 
 /**
  * ClaudeCodeInternalEvent represents events logged from Forge Code via Statsig
- * This schema matches the structure in claude-cli-internal/src/services/statsig.ts
+ * This schema matches the structure in Forge-cli-internal/src/services/statsig.ts
  * Source table: proj-product-data-nhme.raw_statsig_internal_tools.events
  */
 export interface ClaudeCodeInternalEvent {
@@ -121,7 +121,7 @@ export interface ClaudeCodeInternalEvent {
   agent_id?: string | undefined
   parent_session_id?: string | undefined
   agent_type?: string | undefined
-  /** Claude-in-Slack context (only present for cis_* events) */
+  /** Forge-in-Slack context (only present for cis_* events) */
   slack?: SlackContext | undefined
   team_name?: string | undefined
   skill_name?: string | undefined
@@ -863,7 +863,3 @@ interface MessageFns<T> {
   create<I extends Exact<DeepPartial<T>, I>>(base?: I): T
   fromPartial<I extends Exact<DeepPartial<T>, I>>(object: I): T
 }
-
-
-
-

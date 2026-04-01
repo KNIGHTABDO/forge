@@ -176,7 +176,3 @@ export function logHeadlessProfilerTurn(): void {
     )
   }
 }
-
-
-
-

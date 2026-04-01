@@ -263,24 +263,24 @@ function getTmuxInstallInstructions(): string {
     case 'macos':
       return `To use agent swarms, install tmux:
   brew install tmux
-Then start a tmux session with: tmux new-session -s claude`
+Then start a tmux session with: tmux new-session -s Forge`
 
     case 'linux':
     case 'wsl':
       return `To use agent swarms, install tmux:
   sudo apt install tmux    # Ubuntu/Debian
   sudo dnf install tmux    # Fedora/RHEL
-Then start a tmux session with: tmux new-session -s claude`
+Then start a tmux session with: tmux new-session -s Forge`
 
     case 'windows':
       return `To use agent swarms, you need tmux which requires WSL (Windows Subsystem for Linux).
 Install WSL first, then inside WSL run:
   sudo apt install tmux
-Then start a tmux session with: tmux new-session -s claude`
+Then start a tmux session with: tmux new-session -s Forge`
 
     default:
       return `To use agent swarms, install tmux using your system's package manager.
-Then start a tmux session with: tmux new-session -s claude`
+Then start a tmux session with: tmux new-session -s Forge`
   }
 }
 
@@ -462,7 +462,3 @@ export function resetBackendDetection(): void {
   backendsRegistered = false
   inProcessFallbackActive = false
 }
-
-
-
-

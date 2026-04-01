@@ -22,7 +22,7 @@ const contextCollapse = feature('CONTEXT_COLLAPSE')
 import {
   logEvent,
   type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
-} from './services/analytics/index.js'
+} from 'src/services/analytics/index.js'
 import { ImageSizeError } from './utils/imageValidation.js'
 import { ImageResizeError } from './utils/imageResizer.js'
 import { findToolByName, type ToolUseContext } from './Tool.js'
@@ -193,7 +193,7 @@ export type QueryParams = {
   // API task_budget (output_config.task_budget, beta task-budgets-2026-03-13).
   // Distinct from the tokenBudget +500k auto-continue feature. `total` is the
   // budget for the whole agentic turn; `remaining` is computed per iteration
-  // from cumulative API usage. See configureTaskBudgetParams in claude.ts.
+  // from cumulative API usage. See configureTaskBudgetParams in Forge.ts.
   taskBudget?: { total: number }
   deps?: QueryDeps
 }
@@ -550,7 +550,7 @@ async function* queryLoop(
 
     const assistantMessages: AssistantMessage[] = []
     const toolResults: (UserMessage | AttachmentMessage)[] = []
-    // @see https://docs.claude.com/en/docs/build-with-claude/tool-use
+    // @see https://docs.Forge.com/en/docs/build-with-Forge/tool-use
     // Note: stop_reason === 'tool_use' is unreliable -- it's not always set correctly.
     // Set during streaming whenever a tool_use block arrives — the sole
     // loop-exit signal. If false after streaming, we're done (modulo stop-hook retry).
@@ -1545,7 +1545,7 @@ async function* queryLoop(
     })
 
     // Get queued commands snapshot before processing attachments.
-    // These will be sent as attachments so Claude can respond to them in the current turn.
+    // These will be sent as attachments so Forge can respond to them in the current turn.
     //
     // Drain pending notifications. LocalShellTask completions are 'next'
     // (when MONITOR_TOOL is on) and drain without Sleep. Other task types
@@ -1678,7 +1678,7 @@ async function* queryLoop(
     // Each time we have tool results and are about to recurse, that's a turn
     const nextTurnCount = turnCount + 1
 
-    // Periodic task summary for `claude ps` — fires mid-turn so a
+    // Periodic task summary for `Forge ps` — fires mid-turn so a
     // long-running agent still refreshes what it's working on. Gated
     // only on !agentId so every top-level conversation (REPL, SDK, HFI,
     // remote) generates summaries; subagents/forks don't.
@@ -1727,10 +1727,3 @@ async function* queryLoop(
     state = next
   } // while (true)
 }
-
-
-
-
-
-
-

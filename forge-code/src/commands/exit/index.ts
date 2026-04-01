@@ -10,7 +10,3 @@ const exit = {
 } satisfies Command
 
 export default exit
-
-
-
-

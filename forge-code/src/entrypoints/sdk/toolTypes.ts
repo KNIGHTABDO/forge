@@ -1,1 +1,2 @@
-export type ToolCallResult = Record<string, unknown>;
+// Stub — SDK tool types not included in source snapshot
+export type {}

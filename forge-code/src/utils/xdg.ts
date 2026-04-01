@@ -1,5 +1,5 @@
 /**
- * XDG Base Directory utilities for Claude CLI Native Installer
+ * XDG Base Directory utilities for Forge CLI Native Installer
  *
  * Implements the XDG Base Directory specification for organizing
  * native installer components across appropriate system directories.
@@ -63,7 +63,3 @@ export function getUserBinDir(options?: XDGOptions): string {
   const { home } = resolveOptions(options)
   return join(home, '.local', 'bin')
 }
-
-
-
-

@@ -1,31 +1,31 @@
-import type ForgeTeam from '@anthropic-ai/sdk'
+import type Anthropic from '@anthropic-ai/sdk'
 import type {
   BetaTool,
   BetaToolUnion,
 } from '@anthropic-ai/sdk/resources/beta/messages/messages.mjs'
 import { createHash } from 'crypto'
-import { SYSTEM_PROMPT_DYNAMIC_BOUNDARY } from '../constants/prompts.js'
-import { getSystemContext, getUserContext } from './context.js'
-import { isAnalyticsDisabled } from '../services/analytics/config.js'
+import { SYSTEM_PROMPT_DYNAMIC_BOUNDARY } from 'src/constants/prompts.js'
+import { getSystemContext, getUserContext } from 'src/context.js'
+import { isAnalyticsDisabled } from 'src/services/analytics/config.js'
 import {
   checkStatsigFeatureGate_CACHED_MAY_BE_STALE,
   getFeatureValue_CACHED_MAY_BE_STALE,
-} from '../services/analytics/growthbook.js'
+} from 'src/services/analytics/growthbook.js'
 import {
   type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
   logEvent,
-} from '../services/analytics/index.js'
-import { prefetchAllMcpResources } from '../services/mcp/client.js'
-import type { ScopedMcpServerConfig } from '../services/mcp/types.js'
-import { BashTool } from '../tools/BashTool/BashTool.js'
-import { FileEditTool } from '../tools/FileEditTool/FileEditTool.js'
+} from 'src/services/analytics/index.js'
+import { prefetchAllMcpResources } from 'src/services/mcp/client.js'
+import type { ScopedMcpServerConfig } from 'src/services/mcp/types.js'
+import { BashTool } from 'src/tools/BashTool/BashTool.js'
+import { FileEditTool } from 'src/tools/FileEditTool/FileEditTool.js'
 import {
   normalizeFileEditInput,
   stripTrailingWhitespace,
-} from '../tools/FileEditTool/utils.js'
-import { FileWriteTool } from '../tools/FileWriteTool/FileWriteTool.js'
-import { getTools } from '../tools.js'
-import type { AgentId } from '../types/ids.js'
+} from 'src/tools/FileEditTool/utils.js'
+import { FileWriteTool } from 'src/tools/FileWriteTool/FileWriteTool.js'
+import { getTools } from 'src/tools.js'
+import type { AgentId } from 'src/types/ids.js'
 import type { z } from 'zod/v4'
 import { CLI_SYSPROMPT_PREFIXES } from '../constants/system.js'
 import { roughTokenCountEstimation } from '../services/tokenEstimation.js'
@@ -46,7 +46,7 @@ import { isEnvTruthy } from './envUtils.js'
 import { createUserMessage } from './messages.js'
 import {
   getAPIProvider,
-  isFirstPartyForgeTeamBaseUrl,
+  isFirstPartyAnthropicBaseUrl,
 } from './model/providers.js'
 import {
   getFileReadIgnorePatterns,
@@ -95,8 +95,8 @@ const SWARM_FIELDS_BY_TOOL: Record<string, string[]> = {
  */
 function filterSwarmFieldsFromSchema(
   toolName: string,
-  schema: ForgeTeam.Tool.InputSchema,
-): ForgeTeam.Tool.InputSchema {
+  schema: Anthropic.Tool.InputSchema,
+): Anthropic.Tool.InputSchema {
   const fieldsToRemove = SWARM_FIELDS_BY_TOOL[toolName]
   if (!fieldsToRemove || fieldsToRemove.length === 0) {
     return schema
@@ -158,7 +158,7 @@ export async function toolToAPISchema(
       'inputJSONSchema' in tool && tool.inputJSONSchema
         ? tool.inputJSONSchema
         : zodToJsonSchema(tool.inputSchema)
-    ) as ForgeTeam.Tool.InputSchema
+    ) as Anthropic.Tool.InputSchema
 
     // Filter out swarm-related fields when swarms are not enabled
     // This ensures external non-EAP users don't see swarm features in the schema
@@ -194,11 +194,11 @@ export async function toolToAPISchema(
     // Enable fine-grained tool streaming via per-tool API field.
     // Without FGTS, the API buffers entire tool input parameters before sending
     // input_json_delta events, causing multi-minute hangs on large tool inputs.
-    // Gated to direct api.ForgeTeam.com: proxies (LiteLLM etc.) and Bedrock/Vertex
-    // with Claude 4.5 reject this field with 400. See GH#32742, PR #21729.
+    // Gated to direct api.anthropic.com: proxies (LiteLLM etc.) and Bedrock/Vertex
+    // with Forge 4.5 reject this field with 400. See GH#32742, PR #21729.
     if (
       getAPIProvider() === 'firstParty' &&
-      isFirstPartyForgeTeamBaseUrl() &&
+      isFirstPartyAnthropicBaseUrl() &&
       (getFeatureValue_CACHED_MAY_BE_STALE('tengu_fgts', false) ||
         isEnvTruthy(process.env.FORGE_CODE_ENABLE_FINE_GRAINED_TOOL_STREAMING))
     ) {
@@ -230,7 +230,7 @@ export async function toolToAPISchema(
   }
 
   // FORGE_CODE_DISABLE_EXPERIMENTAL_BETAS is the kill switch for beta API
-  // shapes. Proxy gateways (FORGE_TEAM_BASE_URL → LiteLLM → Bedrock) reject
+  // shapes. Proxy gateways (ANTHROPIC_BASE_URL → LiteLLM → Bedrock) reject
   // fields like defer_loading with "Extra inputs are not permitted". The gates
   // above each field are scattered and not all provider-aware, so this strips
   // everything not in the base-tool allowlist at the one choke point all tool
@@ -239,7 +239,7 @@ export async function toolToAPISchema(
   // standard prompt caching (Bedrock/Vertex supported); the beta sub-fields
   // (scope, ttl) are already gated upstream by shouldIncludeFirstPartyOnlyBetas
   // which independently respects this kill switch.
-  // github.com/ForgeTeams/claude-code/issues/20031
+  // github.com/anthropics/Forge-code/issues/20031
   if (isEnvTruthy(process.env.FORGE_CODE_DISABLE_EXPERIMENTAL_BETAS)) {
     const allowed = new Set([
       'name',
@@ -336,7 +336,7 @@ export function splitSysPromptPrefix(
     for (const prompt of systemPrompt) {
       if (!prompt) continue
       if (prompt === SYSTEM_PROMPT_DYNAMIC_BOUNDARY) continue // Skip boundary
-      if (prompt.startsWith('x-ForgeTeam-billing-header')) {
+      if (prompt.startsWith('x-anthropic-billing-header')) {
         attributionHeader = prompt
       } else if (CLI_SYSPROMPT_PREFIXES.has(prompt)) {
         systemPromptPrefix = prompt
@@ -373,7 +373,7 @@ export function splitSysPromptPrefix(
         const block = systemPrompt[i]
         if (!block || block === SYSTEM_PROMPT_DYNAMIC_BOUNDARY) continue
 
-        if (block.startsWith('x-ForgeTeam-billing-header')) {
+        if (block.startsWith('x-anthropic-billing-header')) {
           attributionHeader = block
         } else if (CLI_SYSPROMPT_PREFIXES.has(block)) {
           systemPromptPrefix = block
@@ -415,7 +415,7 @@ export function splitSysPromptPrefix(
   for (const block of systemPrompt) {
     if (!block) continue
 
-    if (block.startsWith('x-ForgeTeam-billing-header')) {
+    if (block.startsWith('x-anthropic-billing-header')) {
       attributionHeader = block
     } else if (CLI_SYSPROMPT_PREFIXES.has(block)) {
       systemPromptPrefix = block
@@ -594,7 +594,7 @@ export function normalizeToolInput<T extends Tool>(
       // Replace \\; with \; (commonly needed for find -exec commands)
       normalizedCommand = normalizedCommand.replace(/\\\\;/g, '\\;')
 
-      // Logging for commands that are only echoing a string. This is to help us understand how often  Claude talks via bash
+      // Logging for commands that are only echoing a string. This is to help us understand how often  Forge talks via bash
       if (/^echo\s+["']?[^|&;><]*["']?$/i.test(normalizedCommand.trim())) {
         logEvent('tengu_bash_tool_simple_echo', {})
       }
@@ -623,7 +623,7 @@ export function normalizeToolInput<T extends Tool>(
       // Validated upstream, won't throw
       const parsedInput = FileEditTool.inputSchema.parse(input)
 
-      // This is a workaround for tokens claude can't see
+      // This is a workaround for tokens Forge can't see
       const { file_path, edits } = normalizeFileEditInput({
         file_path: parsedInput.file_path,
         edits: [
@@ -716,7 +716,3 @@ export function normalizeToolInputForAPI<T extends Tool>(
       return input
   }
 }
-
-
-
-

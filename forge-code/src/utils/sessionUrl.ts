@@ -62,7 +62,3 @@ export function parseSessionIdentifier(
 
   return null
 }
-
-
-
-

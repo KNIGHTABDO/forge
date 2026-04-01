@@ -1,5 +1,5 @@
 /**
- * REPL integration hook for `claude ssh` sessions.
+ * REPL integration hook for `Forge ssh` sessions.
  *
  * Sibling to useDirectConnect — same shape (isRemoteMode/sendMessage/
  * cancelRequest/disconnect), same REPL wiring, but drives an SSH child
@@ -70,18 +70,18 @@ export function useSSHSession({
     logForDebugging('[useSSHSession] wiring SSH session manager')
 
     const manager = session.createManager({
-      onMessage: sdkMessage => {
-        if (isSessionEndMessage(sdkMessage)) {
+      onMessage: SDKControlRequest => {
+        if (isSessionEndMessage(SDKControlRequest)) {
           setIsLoading(false)
         }
 
         // Skip duplicate init messages (one per turn from stream-json mode).
-        if (sdkMessage.type === 'system' && sdkMessage.subtype === 'init') {
+        if (SDKControlRequest.type === 'system' && SDKControlRequest.subtype === 'init') {
           if (hasReceivedInitRef.current) return
           hasReceivedInitRef.current = true
         }
 
-        const converted = convertSDKMessage(sdkMessage, {
+        const converted = convertSDKMessage(SDKControlRequest, {
           convertToolResults: true,
         })
         if (converted.type === 'message') {
@@ -239,7 +239,3 @@ export function useSSHSession({
     [isRemoteMode, sendMessage, cancelRequest, disconnect],
   )
 }
-
-
-
-

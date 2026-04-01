@@ -171,7 +171,7 @@ export const getExternalEditor = memoize((): string | undefined => {
     return process.env.EDITOR.trim()
   }
 
-  // `isCommandAvailable` breaks the claude process' stdin on Windows
+  // `isCommandAvailable` breaks the Forge process' stdin on Windows
   // as a bandaid, we skip it
   if (process.platform === 'win32') {
     return 'start /wait notepad'
@@ -181,7 +181,3 @@ export const getExternalEditor = memoize((): string | undefined => {
   const editors = ['code', 'vi', 'nano']
   return editors.find(command => isCommandAvailable(command))
 })
-
-
-
-

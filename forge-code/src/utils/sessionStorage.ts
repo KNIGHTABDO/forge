@@ -2,7 +2,7 @@ import { feature } from 'bun:bundle'
 import type { UUID } from 'crypto'
 import type { Dirent } from 'fs'
 // Sync fs primitives for readFileTailSync — separate from fs/promises
-// imports above. Named (not wildcard) per CLAUDE.md style; no collisions
+// imports above. Named (not wildcard) per Forge.md style; no collisions
 // with the async-suffixed names.
 import { closeSync, fstatSync, openSync, readSync } from 'fs'
 import {
@@ -20,7 +20,7 @@ import { basename, dirname, join } from 'path'
 import {
   type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
   logEvent,
-} from '../services/analytics/index.js'
+} from 'src/services/analytics/index.js'
 import {
   getOriginalCwd,
   getPlanSlugCache,
@@ -2097,7 +2097,7 @@ export function buildConversationChain(
  * Post-pass for buildConversationChain: recover sibling assistant blocks and
  * tool_results that the single-parent walk orphaned.
  *
- * Streaming (claude.ts:~2024) emits one AssistantMessage per content_block_stop
+ * Streaming (Forge.ts:~2024) emits one AssistantMessage per content_block_stop
  * — N parallel tool_uses → N messages, distinct uuid, same message.id. Each
  * tool_result's sourceToolAssistantUUID points to its own one-block assistant,
  * so insertMessageChain's override (line ~894) writes each TR's parentUuid to a
@@ -2673,7 +2673,7 @@ export function saveAiGeneratedTitle(sessionId: UUID, aiTitle: string): void {
 }
 
 /**
- * Append a periodic task summary for `claude ps`. Unlike ai-title this is
+ * Append a periodic task summary for `Forge ps`. Unlike ai-title this is
  * not re-appended by reAppendSessionMetadata — it's a rolling snapshot of
  * what the agent is doing *now*, so staleness is fine; ps reads the most
  * recent one from the tail.
@@ -5103,7 +5103,3 @@ export async function enrichLogs(
 
   return { logs: result, nextIndex: i }
 }
-
-
-
-

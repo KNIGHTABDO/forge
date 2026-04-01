@@ -29,7 +29,3 @@ const srun: CommandSpec = {
 }
 
 export default srun
-
-
-
-

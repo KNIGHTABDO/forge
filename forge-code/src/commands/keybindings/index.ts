@@ -11,7 +11,3 @@ const keybindings = {
 } satisfies Command
 
 export default keybindings
-
-
-
-

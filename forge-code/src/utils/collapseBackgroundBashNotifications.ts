@@ -82,7 +82,3 @@ export function collapseBackgroundBashNotifications(
 
   return result
 }
-
-
-
-

@@ -37,8 +37,8 @@ export function migrateSonnet45ToSonnet46(): void {
 
   const model = getSettingsForSource('userSettings')?.model
   if (
-    model !== 'claude-sonnet-4-5-20250929' &&
-    model !== 'claude-sonnet-4-5-20250929[1m]' &&
+    model !== 'Forge-sonnet-4-5-20250929' &&
+    model !== 'Forge-sonnet-4-5-20250929[1m]' &&
     model !== 'sonnet-4-5-20250929' &&
     model !== 'sonnet-4-5-20250929[1m]'
   ) {
@@ -65,7 +65,3 @@ export function migrateSonnet45ToSonnet46(): void {
     has_1m: has1m,
   })
 }
-
-
-
-

@@ -9,9 +9,9 @@ const fast = {
   type: 'local-jsx',
   name: 'fast',
   get description() {
-    return `Toggle fast mode (${FAST_MODE_MODEL_DISPLAY})`
+    return `Toggle fast mode (${FAST_MODE_MODEL_DISPLAY} only)`
   },
-  availability: ['claude-ai', 'console'],
+  availability: ['Forge-ai', 'console'],
   isEnabled: () => isFastModeEnabled(),
   get isHidden() {
     return !isFastModeEnabled()
@@ -24,7 +24,3 @@ const fast = {
 } satisfies Command
 
 export default fast
-
-
-
-

@@ -530,7 +530,3 @@ async function generateSyntheticDiff(
     return null
   }
 }
-
-
-
-

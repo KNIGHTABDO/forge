@@ -18,9 +18,9 @@ import last from 'lodash-es/last.js'
 import {
   type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
   logEvent,
-} from '../services/analytics/index.js'
-import { sanitizeToolNameForAnalytics } from '../services/analytics/metadata.js'
-import type { AgentId } from '../types/ids.js'
+} from 'src/services/analytics/index.js'
+import { sanitizeToolNameForAnalytics } from 'src/services/analytics/metadata.js'
+import type { AgentId } from 'src/types/ids.js'
 import { companionIntroText } from '../buddy/prompt.js'
 import { NO_CONTENT_MESSAGE } from '../constants/messages.js'
 import { OUTPUT_STYLE_CONFIG } from '../constants/outputStyles.js'
@@ -102,23 +102,23 @@ import type {
 import type {
   HookEvent,
   SDKAssistantMessageError,
-} from '../entrypoints/agentSdkTypes.js'
-import { EXPLORE_AGENT } from '../tools/AgentTool/built-in/exploreAgent.js'
-import { PLAN_AGENT } from '../tools/AgentTool/built-in/planAgent.js'
-import { areExplorePlanAgentsEnabled } from '../tools/AgentTool/builtInAgents.js'
-import { AGENT_TOOL_NAME } from '../tools/AgentTool/constants.js'
-import { ASK_USER_QUESTION_TOOL_NAME } from '../tools/AskUserQuestionTool/prompt.js'
-import { BashTool } from '../tools/BashTool/BashTool.js'
-import { ExitPlanModeV2Tool } from '../tools/ExitPlanModeTool/ExitPlanModeV2Tool.js'
-import { FileEditTool } from '../tools/FileEditTool/FileEditTool.js'
+} from 'src/entrypoints/agentSdkTypes.js'
+import { EXPLORE_AGENT } from 'src/tools/AgentTool/built-in/exploreAgent.js'
+import { PLAN_AGENT } from 'src/tools/AgentTool/built-in/planAgent.js'
+import { areExplorePlanAgentsEnabled } from 'src/tools/AgentTool/builtInAgents.js'
+import { AGENT_TOOL_NAME } from 'src/tools/AgentTool/constants.js'
+import { ASK_USER_QUESTION_TOOL_NAME } from 'src/tools/AskUserQuestionTool/prompt.js'
+import { BashTool } from 'src/tools/BashTool/BashTool.js'
+import { ExitPlanModeV2Tool } from 'src/tools/ExitPlanModeTool/ExitPlanModeV2Tool.js'
+import { FileEditTool } from 'src/tools/FileEditTool/FileEditTool.js'
 import {
   FILE_READ_TOOL_NAME,
   MAX_LINES_TO_READ,
-} from '../tools/FileReadTool/prompt.js'
-import { FileWriteTool } from '../tools/FileWriteTool/FileWriteTool.js'
-import { GLOB_TOOL_NAME } from '../tools/GlobTool/prompt.js'
-import { GREP_TOOL_NAME } from '../tools/GrepTool/prompt.js'
-import type { DeepImmutable } from './types/utils.js'
+} from 'src/tools/FileReadTool/prompt.js'
+import { FileWriteTool } from 'src/tools/FileWriteTool/FileWriteTool.js'
+import { GLOB_TOOL_NAME } from 'src/tools/GlobTool/prompt.js'
+import { GREP_TOOL_NAME } from 'src/tools/GrepTool/prompt.js'
+import type { DeepImmutable } from 'src/types/utils.js'
 import { getStrictToolResultPairing } from '../bootstrap/state.js'
 import type { SpinnerMode } from '../components/Spinner.js'
 import {
@@ -1615,7 +1615,7 @@ function stripUnavailableToolReferencesFromUserMessage(
 /**
  * Appends a [id:...] message ID tag to the last text block of a user message.
  * Only mutates the API-bound copy, not the stored message.
- * This lets Claude reference message IDs when calling the snip tool.
+ * This lets Forge reference message IDs when calling the snip tool.
  */
 function appendMessageTagToUserMessage(message: UserMessage): UserMessage {
   if (message.isMeta) {
@@ -2146,7 +2146,7 @@ export function normalizeMessagesForAPI(
           // Must be a sibling, NOT inside tool_result.content — mixing text with
           // tool_reference inside the block is a server ValueError.
           // Idempotent: query.ts calls this per-tool-result; the output flows
-          // back through here via claude.ts on the next API request. The first
+          // back through here via Forge.ts on the next API request. The first
           // pass's sibling gets a \n[id:xxx] suffix from appendMessageTag below,
           // so startsWith matches both bare and tagged forms.
           //
@@ -2601,8 +2601,8 @@ export function mergeUserContentBlocks(
   a: ContentBlockParam[],
   b: ContentBlockParam[],
 ): ContentBlockParam[] {
-  // See https://ForgeTeam.slack.com/archives/C06FE2FP0Q2/p1747586370117479 and
-  // https://ForgeTeam.slack.com/archives/C0AHK9P0129/p1773159663856279:
+  // See https://anthropic.slack.com/archives/C06FE2FP0Q2/p1747586370117479 and
+  // https://anthropic.slack.com/archives/C0AHK9P0129/p1773159663856279:
   // any sibling after tool_result renders as </function_results>\n\nHuman:<...>
   // on the wire. Repeated mid-conversation, this teaches capy to emit Human: at
   // a bare tail → 3-token empty end_turn. A/B (sai-20260310-161901) validated:
@@ -3563,7 +3563,7 @@ Read the team config to discover your teammates' names. Check the task list peri
               ? [
                   createUserMessage({
                     content: `Note: The file ${attachment.filename} was too large and has been truncated to the first ${MAX_LINES_TO_READ} lines. Don't tell the user about this truncation. Use ${FileReadTool.name} to read more of the file if you need.`,
-                    isMeta: true, // only claude will see this
+                    isMeta: true, // only Forge will see this
                   }),
                 ]
               : []),
@@ -5081,7 +5081,7 @@ export function stripSignatureBlocks(messages: Message[]): Message[] {
     if (filtered.length === content.length) return msg
 
     // Strip to [] even for thinking-only messages. Streaming yields each
-    // content block as a separate same-id AssistantMessage (claude.ts:2150),
+    // content block as a separate same-id AssistantMessage (Forge.ts:2150),
     // so a thinking-only singleton here is usually a split sibling that
     // mergeAssistantMessages (2232) rejoins with its text/tool_use partner.
     // If we returned the original message, the stale signature would survive
@@ -5510,7 +5510,3 @@ export function wrapCommandText(
       return `The user sent a new message while you were working:\n${raw}\n\nIMPORTANT: After completing your current task, you MUST address the user's message above. Do not ignore it.`
   }
 }
-
-
-
-

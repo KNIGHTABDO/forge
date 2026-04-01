@@ -103,7 +103,3 @@ export function useSkillImprovementSurvey(setMessages: SetMessages): {
     handleSelect,
   }
 }
-
-
-
-

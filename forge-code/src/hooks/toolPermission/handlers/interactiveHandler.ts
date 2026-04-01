@@ -1,7 +1,7 @@
 import { feature } from 'bun:bundle'
 import type { ContentBlockParam } from '@anthropic-ai/sdk/resources/messages.mjs'
 import { randomUUID } from 'crypto'
-import { logForDebugging } from '../../../utils/debug.js'
+import { logForDebugging } from 'src/utils/debug.js'
 import { getAllowedChannels } from '../../../bootstrap/state.js'
 import type { BridgePermissionCallbacks } from '../../../bridge/bridgePermissionCallbacks.js'
 import { getTerminalFocused } from '../../../ink/terminal-focus-state.js'
@@ -231,7 +231,7 @@ function handleInteractivePermission(
     },
   })
 
-  // Race 4: Bridge permission response from CCR (forge-app.vercel.app)
+  // Race 4: Bridge permission response from CCR (Forge.ai)
   // When the bridge is connected, send the permission request to CCR and
   // subscribe for a response. Whichever side (CLI or CCR) responds first
   // wins via claim().
@@ -302,7 +302,7 @@ function handleInteractivePermission(
   // its MCP send_message tool, then race the reply against local/bridge/hook/
   // classifier. The inbound "yes abc123" is intercepted in the notification
   // handler (useManageMCPConnections.ts) BEFORE enqueue, so it never reaches
-  // Claude as a conversation turn.
+  // Forge as a conversation turn.
   //
   // Unlike the bridge block, this still guards on `requiresUserInteraction` —
   // channel replies are pure yes/no with no `updatedInput` path. In practice
@@ -534,7 +534,3 @@ function handleInteractivePermission(
 
 export { handleInteractivePermission }
 export type { InteractivePermissionParams }
-
-
-
-

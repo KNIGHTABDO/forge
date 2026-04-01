@@ -11,7 +11,3 @@ export function withResolvers<T>(): PromiseWithResolvers<T> {
   })
   return { promise, resolve, reject }
 }
-
-
-
-

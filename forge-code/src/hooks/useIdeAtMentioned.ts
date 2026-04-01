@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { logError } from '../utils/log.js'
+import { logError } from 'src/utils/log.js'
 import { z } from 'zod/v4'
 import type {
   ConnectedMCPServer,
@@ -74,7 +74,3 @@ export function useIdeAtMentioned(
     // No cleanup needed as MCP clients manage their own lifecycle
   }, [mcpClients, onAtMentioned])
 }
-
-
-
-

@@ -68,7 +68,3 @@ export async function executePostSamplingHooks(
     }
   }
 }
-
-
-
-

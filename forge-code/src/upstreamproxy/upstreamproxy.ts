@@ -42,15 +42,15 @@ const NO_PROXY_LIST = [
   '10.0.0.0/8',
   '172.16.0.0/12',
   '192.168.0.0/16',
-  // ForgeTeam API: no upstream route will ever match, and the MITM breaks
+  // Anthropic API: no upstream route will ever match, and the MITM breaks
   // non-Bun runtimes (Python httpx/certifi doesn't trust the forged CA).
   // Three forms because NO_PROXY parsing differs across runtimes:
-  //   *.ForgeTeam.com  — Bun, curl, Go (glob match)
-  //   .ForgeTeam.com   — Python urllib/httpx (suffix match, strips leading dot)
-  //   ForgeTeam.com    — apex domain fallback
-  'ForgeTeam.com',
-  '.ForgeTeam.com',
-  '*.ForgeTeam.com',
+  //   *.anthropic.com  — Bun, curl, Go (glob match)
+  //   .anthropic.com   — Python urllib/httpx (suffix match, strips leading dot)
+  //   anthropic.com    — apex domain fallback
+  'anthropic.com',
+  '.anthropic.com',
+  '*.anthropic.com',
   'github.com',
   'api.github.com',
   '*.github.com',
@@ -111,14 +111,14 @@ export async function initUpstreamProxy(opts?: {
 
   setNonDumpable()
 
-  // CCR injects FORGE_TEAM_BASE_URL via StartupContext (sessionExecutor.ts /
+  // CCR injects ANTHROPIC_BASE_URL via StartupContext (sessionExecutor.ts /
   // sessionHandler.ts). getOauthConfig() is wrong here: it keys off
   // USER_TYPE + USE_{LOCAL,STAGING}_OAUTH, none of which the container sets,
   // so it always returned the prod URL and the CA fetch 404'd.
   const baseUrl =
     opts?.ccrBaseUrl ??
-    process.env.FORGE_TEAM_BASE_URL ??
-    'https://api.ForgeTeam.com'
+    process.env.ANTHROPIC_BASE_URL ??
+    'https://api.anthropic.com'
   const caBundlePath =
     opts?.caBundlePath ?? join(homedir(), '.ccr', 'ca-bundle.crt')
 
@@ -283,7 +283,3 @@ async function downloadCaBundle(
     return false
   }
 }
-
-
-
-

@@ -1,4 +1,10 @@
-import { buildTool } from '../../Tool.js';
-import { z } from 'zod';
+// Stub — AssistantSessionChooser not included in source snapshot
+import React from 'react'
 
-export const AssistantSessionChooser = () => null;
+export function AssistantSessionChooser(_props: {
+  sessions: unknown[]
+  onSelect: (id: string) => void
+  onCancel: () => void
+}) {
+  return null
+}

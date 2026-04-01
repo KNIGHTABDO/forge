@@ -1,5 +1,5 @@
 import { feature } from 'bun:bundle'
-import type ForgeTeam from '@anthropic-ai/sdk'
+import type Anthropic from '@anthropic-ai/sdk'
 import type { BetaToolUnion } from '@anthropic-ai/sdk/resources/beta/messages.js'
 import { mkdir, writeFile } from 'fs/promises'
 import { dirname, join } from 'path'
@@ -56,15 +56,15 @@ const BASE_PROMPT: string = feature('TRANSCRIPT_CLASSIFIER')
   : ''
 
 // External template is loaded separately so it's available for
-// `claude auto-mode defaults` even in ant builds. Ant builds use
-// permissions_ForgeTeam.txt at runtime but should dump external defaults.
+// `Forge auto-mode defaults` even in ant builds. Ant builds use
+// permissions_anthropic.txt at runtime but should dump external defaults.
 const EXTERNAL_PERMISSIONS_TEMPLATE: string = feature('TRANSCRIPT_CLASSIFIER')
   ? txtRequire(require('./yolo-classifier-prompts/permissions_external.txt'))
   : ''
 
-const FORGE_TEAM_PERMISSIONS_TEMPLATE: string =
+const ANTHROPIC_PERMISSIONS_TEMPLATE: string =
   feature('TRANSCRIPT_CLASSIFIER') && process.env.USER_TYPE === 'ant'
-    ? txtRequire(require('./yolo-classifier-prompts/permissions_ForgeTeam.txt'))
+    ? txtRequire(require('./yolo-classifier-prompts/permissions_anthropic.txt'))
     : ''
 /* eslint-enable custom-rules/no-process-env-top-level, @typescript-eslint/no-require-imports */
 
@@ -94,8 +94,8 @@ export type AutoModeRules = {
  * <user_*_to_replace> tags (user settings REPLACE these defaults), so the
  * captured tag contents ARE the defaults. Bullet items are single-line in the
  * template; each line starting with `- ` becomes one array entry.
- * Used by `claude auto-mode defaults`. Always returns external defaults,
- * never the ForgeTeam-internal template.
+ * Used by `Forge auto-mode defaults`. Always returns external defaults,
+ * never the Anthropic-internal template.
  */
 export function getDefaultExternalAutoModeRules(): AutoModeRules {
   return {
@@ -119,7 +119,7 @@ function extractTaggedBullets(tagName: string): string[] {
 
 /**
  * Returns the full external classifier system prompt with default rules (no user
- * overrides). Used by `claude auto-mode critique` to show the model how the
+ * overrides). Used by `Forge auto-mode critique` to show the model how the
  * classifier sees its instructions.
  */
 export function buildDefaultExternalSystemPrompt(): string {
@@ -147,7 +147,7 @@ function getAutoModeDumpDir(): string {
 
 /**
  * Dump the auto mode classifier request and response bodies to the per-user
- * claude temp directory when FORGE_CODE_DUMP_AUTO_MODE is set. Files are
+ * Forge temp directory when FORGE_CODE_DUMP_AUTO_MODE is set. Files are
  * named by unix timestamp: {timestamp}[.{suffix}].req.json and .res.json
  */
 async function maybeDumpAutoMode(
@@ -205,7 +205,7 @@ export function getAutoModeClassifierTranscript(): string | null {
 
 /**
  * Dump classifier input prompts + context-comparison diagnostics on API error.
- * Written to a session-scoped file in the claude temp dir so /share can collect
+ * Written to a session-scoped file in the Forge temp dir so /share can collect
  * it (replaces the old Desktop dump). Includes context numbers to help diagnose
  * projection divergence (classifier tokens >> main loop tokens).
  * Returns the dump path on success, null on failure.
@@ -442,11 +442,11 @@ export function buildTranscriptForClassifier(
 }
 
 /**
- * Build the CLAUDE.md prefix message for the classifier. Returns null when
- * CLAUDE.md is disabled or empty. The content is wrapped in a delimiter that
+ * Build the Forge.md prefix message for the classifier. Returns null when
+ * Forge.md is disabled or empty. The content is wrapped in a delimiter that
  * tells the classifier this is user-provided configuration — actions
  * described here reflect user intent. cache_control is set because the
- * content is static per-session, making the system + CLAUDE.md prefix a
+ * content is static per-session, making the system + Forge.md prefix a
  * stable cache prefix across classifier calls.
  *
  * Reads from bootstrap/state.ts cache (populated by context.ts) instead of
@@ -454,10 +454,10 @@ export function buildTranscriptForClassifier(
  * permissions → yoloClassifier is a cycle. context.ts already gates on
  * FORGE_CODE_DISABLE_CLAUDE_MDS and normalizes '' to null before caching.
  * If the cache is unpopulated (tests, or an entrypoint that never calls
- * getUserContext), the classifier proceeds without CLAUDE.md — same as
+ * getUserContext), the classifier proceeds without Forge.md — same as
  * pre-PR behavior.
  */
-function buildClaudeMdMessage(): ForgeTeam.MessageParam | null {
+function buildClaudeMdMessage(): Anthropic.MessageParam | null {
   const claudeMd = getCachedClaudeMdContent()
   if (claudeMd === null) return null
   return {
@@ -466,7 +466,7 @@ function buildClaudeMdMessage(): ForgeTeam.MessageParam | null {
       {
         type: 'text',
         text:
-          `The following is the user's CLAUDE.md configuration. These are ` +
+          `The following is the user's Forge.md configuration. These are ` +
           `instructions the user provided to the agent and should be treated ` +
           `as part of the user's intent when evaluating actions.\n\n` +
           `<user_claude_md>\n${claudeMd}\n</user_claude_md>`,
@@ -488,7 +488,7 @@ export async function buildYoloSystemPrompt(
   const systemPrompt = BASE_PROMPT.replace('<permissions_template>', () =>
     usingExternal
       ? EXTERNAL_PERMISSIONS_TEMPLATE
-      : FORGE_TEAM_PERMISSIONS_TEMPLATE,
+      : ANTHROPIC_PERMISSIONS_TEMPLATE,
   )
 
   const autoMode = getAutoModeConfig()
@@ -511,7 +511,7 @@ export async function buildYoloSystemPrompt(
   // All three sections use the same <foo_to_replace>...</foo_to_replace>
   // delimiter pattern. The external template wraps its defaults inside the
   // tags, so user-provided values REPLACE the defaults entirely. The
-  // ForgeTeam template keeps its defaults outside the tags and uses an empty
+  // anthropic template keeps its defaults outside the tags and uses an empty
   // tag pair at the end of each section, so user-provided values are
   // strictly ADDITIVE.
   const userAllow = allowDescriptions.length
@@ -607,7 +607,7 @@ function parseXmlThinking(text: string): string | null {
  * Extract usage stats from an API response.
  */
 function extractUsage(
-  result: ForgeTeam.Beta.Messages.BetaMessage,
+  result: Anthropic.Beta.Messages.BetaMessage,
 ): ClassifierUsage {
   return {
     inputTokens: result.usage.input_tokens,
@@ -622,7 +622,7 @@ function extractUsage(
  * non-enumerable `_request_id` property on response objects.
  */
 function extractRequestId(
-  result: ForgeTeam.Beta.Messages.BetaMessage,
+  result: Anthropic.Beta.Messages.BetaMessage,
 ): string | undefined {
   return (result as { _request_id?: string | null })._request_id ?? undefined
 }
@@ -709,11 +709,11 @@ function getClassifierThinkingConfig(
  * prompt caching (1h TTL) across calls.
  */
 async function classifyYoloActionXml(
-  prefixMessages: ForgeTeam.MessageParam[],
+  prefixMessages: Anthropic.MessageParam[],
   systemPrompt: string,
   userPrompt: string,
   userContentBlocks: Array<
-    ForgeTeam.TextBlockParam | ForgeTeam.ImageBlockParam
+    Anthropic.TextBlockParam | Anthropic.ImageBlockParam
   >,
   model: string,
   promptLengths: {
@@ -739,7 +739,7 @@ async function classifyYoloActionXml(
         ? 'xml_fast'
         : 'xml_thinking'
   const xmlSystemPrompt = replaceOutputFormatWithXml(systemPrompt)
-  const systemBlocks: ForgeTeam.TextBlockParam[] = [
+  const systemBlocks: Anthropic.TextBlockParam[] = [
     {
       type: 'text' as const,
       text: xmlSystemPrompt,
@@ -758,7 +758,7 @@ async function classifyYoloActionXml(
   // Wrap all content (transcript + action) in <transcript> tags.
   // The action is the final tool_use block in the transcript.
   const wrappedContent: Array<
-    ForgeTeam.TextBlockParam | ForgeTeam.ImageBlockParam
+    Anthropic.TextBlockParam | Anthropic.ImageBlockParam
   > = [
     { type: 'text' as const, text: '<transcript>\n' },
     ...userContentBlocks,
@@ -1031,13 +1031,13 @@ export async function classifyYoloAction(
   const systemPrompt = await buildYoloSystemPrompt(context)
   const transcriptEntries = buildTranscriptEntries(messages)
   const claudeMdMessage = buildClaudeMdMessage()
-  const prefixMessages: ForgeTeam.MessageParam[] = claudeMdMessage
+  const prefixMessages: Anthropic.MessageParam[] = claudeMdMessage
     ? [claudeMdMessage]
     : []
 
   let toolCallsLength = actionCompact.length
   let userPromptsLength = 0
-  const userContentBlocks: ForgeTeam.TextBlockParam[] = []
+  const userContentBlocks: Anthropic.TextBlockParam[] = []
   for (const entry of transcriptEntries) {
     for (const block of entry.content) {
       const serialized = toCompactBlock(block, entry.role, lookup)
@@ -1097,7 +1097,7 @@ export async function classifyYoloAction(
   // Place cache_control on the action block. In the two-stage classifier,
   // stage 2 shares the same transcript+action prefix as stage 1 — the
   // breakpoint here gives stage 2 a guaranteed cache hit on the full prefix.
-  // Budget: system (1) + CLAUDE.md (0–1) + action (1) = 2–3, under the
+  // Budget: system (1) + Forge.md (0–1) + action (1) = 2–3, under the
   // API limit of 4 cache_control blocks.
   userContentBlocks.push({
     type: 'text' as const,
@@ -1315,7 +1315,7 @@ type AutoModeConfig = {
    */
   twoStageClassifier?: boolean | 'fast' | 'thinking'
   /**
-   * Ant builds normally use permissions_ForgeTeam.txt; when true, use
+   * Ant builds normally use permissions_anthropic.txt; when true, use
    * permissions_external.txt instead (dogfood the external template).
    */
   forceExternalPermissions?: boolean
@@ -1493,7 +1493,3 @@ export function formatActionForClassifier(
     content: [{ type: 'tool_use', name: toolName, input: toolInput }],
   }
 }
-
-
-
-

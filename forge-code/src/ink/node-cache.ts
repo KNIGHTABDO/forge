@@ -52,7 +52,3 @@ export function consumeAbsoluteRemovedFlag(): boolean {
   absoluteNodeRemoved = false
   return had
 }
-
-
-
-

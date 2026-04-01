@@ -1,5 +1,5 @@
 import { execa } from 'execa'
-import { getMacOsKeychainStorageServiceName } from '../utils/secureStorage/macOsKeychainHelpers.js'
+import { getMacOsKeychainStorageServiceName } from 'src/utils/secureStorage/macOsKeychainHelpers.js'
 
 export async function maybeRemoveApiKeyFromMacOSKeychainThrows(): Promise<void> {
   if (process.platform === 'darwin') {
@@ -17,7 +17,3 @@ export async function maybeRemoveApiKeyFromMacOSKeychainThrows(): Promise<void> 
 export function normalizeApiKeyForConfig(apiKey: string): string {
   return apiKey.slice(-20)
 }
-
-
-
-

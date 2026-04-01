@@ -238,7 +238,3 @@ export const TeamCreateTool: Tool<InputSchema, Output> = buildTool({
 
   renderToolUseMessage,
 } satisfies ToolDef<InputSchema, Output>)
-
-
-
-

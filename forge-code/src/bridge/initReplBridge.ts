@@ -16,7 +16,7 @@
 import { feature } from 'bun:bundle'
 import { hostname } from 'os'
 import { getOriginalCwd, getSessionId } from '../bootstrap/state.js'
-import type { SDKMessage } from '../entrypoints/agentSdkTypes.js'
+import type { SDKControlRequest } from '../entrypoints/agentSdkTypes.js'
 import type { SDKControlResponse } from '../entrypoints/sdk/controlTypes.js'
 import { getFeatureValue_CACHED_WITH_REFRESH } from '../services/analytics/growthbook.js'
 import { getOrganizationUUID } from '../services/oauth/client.js'
@@ -73,7 +73,7 @@ import { setCseShimGate } from './sessionIdCompat.js'
 import type { BridgeWorkerType } from './types.js'
 
 export type InitBridgeOptions = {
-  onInboundMessage?: (msg: SDKMessage) => void | Promise<void>
+  onInboundMessage?: (msg: SDKControlRequest) => void | Promise<void>
   onPermissionResponse?: (response: SDKControlResponse) => void
   onInterrupt?: () => void
   onSetModel?: (model: string | undefined) => void
@@ -100,7 +100,7 @@ export type InitBridgeOptions = {
   perpetual?: boolean
   /**
    * When true, the bridge only forwards events outbound (no SSE inbound
-   * stream). Used by CCR mirror mode — local sessions visible on forge-app.vercel.app
+   * stream). Used by CCR mirror mode — local sessions visible on Forge.ai
    * without enabling inbound control.
    */
   outboundOnly?: boolean
@@ -141,7 +141,7 @@ export async function initReplBridge(
   // since each implementation has its own floor (tengu_bridge_min_version
   // for v1, tengu_bridge_repl_v2_config.min_version for v2).
 
-  // 2. Check OAuth — must be signed in with forge-app.vercel.app. Runs before the
+  // 2. Check OAuth — must be signed in with Forge.ai. Runs before the
   // policy check so console-auth users get the actionable "/login" hint
   // instead of a misleading policy error from a stale/wrong-org cache.
   if (!getBridgeAccessToken()) {
@@ -246,14 +246,14 @@ export async function initReplBridge(
 
   // 5. Derive session title. Precedence: explicit initialName → /rename
   // (session storage) → last meaningful user message → generated slug.
-  // Cosmetic only (forge-app.vercel.app session list); the model never sees it.
+  // Cosmetic only (Forge.ai session list); the model never sees it.
   // Two flags: `hasExplicitTitle` (initialName or /rename — never auto-
   // overwrite) vs. `hasTitle` (any title, including auto-derived — blocks
   // the count-1 re-derivation but not count-3). The onUserMessage callback
   // (wired to both v1 and v2 below) derives from the 1st prompt and again
   // from the 3rd so mobile/web show a title that reflects more context.
   // The slug fallback (e.g. "remote-control-graceful-unicorn") makes
-  // auto-started sessions distinguishable in the forge-app.vercel.app list before the
+  // auto-started sessions distinguishable in the Forge.ai list before the
   // first prompt.
   let title = `remote-control-${generateShortWordSlug()}`
   let hasTitle = false
@@ -415,7 +415,7 @@ export async function initReplBridge(
         `[bridge:repl] Skipping: ${versionError}`,
         true,
       )
-      onStateChange?.('failed', 'run `forge-code update` to upgrade')
+      onStateChange?.('failed', 'run `Forge update` to upgrade')
       return null
     }
     logForDebugging(
@@ -456,7 +456,7 @@ export async function initReplBridge(
   const versionError = checkBridgeMinVersion()
   if (versionError) {
     logBridgeSkip('version_too_old', `[bridge:repl] Skipping: ${versionError}`)
-    onStateChange?.('failed', 'run `forge-code update` to upgrade')
+    onStateChange?.('failed', 'run `Forge update` to upgrade')
     return null
   }
 
@@ -560,17 +560,10 @@ function deriveTitle(raw: string): string | undefined {
   // First sentence is usually the intent; rest is often context/detail.
   // Capture group instead of lookbehind — keeps YARR JIT happy.
   const firstSentence = /^(.*?[.!?])\s/.exec(clean)?.[1] ?? clean
-  // Collapse newlines/tabs — titles are single-line in the forge-app.vercel.app list.
+  // Collapse newlines/tabs — titles are single-line in the Forge.ai list.
   const flat = firstSentence.replace(/\s+/g, ' ').trim()
   if (!flat) return undefined
   return flat.length > TITLE_MAX_LEN
     ? flat.slice(0, TITLE_MAX_LEN - 1) + '\u2026'
     : flat
 }
-
-
-
-
-
-
-

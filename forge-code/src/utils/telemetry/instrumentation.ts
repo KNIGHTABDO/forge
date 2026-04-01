@@ -38,14 +38,14 @@ import {
   setLoggerProvider,
   setMeterProvider,
   setTracerProvider,
-} from '../../bootstrap/state.js'
+} from 'src/bootstrap/state.js'
 import {
   getOtelHeadersFromHelper,
   getSubscriptionType,
   is1PApiCustomer,
   isClaudeAISubscriber,
-} from '../../utils/auth.js'
-import { getPlatform, getWslVersion } from '../../utils/platform.js'
+} from 'src/utils/auth.js'
+import { getPlatform, getWslVersion } from 'src/utils/platform.js'
 
 import { getCACertificates } from '../caCerts.js'
 import { registerCleanup } from '../cleanupRegistry.js'
@@ -335,9 +335,9 @@ function getBigQueryExportingReader() {
 
 function isBigQueryMetricsEnabled() {
   // BigQuery metrics are enabled for:
-  // 1. API customers (excluding forge-app.vercel.app subscribers and Bedrock/Vertex)
-  // 2. Claude for Enterprise (C4E) users
-  // 3. Claude for Teams users
+  // 1. API customers (excluding Forge.ai subscribers and Bedrock/Vertex)
+  // 2. Forge for Enterprise (C4E) users
+  // 3. Forge for Teams users
   const subscriptionType = getSubscriptionType()
   const isC4EOrTeamUser =
     isClaudeAISubscriber() &&
@@ -401,7 +401,7 @@ async function initializeBetaTracing(
 
   // Initialize event logger
   const eventLogger = logs.getLogger(
-    'com.ForgeTeam.claude_code.events',
+    'com.anthropic.claude_code.events',
     MACRO.VERSION,
   )
   setEventLogger(eventLogger)
@@ -471,7 +471,7 @@ export async function initializeTelemetry() {
   // Create base resource with service attributes
   const platform = getPlatform()
   const baseAttributes: Record<string, string> = {
-    [ATTR_SERVICE_NAME]: 'claude-code',
+    [ATTR_SERVICE_NAME]: 'Forge-code',
     [ATTR_SERVICE_VERSION]: MACRO.VERSION,
   }
 
@@ -560,7 +560,7 @@ export async function initializeTelemetry() {
     }
     registerCleanup(shutdownTelemetry)
 
-    return meterProvider.getMeter('com.ForgeTeam.claude_code', MACRO.VERSION)
+    return meterProvider.getMeter('com.anthropic.claude_code', MACRO.VERSION)
   }
 
   const meterProvider = new MeterProvider({
@@ -600,7 +600,7 @@ export async function initializeTelemetry() {
 
       // Initialize event logger
       const eventLogger = logs.getLogger(
-        'com.ForgeTeam.claude_code.events',
+        'com.anthropic.claude_code.events',
         MACRO.VERSION,
       )
       setEventLogger(eventLogger)
@@ -697,7 +697,7 @@ Current timeout: ${timeoutMs}ms
   // Always register shutdown (internal metrics are always enabled)
   registerCleanup(shutdownTelemetry)
 
-  return meterProvider.getMeter('com.ForgeTeam.claude_code', MACRO.VERSION)
+  return meterProvider.getMeter('com.anthropic.claude_code', MACRO.VERSION)
 }
 
 /**
@@ -823,7 +823,3 @@ function getOTLPExporterConfig() {
   config.httpAgentOptions = agentFactory
   return config
 }
-
-
-
-

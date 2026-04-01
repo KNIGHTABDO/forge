@@ -73,7 +73,3 @@ export function useStalledAnimation(
 
   return { isStalled, stalledIntensity: effectiveIntensity }
 }
-
-
-
-

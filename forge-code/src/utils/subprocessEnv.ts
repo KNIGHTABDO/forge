@@ -3,9 +3,9 @@ import { isEnvTruthy } from './envUtils.js'
 /**
  * Env vars to strip from subprocess environments when running inside GitHub
  * Actions. This prevents prompt-injection attacks from exfiltrating secrets
- * via shell expansion (e.g., ${FORGE_TEAM_API_KEY}) in Bash tool commands.
+ * via shell expansion (e.g., ${ANTHROPIC_API_KEY}) in Bash tool commands.
  *
- * The parent claude process keeps these vars (needed for API calls, lazy
+ * The parent Forge process keeps these vars (needed for API calls, lazy
  * credential reads). Only child processes (bash, shell snapshot, MCP stdio, LSP, hooks) are scrubbed.
  *
  * GITHUB_TOKEN / GH_TOKEN are intentionally NOT scrubbed — wrapper scripts
@@ -13,12 +13,12 @@ import { isEnvTruthy } from './envUtils.js'
  * expires when the workflow ends.
  */
 const GHA_SUBPROCESS_SCRUB = [
-  // ForgeTeam auth — claude re-reads these per-request, subprocesses don't need them
-  'FORGE_TEAM_API_KEY',
+  // Anthropic auth — Forge re-reads these per-request, subprocesses don't need them
+  'ANTHROPIC_API_KEY',
   'FORGE_CODE_OAUTH_TOKEN',
-  'FORGE_TEAM_AUTH_TOKEN',
-  'FORGE_TEAM_FOUNDRY_API_KEY',
-  'FORGE_TEAM_CUSTOM_HEADERS',
+  'ANTHROPIC_AUTH_TOKEN',
+  'ANTHROPIC_FOUNDRY_API_KEY',
+  'ANTHROPIC_CUSTOM_HEADERS',
 
   // OTLP exporter headers — documented to carry Authorization=Bearer tokens
   // for monitoring backends; read in-process by OTEL SDK, subprocesses never need them
@@ -35,7 +35,7 @@ const GHA_SUBPROCESS_SCRUB = [
   'AZURE_CLIENT_SECRET',
   'AZURE_CLIENT_CERTIFICATE_PATH',
 
-  // GitHub Actions OIDC — consumed by the action's JS before claude spawns;
+  // GitHub Actions OIDC — consumed by the action's JS before Forge spawns;
   // leaking these allows minting an App installation token → repo takeover
   'ACTIONS_ID_TOKEN_REQUEST_TOKEN',
   'ACTIONS_ID_TOKEN_REQUEST_URL',
@@ -44,8 +44,8 @@ const GHA_SUBPROCESS_SCRUB = [
   'ACTIONS_RUNTIME_TOKEN',
   'ACTIONS_RUNTIME_URL',
 
-  // claude-code-action-specific duplicates — action JS consumes these during
-  // prepare, before spawning claude. ALL_INPUTS contains FORGE_TEAM_API_KEY as JSON.
+  // Forge-code-action-specific duplicates — action JS consumes these during
+  // prepare, before spawning Forge. ALL_INPUTS contains anthropic_api_key as JSON.
   'ALL_INPUTS',
   'OVERRIDE_GITHUB_TOKEN',
   'DEFAULT_WORKFLOW_TOKEN',
@@ -57,7 +57,7 @@ const GHA_SUBPROCESS_SCRUB = [
  * spawning subprocesses (Bash tool, shell snapshot, MCP stdio servers, LSP
  * servers, shell hooks).
  *
- * Gated on FORGE_CODE_SUBPROCESS_ENV_SCRUB. claude-code-action sets this
+ * Gated on FORGE_CODE_SUBPROCESS_ENV_SCRUB. Forge-code-action sets this
  * automatically when `allowed_non_write_users` is configured — the flag that
  * exposes a workflow to untrusted content (prompt injection surface).
  */
@@ -92,12 +92,8 @@ export function subprocessEnv(): NodeJS.ProcessEnv {
   for (const k of GHA_SUBPROCESS_SCRUB) {
     delete env[k]
     // GitHub Actions auto-creates INPUT_<NAME> for `with:` inputs, duplicating
-    // secrets like INPUT_FORGE_TEAM_API_KEY. No-op for vars that aren't action inputs.
+    // secrets like INPUT_ANTHROPIC_API_KEY. No-op for vars that aren't action inputs.
     delete env[`INPUT_${k}`]
   }
   return env
 }
-
-
-
-

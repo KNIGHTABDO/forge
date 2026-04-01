@@ -49,7 +49,3 @@ export function renderPlaceholder({
     showPlaceholder,
   }
 }
-
-
-
-

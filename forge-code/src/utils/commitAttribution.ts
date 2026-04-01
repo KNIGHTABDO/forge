@@ -22,56 +22,56 @@ import { sequential } from './sequential.js'
  * Includes both SSH and HTTPS URL formats.
  *
  * NOTE: This is intentionally a repo allowlist, not an org-wide check.
- * The ForgeTeams and ForgeTeam-experimental orgs contain PUBLIC repos
- * (e.g. ForgeTeams/claude-code, ForgeTeam-experimental/sandbox-runtime).
+ * The anthropics and anthropic-experimental orgs contain PUBLIC repos
+ * (e.g. anthropics/Forge-code, anthropic-experimental/sandbox-runtime).
  * Undercover mode must stay ON in those to prevent codename leaks.
  * Only add repos here that are confirmed PRIVATE.
  */
 const INTERNAL_MODEL_REPOS = [
-  'github.com:ForgeTeams/claude-cli-internal',
-  'github.com/ForgeTeams/claude-cli-internal',
-  'github.com:ForgeTeams/ForgeTeam',
-  'github.com/ForgeTeams/ForgeTeam',
-  'github.com:ForgeTeams/apps',
-  'github.com/ForgeTeams/apps',
-  'github.com:ForgeTeams/casino',
-  'github.com/ForgeTeams/casino',
-  'github.com:ForgeTeams/dbt',
-  'github.com/ForgeTeams/dbt',
-  'github.com:ForgeTeams/dotfiles',
-  'github.com/ForgeTeams/dotfiles',
-  'github.com:ForgeTeams/terraform-config',
-  'github.com/ForgeTeams/terraform-config',
-  'github.com:ForgeTeams/hex-export',
-  'github.com/ForgeTeams/hex-export',
-  'github.com:ForgeTeams/feedback-v2',
-  'github.com/ForgeTeams/feedback-v2',
-  'github.com:ForgeTeams/labs',
-  'github.com/ForgeTeams/labs',
-  'github.com:ForgeTeams/argo-rollouts',
-  'github.com/ForgeTeams/argo-rollouts',
-  'github.com:ForgeTeams/starling-configs',
-  'github.com/ForgeTeams/starling-configs',
-  'github.com:ForgeTeams/ts-tools',
-  'github.com/ForgeTeams/ts-tools',
-  'github.com:ForgeTeams/ts-capsules',
-  'github.com/ForgeTeams/ts-capsules',
-  'github.com:ForgeTeams/feldspar-testing',
-  'github.com/ForgeTeams/feldspar-testing',
-  'github.com:ForgeTeams/trellis',
-  'github.com/ForgeTeams/trellis',
-  'github.com:ForgeTeams/claude-for-hiring',
-  'github.com/ForgeTeams/claude-for-hiring',
-  'github.com:ForgeTeams/forge-web',
-  'github.com/ForgeTeams/forge-web',
-  'github.com:ForgeTeams/infra-manifests',
-  'github.com/ForgeTeams/infra-manifests',
-  'github.com:ForgeTeams/mycro_manifests',
-  'github.com/ForgeTeams/mycro_manifests',
-  'github.com:ForgeTeams/mycro_configs',
-  'github.com/ForgeTeams/mycro_configs',
-  'github.com:ForgeTeams/mobile-apps',
-  'github.com/ForgeTeams/mobile-apps',
+  'github.com:anthropics/Forge-cli-internal',
+  'github.com/anthropics/Forge-cli-internal',
+  'github.com:anthropics/anthropic',
+  'github.com/anthropics/anthropic',
+  'github.com:anthropics/apps',
+  'github.com/anthropics/apps',
+  'github.com:anthropics/casino',
+  'github.com/anthropics/casino',
+  'github.com:anthropics/dbt',
+  'github.com/anthropics/dbt',
+  'github.com:anthropics/dotfiles',
+  'github.com/anthropics/dotfiles',
+  'github.com:anthropics/terraform-config',
+  'github.com/anthropics/terraform-config',
+  'github.com:anthropics/hex-export',
+  'github.com/anthropics/hex-export',
+  'github.com:anthropics/feedback-v2',
+  'github.com/anthropics/feedback-v2',
+  'github.com:anthropics/labs',
+  'github.com/anthropics/labs',
+  'github.com:anthropics/argo-rollouts',
+  'github.com/anthropics/argo-rollouts',
+  'github.com:anthropics/starling-configs',
+  'github.com/anthropics/starling-configs',
+  'github.com:anthropics/ts-tools',
+  'github.com/anthropics/ts-tools',
+  'github.com:anthropics/ts-capsules',
+  'github.com/anthropics/ts-capsules',
+  'github.com:anthropics/feldspar-testing',
+  'github.com/anthropics/feldspar-testing',
+  'github.com:anthropics/trellis',
+  'github.com/anthropics/trellis',
+  'github.com:anthropics/Forge-for-hiring',
+  'github.com/anthropics/Forge-for-hiring',
+  'github.com:anthropics/forge-web',
+  'github.com/anthropics/forge-web',
+  'github.com:anthropics/infra-manifests',
+  'github.com/anthropics/infra-manifests',
+  'github.com:anthropics/mycro_manifests',
+  'github.com/anthropics/mycro_manifests',
+  'github.com:anthropics/mycro_configs',
+  'github.com/anthropics/mycro_configs',
+  'github.com:anthropics/mobile-apps',
+  'github.com/anthropics/mobile-apps',
 ]
 
 /**
@@ -153,22 +153,22 @@ export function sanitizeSurfaceKey(surfaceKey: string): string {
  */
 export function sanitizeModelName(shortName: string): string {
   // Map internal variants to public equivalents based on model family
-  if (shortName.includes('opus-4-6')) return 'claude-opus-4-6'
-  if (shortName.includes('opus-4-5')) return 'claude-opus-4-5'
-  if (shortName.includes('opus-4-1')) return 'claude-opus-4-1'
-  if (shortName.includes('opus-4')) return 'claude-opus-4'
-  if (shortName.includes('sonnet-4-6')) return 'claude-sonnet-4-6'
-  if (shortName.includes('sonnet-4-5')) return 'claude-sonnet-4-5'
-  if (shortName.includes('sonnet-4')) return 'claude-sonnet-4'
-  if (shortName.includes('sonnet-3-7')) return 'claude-sonnet-3-7'
-  if (shortName.includes('haiku-4-5')) return 'claude-haiku-4-5'
-  if (shortName.includes('haiku-3-5')) return 'claude-haiku-3-5'
+  if (shortName.includes('opus-4-6')) return 'Forge-opus-4-6'
+  if (shortName.includes('opus-4-5')) return 'Forge-opus-4-5'
+  if (shortName.includes('opus-4-1')) return 'Forge-opus-4-1'
+  if (shortName.includes('opus-4')) return 'Forge-opus-4'
+  if (shortName.includes('sonnet-4-6')) return 'Forge-sonnet-4-6'
+  if (shortName.includes('sonnet-4-5')) return 'Forge-sonnet-4-5'
+  if (shortName.includes('sonnet-4')) return 'Forge-sonnet-4'
+  if (shortName.includes('sonnet-3-7')) return 'Forge-sonnet-3-7'
+  if (shortName.includes('haiku-4-5')) return 'Forge-haiku-4-5'
+  if (shortName.includes('haiku-3-5')) return 'Forge-haiku-3-5'
   // Unknown models get a generic name
-  return 'claude'
+  return 'Forge'
 }
 
 /**
- * Attribution state for tracking Claude's contributions to files.
+ * Attribution state for tracking Forge's contributions to files.
  */
 export type AttributionState = {
   // File states keyed by relative path (from cwd)
@@ -192,7 +192,7 @@ export type AttributionState = {
 }
 
 /**
- * Summary of Claude's contribution for a commit.
+ * Summary of Forge's contribution for a commit.
  */
 export type AttributionSummary = {
   claudePercent: number
@@ -232,7 +232,7 @@ export function getClientSurface(): string {
 
 /**
  * Build a surface key that includes the model name.
- * Format: "surface/model" (e.g., "cli/claude-sonnet")
+ * Format: "surface/model" (e.g., "cli/Forge-sonnet")
  */
 export function buildSurfaceKey(surface: string, model: ModelName): string {
   return `${surface}/${getCanonicalName(model)}`
@@ -332,7 +332,7 @@ function computeFileModificationState(
   const normalizedPath = normalizeFilePath(filePath)
 
   try {
-    // Calculate Claude's character contribution
+    // Calculate Forge's character contribution
     let claudeContribution: number
 
     if (oldContent === '' || newContent === '') {
@@ -396,7 +396,7 @@ export async function getFileMtime(filePath: string): Promise<number> {
 }
 
 /**
- * Track a file modification by Claude.
+ * Track a file modification by Forge.
  * Called after Edit/Write tool completes.
  */
 export function trackFileModification(
@@ -433,8 +433,8 @@ export function trackFileModification(
 }
 
 /**
- * Track a file creation by Claude (e.g., via bash command).
- * Used when Claude creates a new file through a non-tracked mechanism.
+ * Track a file creation by Forge (e.g., via bash command).
+ * Used when Forge creates a new file through a non-tracked mechanism.
  */
 export function trackFileCreation(
   state: AttributionState,
@@ -447,8 +447,8 @@ export function trackFileCreation(
 }
 
 /**
- * Track a file deletion by Claude (e.g., via bash rm command).
- * Used when Claude deletes a file through a non-tracked mechanism.
+ * Track a file deletion by Forge (e.g., via bash rm command).
+ * Used when Forge deletes a file through a non-tracked mechanism.
  */
 export function trackFileDeletion(
   state: AttributionState,
@@ -637,7 +637,7 @@ export async function calculateCommitAttribution(
       if (deleted) {
         // File was deleted
         if (fileState) {
-          // Claude deleted this file (tracked deletion)
+          // Forge deleted this file (tracked deletion)
           claudeChars = fileState.claudeContribution
           humanChars = 0
         } else {
@@ -662,7 +662,7 @@ export async function calculateCommitAttribution(
             const diffSize = await getGitDiffSize(file)
             humanChars = diffSize > 0 ? diffSize : stats.size
           } else {
-            // New file not created by Claude
+            // New file not created by Forge
             humanChars = stats.size
           }
         } catch {
@@ -959,7 +959,3 @@ export function incrementPromptCount(
   saveSnapshot(snapshot)
   return newAttribution
 }
-
-
-
-

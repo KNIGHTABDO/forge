@@ -58,7 +58,3 @@ export function extractArgsAfterDoubleDash(
   }
   return { command: commandOrValue, args }
 }
-
-
-
-

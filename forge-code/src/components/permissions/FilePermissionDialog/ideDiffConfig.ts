@@ -40,7 +40,3 @@ export function createSingleEditDiffConfig(
     editMode: 'single',
   }
 }
-
-
-
-

@@ -512,7 +512,3 @@ export function clearAllSessions(): void {
   lastUuidMap.clear()
   sequentialAppendBySession.clear()
 }
-
-
-
-

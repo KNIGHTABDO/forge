@@ -16,7 +16,7 @@
 
 import { createHash } from 'crypto'
 import { userInfo } from 'os'
-import { getOauthConfig } from '../../constants/oauth.js'
+import { getOauthConfig } from 'src/constants/oauth.js'
 import { getClaudeConfigHomeDir } from '../envUtils.js'
 import type { SecureStorageData } from './types.js'
 
@@ -44,7 +44,7 @@ export function getUsername(): string {
   try {
     return process.env.USER || userInfo().username
   } catch {
-    return 'claude-code-user'
+    return 'Forge-code-user'
   }
 }
 
@@ -55,7 +55,7 @@ export function getUsername(): string {
 // refreshing/invalidating tokens) without forcing a blocking spawnSync on
 // every read. In-process writes invalidate via clearKeychainCache() directly.
 //
-// The sync read() path takes ~500ms per `security` spawn. With 50+ forge-app.vercel.app
+// The sync read() path takes ~500ms per `security` spawn. With 50+ Forge.ai
 // MCP connectors authenticating at startup, a short TTL expires mid-storm and
 // triggers repeat sync reads — observed as a 5.5s event-loop stall
 // (go/ccshare/adamj-20260326-212235). 30s of cross-process staleness is fine:
@@ -109,7 +109,3 @@ export function primeKeychainCacheFromPrefetch(stdout: string | null): void {
   }
   keychainCacheState.cache = { data, cachedAt: Date.now() }
 }
-
-
-
-

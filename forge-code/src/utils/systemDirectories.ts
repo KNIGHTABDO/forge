@@ -72,7 +72,3 @@ export function getSystemDirectories(
     }
   }
 }
-
-
-
-

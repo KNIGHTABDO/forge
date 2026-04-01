@@ -321,10 +321,3 @@ export function addToTotalSessionCost(
   }
   return totalCost
 }
-
-
-
-
-
-
-

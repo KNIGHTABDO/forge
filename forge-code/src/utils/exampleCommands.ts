@@ -23,7 +23,7 @@ const NON_CORE_PATTERNS = [
   // configuration / metadata
   /(?:^|\/)\.?(?:eslintrc|prettierrc|babelrc|editorconfig|gitignore|gitattributes|dockerignore|npmrc)/,
   /(?:^|\/)(?:tsconfig|jsconfig|biome|vitest\.config|jest\.config|webpack\.config|vite\.config|rollup\.config)\.[a-z]+$/,
-  /(?:^|\/)\.(?:github|vscode|idea|claude)\//,
+  /(?:^|\/)\.(?:github|vscode|idea|Forge)\//,
   // docs / changelogs (not "how does X work" material)
   /(?:^|\/)(?:CHANGELOG|LICENSE|CONTRIBUTING|CODEOWNERS|README)(?:\.[a-z]+)?$/i,
 ]
@@ -182,7 +182,3 @@ export const refreshExampleCommands = memoize(async (): Promise<void> => {
     })
   }
 })
-
-
-
-

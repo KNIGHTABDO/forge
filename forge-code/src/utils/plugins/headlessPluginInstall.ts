@@ -67,7 +67,7 @@ export async function installPluginsForHeadless(): Promise<boolean> {
     await getFsImplementation().mkdir(getZipCachePluginsDir())
   }
 
-  // Declared now includes an implicit claude-plugins-official entry when any
+  // Declared now includes an implicit Forge-plugins-official entry when any
   // enabled plugin references it (see getDeclaredMarketplaces). This routes
   // the official marketplace through the same reconciler path as any other —
   // which composes correctly with FORGE_CODE_PLUGIN_SEED_DIR: seed registers
@@ -172,7 +172,3 @@ export async function installPluginsForHeadless(): Promise<boolean> {
     logEvent('tengu_headless_plugin_install', metrics)
   }
 }
-
-
-
-

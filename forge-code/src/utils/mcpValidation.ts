@@ -206,7 +206,3 @@ export async function truncateMcpContentIfNeeded(
 
   return await truncateMcpContent(content)
 }
-
-
-
-

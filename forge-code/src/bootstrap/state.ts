@@ -7,26 +7,26 @@ import type { BasicTracerProvider } from '@opentelemetry/sdk-trace-base'
 import { realpathSync } from 'fs'
 import sumBy from 'lodash-es/sumBy.js'
 import { cwd } from 'process'
-import type { HookEvent, ModelUsage } from '../entrypoints/agentSdkTypes.js'
-import type { AgentColorName } from '../tools/AgentTool/agentColorManager.js'
-import type { HookCallbackMatcher } from '../types/hooks.js'
+import type { HookEvent, ModelUsage } from 'src/entrypoints/agentSdkTypes.js'
+import type { AgentColorName } from 'src/tools/AgentTool/agentColorManager.js'
+import type { HookCallbackMatcher } from 'src/types/hooks.js'
 // Indirection for browser-sdk build (package.json "browser" field swaps
 // crypto.ts for crypto.browser.ts). Pure leaf re-export of node:crypto —
 // zero circular-dep risk. Path-alias import bypasses bootstrap-isolation
 // (rule only checks ./ and / prefixes); explicit disable documents intent.
 // eslint-disable-next-line custom-rules/bootstrap-isolation
-import { randomUUID } from '../utils/crypto.js'
-import type { ModelSetting } from '../utils/model/model.js'
-import type { ModelStrings } from '../utils/model/modelStrings.js'
-import type { SettingSource } from '../utils/settings/constants.js'
-import { resetSettingsCache } from '../utils/settings/settingsCache.js'
-import type { PluginHookMatcher } from '../utils/settings/types.js'
-import { createSignal } from '../utils/signal.js'
+import { randomUUID } from 'src/utils/crypto.js'
+import type { ModelSetting } from 'src/utils/model/model.js'
+import type { ModelStrings } from 'src/utils/model/modelStrings.js'
+import type { SettingSource } from 'src/utils/settings/constants.js'
+import { resetSettingsCache } from 'src/utils/settings/settingsCache.js'
+import type { PluginHookMatcher } from 'src/utils/settings/types.js'
+import { createSignal } from 'src/utils/signal.js'
 
 // Union type for registered hooks - can be SDK callbacks or native plugin hooks
 type RegisteredHookMatcher = HookCallbackMatcher | PluginHookMatcher
 
-import type { SessionId } from '../types/ids.js'
+import type { SessionId } from 'src/types/ids.js'
 
 // DO NOT ADD MORE STATE HERE - BE JUDICIOUS WITH GLOBAL STATE
 
@@ -113,12 +113,12 @@ type State = {
   // Last API request for bug reports
   lastAPIRequest: Omit<BetaMessageStreamParams, 'messages'> | null
   // Messages from the last API request (ant-only; reference, not clone).
-  // Captures the exact post-compaction, CLAUDE.md-injected message set sent
+  // Captures the exact post-compaction, Forge.md-injected message set sent
   // to the API so /share's serialized_conversation.json reflects reality.
   lastAPIRequestMessages: BetaMessageStreamParams['messages'] | null
   // Last auto-mode classifier request(s) for /share transcript
   lastClassifierRequests: unknown[] | null
-  // CLAUDE.md content cached by context.ts for the auto-mode classifier.
+  // Forge.md content cached by context.ts for the auto-mode classifier.
   // Breaks the yoloClassifier → claudemd → filesystem → permissions cycle.
   cachedClaudeMdContent: string | null
   // In-memory error log for recent errors
@@ -131,13 +131,13 @@ type State = {
   useCoworkPlugins: boolean
   // Session-only bypass permissions mode flag (not persisted)
   sessionBypassPermissionsMode: boolean
-  // Session-only flag gating the .claude/scheduled_tasks.json watcher
+  // Session-only flag gating the .Forge/scheduled_tasks.json watcher
   // (useScheduledTasks). Set by cronScheduler.start() when the JSON has
   // entries, or by CronCreateTool. Not persisted.
   scheduledTasksEnabled: boolean
   // Session-only cron tasks created via CronCreate with durable: false.
   // Fire on schedule like file-backed tasks but are never written to
-  // .claude/scheduled_tasks.json — they die with the process. Typed via
+  // .Forge/scheduled_tasks.json — they die with the process. Typed via
   // SessionCronTask below (not importing from cronTasks.ts keeps
   // bootstrap a leaf of the import DAG).
   sessionCronTasks: SessionCronTask[]
@@ -203,7 +203,7 @@ type State = {
   systemPromptSectionCache: Map<string, string | null>
   // Last date emitted to the model (for detecting midnight date changes)
   lastEmittedDate: string | null
-  // Additional directories from --add-dir flag (for CLAUDE.md loading)
+  // Additional directories from --add-dir flag (for Forge.md loading)
   additionalDirectoriesForClaudeMd: string[]
   // Channel server allowlist from --channels flag (servers whose channel
   // notifications should register this session). Parsed once in main.tsx —
@@ -399,7 +399,7 @@ function getInitialState(): State {
     systemPromptSectionCache: new Map(),
     // Last date emitted to the model
     lastEmittedDate: null,
-    // Additional directories from --add-dir flag (for CLAUDE.md loading)
+    // Additional directories from --add-dir flag (for Forge.md loading)
     additionalDirectoriesForClaudeMd: [],
     // Channel server allowlist from --channels flag
     allowedChannels: [],
@@ -1233,7 +1233,7 @@ export function setAllowedSettingSources(sources: SettingSource[]): void {
 
 export function preferThirdPartyAuthentication(): boolean {
   // IDE extension should behave as 1P for authentication reasons.
-  return getIsNonInteractiveSession() && STATE.clientType !== 'claude-vscode'
+  return getIsNonInteractiveSession() && STATE.clientType !== 'Forge-vscode'
 }
 
 export function setInlinePlugins(plugins: Array<string>): void {
@@ -1570,7 +1570,7 @@ export function addSlowOperation(operation: string, durationMs: number): void {
   if (process.env.USER_TYPE !== 'ant') return
   // Skip tracking for editor sessions (user editing a prompt file in $EDITOR)
   // These are intentionally slow since the user is drafting text
-  if (operation.includes('exec') && operation.includes('claude-prompt-')) {
+  if (operation.includes('exec') && operation.includes('Forge-prompt-')) {
     return
   }
   const now = Date.now()
@@ -1755,11 +1755,4 @@ export function getPromptId(): string | null {
 export function setPromptId(id: string | null): void {
   STATE.promptId = id
 }
-
-
-
-
-
-
-
 

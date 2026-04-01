@@ -34,7 +34,3 @@ export function emitTaskProgress(params: {
     workflow_progress: params.workflowProgress,
   })
 }
-
-
-
-

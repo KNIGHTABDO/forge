@@ -37,7 +37,3 @@ export function _resetForTesting(): void {
   autoModeFlagCli = false
   autoModeCircuitBroken = false
 }
-
-
-
-

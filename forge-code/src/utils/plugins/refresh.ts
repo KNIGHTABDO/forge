@@ -3,7 +3,7 @@
  *
  * Three-layer model (see reconciler.ts for Layer-2):
  * - Layer 1: intent (settings)
- * - Layer 2: materialization (~/.claude/plugins/) — reconcileMarketplaces()
+ * - Layer 2: materialization (~/.Forge/plugins/) — reconcileMarketplaces()
  * - Layer 3: active components (AppState) — this file
  *
  * Called from:
@@ -213,7 +213,3 @@ function errorKey(e: PluginError): string {
     ? `generic-error:${e.source}:${e.error}`
     : `${e.type}:${e.source}`
 }
-
-
-
-

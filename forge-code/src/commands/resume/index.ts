@@ -10,7 +10,3 @@ const resume: Command = {
 }
 
 export default resume
-
-
-
-

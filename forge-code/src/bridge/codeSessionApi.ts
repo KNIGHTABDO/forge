@@ -13,13 +13,13 @@ import { errorMessage } from '../utils/errors.js'
 import { jsonStringify } from '../utils/slowOperations.js'
 import { extractErrorDetail } from './debugUtils.js'
 
-const ForgeTeam_VERSION = '2023-06-01'
+const ANTHROPIC_VERSION = '2023-06-01'
 
 function oauthHeaders(accessToken: string): Record<string, string> {
   return {
     Authorization: `Bearer ${accessToken}`,
     'Content-Type': 'application/json',
-    'ForgeTeam-version': ForgeTeam_VERSION,
+    'anthropic-version': ANTHROPIC_VERSION,
   }
 }
 
@@ -166,10 +166,3 @@ export async function fetchRemoteCredentials(
     worker_epoch: epoch,
   }
 }
-
-
-
-
-
-
-

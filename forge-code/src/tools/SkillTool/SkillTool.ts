@@ -2,37 +2,37 @@ import { feature } from 'bun:bundle'
 import type { ToolResultBlockParam } from '@anthropic-ai/sdk/resources/index.mjs'
 import uniqBy from 'lodash-es/uniqBy.js'
 import { dirname } from 'path'
-import { getProjectRoot } from '../../bootstrap/state.js'
+import { getProjectRoot } from 'src/bootstrap/state.js'
 import {
   builtInCommandNames,
   findCommand,
   getCommands,
   type PromptCommand,
-} from '../../commands.js'
+} from 'src/commands.js'
 import type {
   Tool,
   ToolCallProgress,
   ToolResult,
   ToolUseContext,
   ValidationResult,
-} from '../../Tool.js'
-import { buildTool, type ToolDef } from '../../Tool.js'
-import type { Command } from '../../types/command.js'
+} from 'src/Tool.js'
+import { buildTool, type ToolDef } from 'src/Tool.js'
+import type { Command } from 'src/types/command.js'
 import type {
   AssistantMessage,
   AttachmentMessage,
   Message,
   SystemMessage,
   UserMessage,
-} from '../../types/message.js'
-import { logForDebugging } from '../../utils/debug.js'
-import type { PermissionDecision } from '../../utils/permissions/PermissionResult.js'
-import { getRuleByContentsForTool } from '../../utils/permissions/permissions.js'
+} from 'src/types/message.js'
+import { logForDebugging } from 'src/utils/debug.js'
+import type { PermissionDecision } from 'src/utils/permissions/PermissionResult.js'
+import { getRuleByContentsForTool } from 'src/utils/permissions/permissions.js'
 import {
   isOfficialMarketplaceName,
   parsePluginIdentifier,
-} from '../../utils/plugins/pluginIdentifier.js'
-import { buildPluginCommandTelemetryFields } from '../../utils/telemetry/pluginTelemetry.js'
+} from 'src/utils/plugins/pluginIdentifier.js'
+import { buildPluginCommandTelemetryFields } from 'src/utils/telemetry/pluginTelemetry.js'
 import { z } from 'zod/v4'
 import {
   addInvokedSkill,
@@ -161,7 +161,7 @@ async function executeForkedSkill(
       'fork' as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
     invocation_trigger: (queryDepth > 0
       ? 'nested-skill'
-      : 'claude-proactive') as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
+      : 'Forge-proactive') as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
     query_depth: queryDepth,
     ...(parentAgentId && {
       parent_agent_id:
@@ -344,7 +344,7 @@ export const SkillTool: Tool<InputSchema, Output, Progress> = buildTool({
   prompt: async () => getPrompt(getProjectRoot()),
 
   // Only one skill/command should run at a time, since the tool expands the
-  // command into a full prompt that Claude must process before continuing.
+  // command into a full prompt that Forge must process before continuing.
   // Skill-coach needs the skill name to avoid false-positive "you could have
   // used skill X" suggestions when X was actually invoked. Backseat classifies
   // downstream tool calls from the expanded prompt, not this wrapper, so the
@@ -684,7 +684,7 @@ export const SkillTool: Tool<InputSchema, Output, Progress> = buildTool({
         'inline' as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
       invocation_trigger: (queryDepth > 0
         ? 'nested-skill'
-        : 'claude-proactive') as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
+        : 'Forge-proactive') as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
       query_depth: queryDepth,
       ...(parentAgentId && {
         parent_agent_id:
@@ -1038,7 +1038,7 @@ async function executeRemoteSkill(
       'remote' as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
     invocation_trigger: (queryDepth > 0
       ? 'nested-skill'
-      : 'claude-proactive') as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
+      : 'Forge-proactive') as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
     query_depth: queryDepth,
     ...(parentAgentId && {
       parent_agent_id:
@@ -1106,7 +1106,3 @@ async function executeRemoteSkill(
     ),
   }
 }
-
-
-
-

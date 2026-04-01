@@ -1,4 +1,4 @@
-import type { Tool, ToolUseContext } from '../../Tool.js'
+import type { Tool, ToolUseContext } from 'src/Tool.js'
 import z from 'zod/v4'
 import { logForDebugging } from '../debug.js'
 import { lazySchema } from '../lazySchema.js'
@@ -46,7 +46,7 @@ const PermissionAllowResultSchema = lazySchema(() =>
     behavior: z.literal('allow'),
     updatedInput: z.record(z.string(), z.unknown()),
     // SDK hosts may send malformed entries; fall back to undefined rather
-    // than rejecting the entire allow decision (ForgeTeams/claude-code#29440)
+    // than rejecting the entire allow decision (anthropics/Forge-code#29440)
     updatedPermissions: z
       .array(permissionUpdateSchema())
       .optional()
@@ -125,7 +125,3 @@ export function permissionPromptToolResultToPermissionDecision(
     decisionReason,
   }
 }
-
-
-
-

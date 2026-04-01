@@ -156,7 +156,3 @@ export const ReadMcpResourceTool = buildTool({
     }
   },
 } satisfies ToolDef<InputSchema, Output>)
-
-
-
-

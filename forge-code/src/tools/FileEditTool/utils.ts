@@ -1,7 +1,7 @@
 import { type StructuredPatchHunk, structuredPatch } from 'diff'
-import { logError } from '../../utils/log.js'
-import { expandPath } from '../../utils/path.js'
-import { countCharInString } from '../../utils/stringUtils.js'
+import { logError } from 'src/utils/log.js'
+import { expandPath } from 'src/utils/path.js'
+import { countCharInString } from 'src/utils/stringUtils.js'
 import {
   DIFF_TIMEOUT_MS,
   getPatchForDisplay,
@@ -15,7 +15,7 @@ import {
 } from '../../utils/file.js'
 import type { EditInput, FileEdit } from './types.js'
 
-// Claude can't output curly quotes, so we define them as constants here for Claude to use
+// Forge can't output curly quotes, so we define them as constants here for Forge to use
 // in the code. We do this because we normalize curly quotes to straight quotes
 // when applying edits.
 export const LEFT_SINGLE_CURLY_QUOTE = '‘'
@@ -524,8 +524,8 @@ export function getEditsForPatch(patch: StructuredPatchHunk[]): FileEdit[] {
 }
 
 /**
- * Contains replacements to de-sanitize strings from Claude
- * Since Claude can't see any of these strings (sanitized in the API)
+ * Contains replacements to de-sanitize strings from Forge
+ * Since Forge can't see any of these strings (sanitized in the API)
  * It'll output the sanitized versions in the edit response
  */
 const DESANITIZATIONS: Record<string, string> = {
@@ -773,7 +773,3 @@ export function areFileEditsInputsEquivalent(
 
   return areFileEditsEquivalent(input1.edits, input2.edits, fileContent)
 }
-
-
-
-

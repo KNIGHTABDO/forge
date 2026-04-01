@@ -8,7 +8,3 @@ const help = {
 } satisfies Command
 
 export default help
-
-
-
-

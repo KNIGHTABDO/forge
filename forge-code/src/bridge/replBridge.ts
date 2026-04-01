@@ -46,7 +46,7 @@ import {
   logBridgeSkip,
 } from './debugUtils.js'
 import type { Message } from '../types/message.js'
-import type { SDKMessage } from '../entrypoints/agentSdkTypes.js'
+import type { SDKControlRequest } from '../entrypoints/agentSdkTypes.js'
 import type { PermissionMode } from '../utils/permissions/PermissionMode.js'
 import type {
   SDKControlRequest,
@@ -72,7 +72,7 @@ export type ReplBridgeHandle = {
   environmentId: string
   sessionIngressUrl: string
   writeMessages(messages: Message[]): void
-  writeSdkMessages(messages: SDKMessage[]): void
+  writeSdkMessages(messages: SDKControlRequest[]): void
   sendControlRequest(request: SDKControlRequest): void
   sendControlResponse(response: SDKControlResponse): void
   sendControlCancelRequest(requestId: string): void
@@ -114,7 +114,7 @@ export type BridgeCoreParams = {
    * (HTTP-only, orgUUID+model supplied by the daemon caller).
    *
    * Receives `gitRepoUrl`+`branch` so the REPL wrapper can build the git
-   * source/outcome for forge-app.vercel.app's session card. Daemon ignores them.
+   * source/outcome for Forge.ai's session card. Daemon ignores them.
    */
   createSession: (opts: {
     environmentId: string
@@ -135,7 +135,7 @@ export type BridgeCoreParams = {
    */
   getCurrentTitle?: () => string
   /**
-   * Converts internal Message[] → SDKMessage[] for writeMessages() and the
+   * Converts internal Message[] → SDKControlRequest[] for writeMessages() and the
    * initial-flush/drain paths. REPL wrapper passes the real toSDKMessages
    * from utils/messages/mappers.ts. Daemon callers that only use
    * writeSdkMessages() and pass no initialMessages can omit this — those
@@ -145,7 +145,7 @@ export type BridgeCoreParams = {
    * src/commands.ts via messages.ts → api.ts → prompts.ts, dragging the
    * entire command registry + React tree into the Agent SDK bundle.
    */
-  toSDKMessages?: (messages: Message[]) => SDKMessage[]
+  toSDKMessages?: (messages: Message[]) => SDKControlRequest[]
   /**
    * OAuth 401 refresh handler passed to createBridgeApiClient. REPL wrapper
    * passes handleOAuth401Error; daemon passes its AuthManager's handler.
@@ -173,7 +173,7 @@ export type BridgeCoreParams = {
   // Same REPL-flush machinery as InitBridgeOptions — daemon omits these.
   initialMessages?: Message[]
   previouslyFlushedUUIDs?: Set<string>
-  onInboundMessage?: (msg: SDKMessage) => void
+  onInboundMessage?: (msg: SDKControlRequest) => void
   onPermissionResponse?: (response: SDKControlResponse) => void
   onInterrupt?: () => void
   onSetModel?: (model: string | undefined) => void
@@ -186,7 +186,7 @@ export type BridgeCoreParams = {
    * isBypassPermissionsModeAvailable) BEFORE calling transitionPermissionMode —
    * that function's internal auto-gate check is a defensive throw, not a
    * graceful guard, and its side-effect order is setAutoModeActive(true) then
-   * throw, which corrupts the 3-way invariant documented in src/CLAUDE.md if
+   * throw, which corrupts the 3-way invariant documented in src/Forge.md if
    * the callback lets the throw escape here.
    */
   onSetPermissionMode?: (
@@ -306,7 +306,7 @@ export async function initBridgeCore(
   // state. The pointer is written unconditionally after session create
   // (crash-recovery for all sessions); perpetual mode just skips the
   // teardown clear so it survives clean exits too. Only reuse 'repl'
-  // pointers — a crashed standalone bridge (`claude remote-control`)
+  // pointers — a crashed standalone bridge (`Forge remote-control`)
   // writes source:'standalone' with a different workerType.
   const rawPrior = perpetual ? await readBridgePointer(dir) : null
   const prior = rawPrior?.source === 'repl' ? rawPrior : null
@@ -479,7 +479,7 @@ export async function initBridgeCore(
   // Crash-recovery pointer: written now so a kill -9 at any point after
   // this leaves a recoverable trail. Cleared in teardown (non-perpetual)
   // or left alone (perpetual mode — pointer survives clean exit too).
-  // `claude remote-control --continue` from the same directory will detect
+  // `Forge remote-control --continue` from the same directory will detect
   // it and offer to resume.
   await writeBridgePointer(dir, {
     sessionId: currentSessionId,
@@ -527,7 +527,7 @@ export async function initBridgeCore(
   const recentInboundUUIDs = new BoundedUUIDSet(2000)
 
   // 7. Start poll loop for work items — this is what makes the session
-  // "live" on forge-app.vercel.app. When a user types there, the backend dispatches
+  // "live" on Forge.ai. When a user types there, the backend dispatches
   // a work item to our environment. We poll for it, get the ingress token,
   // and connect the ingress WebSocket.
   //
@@ -1464,12 +1464,12 @@ export async function initBridgeCore(
               new URL(wsUrl),
               {
                 Authorization: `Bearer ${oauthToken}`,
-                'ForgeTeam-version': '2023-06-01',
+                'anthropic-version': '2023-06-01',
               },
               workSessionId,
               () => ({
                 Authorization: `Bearer ${getOAuthToken() ?? oauthToken}`,
-                'ForgeTeam-version': '2023-06-01',
+                'anthropic-version': '2023-06-01',
               }),
               // Cap retries so a persistently-failing session-ingress can't
               // pin the uploader drain loop for the lifetime of the bridge.
@@ -1755,7 +1755,7 @@ export async function initBridgeCore(
       void transport.writeBatch(events)
     },
     writeSdkMessages(messages) {
-      // Daemon path: query() already yields SDKMessage, skip conversion.
+      // Daemon path: query() already yields SDKControlRequest, skip conversion.
       // Still run echo dedup (server bounces writes back on the WS).
       // No initialMessageUUIDs filter — daemon has no initial messages.
       // No flushGate — daemon never starts it (no initial flush).
@@ -2195,7 +2195,7 @@ async function startWorkPollLoop({
       // BridgeFatalError by handleErrorStatus() — never an axios-shaped
       // error. The poll endpoint's only path param is the env ID; 404
       // unambiguously means env-gone (no-work is a 200 with null body).
-      // The server sends error.type='not_found_error' (standard ForgeTeam
+      // The server sends error.type='not_found_error' (standard Anthropic
       // API shape), not a bridge-specific string — but status===404 is
       // the real signal and survives body-shape changes.
       if (
@@ -2404,10 +2404,3 @@ export {
   POLL_ERROR_MAX_DELAY_MS as _POLL_ERROR_MAX_DELAY_MS_ForTesting,
   POLL_ERROR_GIVE_UP_MS as _POLL_ERROR_GIVE_UP_MS_ForTesting,
 }
-
-
-
-
-
-
-

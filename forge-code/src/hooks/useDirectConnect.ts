@@ -64,20 +64,20 @@ export function useDirectConnect({
     logForDebugging(`[useDirectConnect] Connecting to ${config.wsUrl}`)
 
     const manager = new DirectConnectSessionManager(config, {
-      onMessage: sdkMessage => {
-        if (isSessionEndMessage(sdkMessage)) {
+      onMessage: SDKControlRequest => {
+        if (isSessionEndMessage(SDKControlRequest)) {
           setIsLoading(false)
         }
 
         // Skip duplicate init messages (server sends one per turn)
-        if (sdkMessage.type === 'system' && sdkMessage.subtype === 'init') {
+        if (SDKControlRequest.type === 'system' && SDKControlRequest.subtype === 'init') {
           if (hasReceivedInitRef.current) {
             return
           }
           hasReceivedInitRef.current = true
         }
 
-        const converted = convertSDKMessage(sdkMessage, {
+        const converted = convertSDKMessage(SDKControlRequest, {
           convertToolResults: true,
         })
         if (converted.type === 'message') {
@@ -227,7 +227,3 @@ export function useDirectConnect({
     [isRemoteMode, sendMessage, cancelRequest, disconnect],
   )
 }
-
-
-
-

@@ -37,7 +37,7 @@ export function getAddDirEnabledPlugins(): NonNullable<
   const result: NonNullable<SettingsJson['enabledPlugins']> = {}
   for (const dir of getAdditionalDirectoriesForClaudeMd()) {
     for (const file of SETTINGS_FILES) {
-      const { settings } = parseSettingsFile(join(dir, '.claude', file))
+      const { settings } = parseSettingsFile(join(dir, '.Forge', file))
       if (!settings?.enabledPlugins) {
         continue
       }
@@ -60,7 +60,7 @@ export function getAddDirExtraMarketplaces(): Record<
   const result: Record<string, ExtraKnownMarketplace> = {}
   for (const dir of getAdditionalDirectoriesForClaudeMd()) {
     for (const file of SETTINGS_FILES) {
-      const { settings } = parseSettingsFile(join(dir, '.claude', file))
+      const { settings } = parseSettingsFile(join(dir, '.Forge', file))
       if (!settings?.extraKnownMarketplaces) {
         continue
       }
@@ -69,7 +69,3 @@ export function getAddDirExtraMarketplaces(): Record<
   }
   return result
 }
-
-
-
-

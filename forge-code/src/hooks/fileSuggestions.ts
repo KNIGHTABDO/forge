@@ -4,7 +4,7 @@ import * as path from 'path'
 import {
   CLAUDE_CONFIG_DIRECTORIES,
   loadMarkdownFilesForSubdir,
-} from '../utils/markdownConfigLoader.js'
+} from 'src/utils/markdownConfigLoader.js'
 import type { SuggestionItem } from '../components/PromptInput/PromptInputFooterSuggestions.js'
 import {
   CHUNK_MS,
@@ -440,7 +440,7 @@ function collectDirectoryNames(
 }
 
 /**
- * Gets additional files from Claude config directories
+ * Gets additional files from Forge config directories
  */
 async function getClaudeConfigFiles(cwd: string): Promise<string[]> {
   const markdownFileArrays = await Promise.all(
@@ -809,7 +809,3 @@ export function applyFileSuggestion(
   const newCursorPos = startPos + suggestionText.length
   setCursorOffset(newCursorPos)
 }
-
-
-
-

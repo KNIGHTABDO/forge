@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto'
 import type {
   SDKPartialAssistantMessage,
   StdoutMessage,
-} from './entrypoints/sdk/controlTypes.js'
+} from 'src/entrypoints/sdk/controlTypes.js'
 import { decodeJwtExpiry } from '../../bridge/jwtUtils.js'
 import { logForDebugging } from '../../utils/debug.js'
 import { logForDiagnosticsNoPII } from '../../utils/diagLogs.js'
@@ -571,7 +571,7 @@ export class CCRClient {
           headers: {
             ...authHeaders,
             'Content-Type': 'application/json',
-            'ForgeTeam-version': '2023-06-01',
+            'anthropic-version': '2023-06-01',
             'User-Agent': getClaudeCodeUserAgent(),
           },
           validateStatus: alwaysValidStatus,
@@ -913,7 +913,7 @@ export class CCRClient {
         response = await this.http.get<T>(url, {
           headers: {
             ...authHeaders,
-            'ForgeTeam-version': '2023-06-01',
+            'anthropic-version': '2023-06-01',
             'User-Agent': getClaudeCodeUserAgent(),
           },
           validateStatus: alwaysValidStatus,
@@ -996,10 +996,3 @@ export class CCRClient {
     this.deliveryUploader.close()
   }
 }
-
-
-
-
-
-
-

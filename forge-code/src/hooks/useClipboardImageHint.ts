@@ -75,7 +75,3 @@ export function useClipboardImageHint(
     }
   }, [isFocused, enabled, addNotification])
 }
-
-
-
-

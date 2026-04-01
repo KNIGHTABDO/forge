@@ -1,6 +1,6 @@
 import { feature } from 'bun:bundle'
 import { useEffect, useRef } from 'react'
-import { useNotifications } from '../../context/notifications.js'
+import { useNotifications } from 'src/context/notifications.js'
 import { getIsRemoteMode } from '../../bootstrap/state.js'
 import { useAppState } from '../../state/AppState.js'
 import type { PermissionMode } from '../../utils/permissions/PermissionMode.js'
@@ -54,7 +54,3 @@ export function useAutoModeUnavailableNotification(): void {
     })
   }, [mode, isAutoModeAvailable, addNotification])
 }
-
-
-
-

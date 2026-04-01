@@ -182,7 +182,7 @@ function getSimpleSandboxSection(): string {
   const allowUnsandboxedCommands =
     SandboxManager.areUnsandboxedCommandsAllowed()
 
-  // Replace the per-UID temp dir literal (e.g. /private/tmp/claude-1001/) with
+  // Replace the per-UID temp dir literal (e.g. /private/tmp/Forge-1001/) with
   // "$TMPDIR" so the prompt is identical across users — avoids busting the
   // cross-user global prompt cache. The sandbox already sets $TMPDIR at runtime.
   const claudeTempDir = getClaudeTempDir()
@@ -273,7 +273,7 @@ function getSimpleSandboxSection(): string {
 }
 
 export function getSimplePrompt(): string {
-  // Ant-native builds alias find/grep to embedded bfs/ugrep in Claude's shell,
+  // Ant-native builds alias find/grep to embedded bfs/ugrep in Forge's shell,
   // so we don't steer away from them (and Glob/Grep tools are removed).
   const embedded = hasEmbeddedSearchTools()
 
@@ -367,7 +367,3 @@ export function getSimplePrompt(): string {
     ...(getCommitAndPRInstructions() ? ['', getCommitAndPRInstructions()] : []),
   ].join('\n')
 }
-
-
-
-

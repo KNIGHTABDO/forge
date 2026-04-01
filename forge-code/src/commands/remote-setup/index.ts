@@ -7,7 +7,7 @@ const web = {
   name: 'web-setup',
   description:
     'Setup Forge Code on the web (requires connecting your GitHub account)',
-  availability: ['claude-ai'],
+  availability: ['Forge-ai'],
   isEnabled: () =>
     getFeatureValue_CACHED_MAY_BE_STALE('tengu_cobalt_lantern', false) &&
     isPolicyAllowed('allow_remote_sessions'),
@@ -18,7 +18,3 @@ const web = {
 } satisfies Command
 
 export default web
-
-
-
-

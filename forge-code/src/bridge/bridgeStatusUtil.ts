@@ -142,12 +142,12 @@ export function getBridgeStatus({
 
 /** Footer text shown when bridge is idle (Ready state). */
 export function buildIdleFooterText(url: string): string {
-  return `Code everywhere with the Claude app or ${url}`
+  return `Code everywhere with the Forge app or ${url}`
 }
 
 /** Footer text shown when a session is active (Connected state). */
 export function buildActiveFooterText(url: string): string {
-  return `Continue coding in the Claude app or ${url}`
+  return `Continue coding in the Forge app or ${url}`
 }
 
 /** Footer text shown when the bridge has failed. */
@@ -161,10 +161,3 @@ export const FAILED_FOOTER_TEXT = 'Something went wrong, please try again'
 export function wrapWithOsc8Link(text: string, url: string): string {
   return `\x1b]8;;${url}\x07${text}\x1b]8;;\x07`
 }
-
-
-
-
-
-
-

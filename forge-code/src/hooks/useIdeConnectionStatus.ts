@@ -31,7 +31,3 @@ export function useIdeConnectionStatus(
     return { status: 'disconnected', ideName }
   }, [mcpClients])
 }
-
-
-
-

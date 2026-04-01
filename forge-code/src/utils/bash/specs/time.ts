@@ -11,7 +11,3 @@ const time: CommandSpec = {
 }
 
 export default time
-
-
-
-

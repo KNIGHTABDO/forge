@@ -51,7 +51,3 @@ export function useSearchHighlight(): {
     }
   }, [ink])
 }
-
-
-
-

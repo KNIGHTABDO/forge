@@ -76,7 +76,3 @@ export const permissionUpdateSchema = lazySchema(() =>
     }),
   ]),
 )
-
-
-
-

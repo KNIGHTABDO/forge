@@ -7,7 +7,7 @@ import { join } from 'path'
 export const getClaudeConfigHomeDir = memoize(
   (): string => {
     return (
-      process.env.CLAUDE_CONFIG_DIR ?? join(homedir(), '.claude')
+      process.env.CLAUDE_CONFIG_DIR ?? join(homedir(), '.Forge')
     ).normalize('NFC')
   },
   () => process.env.CLAUDE_CONFIG_DIR,
@@ -49,7 +49,7 @@ export function isEnvDefinedFalsy(
 /**
  * --bare / FORGE_CODE_SIMPLE — skip hooks, LSP, plugin sync, skill dir-walk,
  * attribution, background prefetches, and ALL keychain/credential reads.
- * Auth is strictly FORGE_TEAM_API_KEY env or apiKeyHelper from --settings.
+ * Auth is strictly ANTHROPIC_API_KEY env or apiKeyHelper from --settings.
  * Explicit CLI flags (--plugin-dir, --add-dir, --mcp-config) still honored.
  * ~30 gates across the codebase.
  *
@@ -91,7 +91,7 @@ export function parseEnvVars(
 
 /**
  * Get the AWS region with fallback to default
- * Matches the ForgeTeam Bedrock SDK's region behavior
+ * Matches the Anthropic Bedrock SDK's region behavior
  */
 export function getAWSRegion(): string {
   return process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'us-east-1'
@@ -150,18 +150,18 @@ export function isInProtectedNamespace(): boolean {
 /**
  * Model prefix → env var for Vertex region overrides.
  * Order matters: more specific prefixes must come before less specific ones
- * (e.g., 'claude-opus-4-1' before 'claude-opus-4').
+ * (e.g., 'Forge-opus-4-1' before 'Forge-opus-4').
  */
 const VERTEX_REGION_OVERRIDES: ReadonlyArray<[string, string]> = [
-  ['claude-haiku-4-5', 'VERTEX_REGION_CLAUDE_HAIKU_4_5'],
-  ['claude-3-5-haiku', 'VERTEX_REGION_CLAUDE_3_5_HAIKU'],
-  ['claude-3-5-sonnet', 'VERTEX_REGION_CLAUDE_3_5_SONNET'],
-  ['claude-3-7-sonnet', 'VERTEX_REGION_CLAUDE_3_7_SONNET'],
-  ['claude-opus-4-1', 'VERTEX_REGION_CLAUDE_4_1_OPUS'],
-  ['claude-opus-4', 'VERTEX_REGION_CLAUDE_4_0_OPUS'],
-  ['claude-sonnet-4-6', 'VERTEX_REGION_CLAUDE_4_6_SONNET'],
-  ['claude-sonnet-4-5', 'VERTEX_REGION_CLAUDE_4_5_SONNET'],
-  ['claude-sonnet-4', 'VERTEX_REGION_CLAUDE_4_0_SONNET'],
+  ['Forge-haiku-4-5', 'VERTEX_REGION_CLAUDE_HAIKU_4_5'],
+  ['Forge-3-5-haiku', 'VERTEX_REGION_CLAUDE_3_5_HAIKU'],
+  ['Forge-3-5-sonnet', 'VERTEX_REGION_CLAUDE_3_5_SONNET'],
+  ['Forge-3-7-sonnet', 'VERTEX_REGION_CLAUDE_3_7_SONNET'],
+  ['Forge-opus-4-1', 'VERTEX_REGION_CLAUDE_4_1_OPUS'],
+  ['Forge-opus-4', 'VERTEX_REGION_CLAUDE_4_0_OPUS'],
+  ['Forge-sonnet-4-6', 'VERTEX_REGION_CLAUDE_4_6_SONNET'],
+  ['Forge-sonnet-4-5', 'VERTEX_REGION_CLAUDE_4_5_SONNET'],
+  ['Forge-sonnet-4', 'VERTEX_REGION_CLAUDE_4_0_SONNET'],
 ]
 
 /**
@@ -181,7 +181,3 @@ export function getVertexRegionForModel(
   }
   return getDefaultVertexRegion()
 }
-
-
-
-

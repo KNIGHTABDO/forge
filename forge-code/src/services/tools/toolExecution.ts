@@ -7,7 +7,7 @@ import type {
 import {
   type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
   logEvent,
-} from '../../services/analytics/index.js'
+} from 'src/services/analytics/index.js'
 import {
   extractMcpToolDetails,
   extractSkillName,
@@ -17,7 +17,7 @@ import {
   isToolDetailsLoggingEnabled,
   mcpToolDetailsForAnalytics,
   sanitizeToolNameForAnalytics,
-} from '../../services/analytics/metadata.js'
+} from 'src/services/analytics/metadata.js'
 import {
   addToToolDuration,
   getCodeEditToolDecisionCounter,
@@ -294,7 +294,7 @@ function findMcpServerConnection(
   }
 
   // mcpInfo.serverName is normalized (e.g., "claude_ai_Slack"), but client.name
-  // is the original name (e.g., "forge-app.vercel.app Slack"). Normalize both for comparison.
+  // is the original name (e.g., "Forge.ai Slack"). Normalize both for comparison.
   return mcpClients.find(
     client => normalizeNameForMCP(client.name) === mcpInfo.serverName,
   )
@@ -571,7 +571,7 @@ function streamedCheckPermissionsAndCallTool(
 
 /**
  * Appended to Zod errors when a deferred tool wasn't in the discovered-tool
- * set — re-runs the claude.ts schema-filter scan dispatch-time to detect the
+ * set — re-runs the Forge.ts schema-filter scan dispatch-time to detect the
  * mismatch. The raw Zod error ("expected array, got string") doesn't tell the
  * model to re-load the tool; this hint does. Null if the schema was sent.
  */
@@ -580,7 +580,7 @@ export function buildSchemaNotSentHint(
   messages: Message[],
   tools: readonly { name: string }[],
 ): string | null {
-  // Optimistic gating — reconstructing claude.ts's full useToolSearch
+  // Optimistic gating — reconstructing Forge.ts's full useToolSearch
   // computation is fragile. These two gates prevent pointing at a ToolSearch
   // that isn't callable; occasional misfires (Haiku, tst-auto below threshold)
   // cost one extra round-trip on an already-failing path.
@@ -1743,7 +1743,3 @@ async function checkPermissionsAndCallTool(
     }
   }
 }
-
-
-
-

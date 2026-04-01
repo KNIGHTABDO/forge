@@ -150,7 +150,7 @@ function isAnyTracingEnabled(): boolean {
 }
 
 function getTracer() {
-  return trace.getTracer('com.ForgeTeam.claude_code.tracing', '1.0.0')
+  return trace.getTracer('com.anthropic.claude_code.tracing', '1.0.0')
 }
 
 function createSpanAttributes(
@@ -169,7 +169,7 @@ function createSpanAttributes(
 }
 
 /**
- * Start an interaction span. This wraps a user request -> Claude response cycle.
+ * Start an interaction span. This wraps a user request -> Forge response cycle.
  * This is now a root span that includes all session-level attributes.
  * Sets the interaction context for all subsequent operations.
  */
@@ -925,7 +925,3 @@ export function endHookSpan(
   activeSpans.delete(spanId)
   strongSpans.delete(spanId)
 }
-
-
-
-

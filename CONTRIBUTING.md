@@ -1,74 +1,31 @@
-# Contributing to FORGE
+# Contributing to Forge
 
-First off, thank you for considering contributing to FORGE! It's people like you who make FORGE such a great tool.
+We'd love your help in making **Forge (Web & CLI)** even more powerful! 
 
-## How Can I Contribute?
+## 🛠️ Local Environment Setup
 
-### Reporting Bugs
-- Use a clear and descriptive title.
-- Describe the exact steps which reproduce the problem.
-- Explain which behavior you expected to see and what you saw instead.
-- Include screenshots if possible.
+### ⚙️ Forge Web App
+The primary engine orchestrating Sandbox environments and Deep Research.
 
-### Suggesting Enhancements
-- Explain why this enhancement would be useful to most FORGE users.
-- Provide step-by-step descriptions of the suggested enhancement.
+1. Navigate to the root directory.
+2. Install standard Node dependencies: `npm install` (or `bun install`)
+3. Initialize the config: Create `.env.local` with your standard API keys, such as `GEMINI_API_KEY`.
+4. Spin up the server: `npm run dev`
 
-### Pull Requests
-1. Fork the repo and create your branch from `main`.
-2. Install dependencies with `npm install` from the root.
-3. Ensure the project builds with `npm run build`.
-4. To work on the CLI specifically, navigate to `cd forge-code`.
-5. If you've added code that should be tested, add tests.
-6. Ensure the test suite passes.
-7. Issue that pull request!
+### 💻 Forge Code CLI
+The advanced React-Ink terminal agent natively bridged into your shell.
 
-## Style Guide
-- Use TypeScript for all new code.
-- Follow the existing project structure.
-- Write clean, documented code.
-- Ensure all new UI components are responsive and follow the FORGE design system.
+1. Navigate to `forge-code/`.
+2. Install ultra-fast Bun dependencies: `bun install`
+3. Build the CLI via our TypeScript AST stripper toolchain: `bun run build`
+4. Run locally to test file modifications: `bun run dev:gemini` (or `dev:github`)
 
-## Agent Intelligence (gemini-api-dev Skill)
+## 🤝 Pull Request Process
+1. Fork the repo and create your topic branch from `main`.
+2. Ensure you've run the local tests and checked `/scripts/system-check.ts` for the CLI functionality.
+3. Validate that the UI (React Ink) correctly complies and renders without terminal artifacting.
+4. Submit your PR!
 
-Forge's Architect and Builder agents embed the official **gemini-api-dev** skill as a shared constant (`GEMINI_API_DEV_SKILL`) in `lib/system-prompt.ts`. This constant is appended to both `PLANNER_SYSTEM_PROMPT` and `BUILD_SYSTEM_PROMPT`.
+*(Note: Major architecture changes around the Web Orchestrator or Deep Research agent should be discussed in a GitHub tracking issue prior to implementing large AST changes.)*
 
-If you need to update the skill's content (e.g. to reflect new Gemini models or SDK changes), edit `GEMINI_API_DEV_SKILL` in `lib/system-prompt.ts`. The change will automatically propagate to both agents. Do not duplicate the skill content inline inside individual prompts.
-
-## Smart Title Generation
-
-Forge's Architect agent automatically proposes 3 short, catchy, brandable project names at the end of every architectural blueprint, inside a `## 🏷️ Smart Title Suggestions` section.
-
-- **Prompt instructions**: see `PLANNER_SYSTEM_PROMPT` rule 6 in `lib/system-prompt.ts`.
-- **Parsing**: `parseTitleSuggestions(content)` in `app/build/page.tsx` extracts the three titles from the plan markdown.
-- **UI**: `.title-suggestion-card` and related classes are defined in `app/globals.css`.
-- **Fast mode**: best title auto-applied (no user action needed).
-- **Plan mode**: title picker card shown in the chat panel before the user approves the plan.
-
-When updating title generation behavior, keep the parseable list format (`- ⭐ **TitleName** — rationale`) intact so the regex stays accurate.
-
-## Deep Research Agent (Beta)
-
-Forge includes a dedicated Deep Research capability on a standalone route (`/research/[id]`).
-
-- Keep this workflow fully separate from `/build` and the one-sentence app creation flow.
-- Use research-specific APIs under `app/api/research/` and session-backed persistence.
-- Maintain Beta labeling and progressive disclosure in UI copy.
-
-### Research UI Animation Patterns
-
-- Prefer existing Forge timing/easing tokens and subtle motion (pulse, fade-in, progress fill, smooth state transitions).
-- Keep animations informative (phase changes, status transitions, loading indicators), not decorative noise.
-- Respect responsive behavior and avoid introducing visual styles outside the current premium minimal design system.
-
-## 💻 Forge Code CLI
-
-Forge Code is a high-performance agentic CLI built with Bun, React (Ink), and Commander.js.
-
-- **Source**: located in `forge-claude/`.
-- **Development**: use `bun run dev` inside the CLI directory for hot-reloading.
-- **Native Modules**: use the local TypeScript ports in `src/native-ts/` for maximum portability.
-- **Strict Typing**: ensure all tools and commands are strictly typed.
-
-## License
-By contributing to FORGE, you agree that your contributions will be licensed under the project's MIT License.
+Thanks for contributing to the absolute edge of scalable SaaS Engineering!

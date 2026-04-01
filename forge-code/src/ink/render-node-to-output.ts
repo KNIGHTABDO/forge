@@ -1,6 +1,6 @@
 import indentString from 'indent-string'
 import { applyTextStyles } from './colorize.js'
-import type { DOMElement } from './dom.js'
+import type { DOMElement, DOMNode } from './dom.js'
 import getMaxWidth from './get-max-width.js'
 import type { Rectangle } from './layout/geometry.js'
 import { LayoutDisplay, LayoutEdge, type LayoutNode } from './layout/node.js'
@@ -383,6 +383,23 @@ function applyPaddingToText(
   return text
 }
 
+function isElementNode(node: DOMNode | undefined): node is DOMElement {
+  return Boolean(node && node.nodeName !== '#text')
+}
+
+function isRenderableElementNode(node: unknown): node is DOMElement {
+  if (!node || typeof node !== 'object') return false
+  const candidate = node as Partial<DOMElement> & { nodeName?: string }
+  return (
+    candidate.nodeName !== undefined &&
+    candidate.nodeName !== '#text' &&
+    candidate.style !== undefined &&
+    typeof candidate.style === 'object' &&
+    typeof candidate.dirty === 'boolean' &&
+    Array.isArray(candidate.childNodes)
+  )
+}
+
 // After nodes are laid out, render each to output object, which later gets rendered to terminal
 function renderNodeToOutput(
   node: DOMElement,
@@ -701,9 +718,9 @@ function renderNodeToOutput(
             yogaNode.getComputedPadding(LayoutEdge.Bottom),
         )
 
-        const content = node.childNodes.find(c => (c as DOMElement).yogaNode) as
-          | DOMElement
-          | undefined
+        const content = node.childNodes.find(
+          (c): c is DOMElement => isElementNode(c) && c.yogaNode !== undefined,
+        )
         const contentYoga = content?.yogaNode
         // scrollHeight is the intrinsic height of the content wrapper.
         // Do NOT add getComputedTop() — that's the wrapper's offset
@@ -937,9 +954,14 @@ function renderNodeToOutput(
             // Snapshot dirty children before the first pass — the first
             // pass clears dirty flags, and edge-spanning children would be
             // missed by the second pass without this snapshot.
-            const dirtyChildren = content.dirty
-              ? new Set(content.childNodes.filter(c => (c as DOMElement).dirty))
-              : null
+            const dirtyChildren =
+              content.dirty
+                ? new Set(
+                    content.childNodes.filter(
+                      (c): c is DOMElement => isElementNode(c) && c.dirty,
+                    ),
+                  )
+                : null
             renderScrolledChildren(
               content,
               output,
@@ -989,7 +1011,8 @@ function renderNodeToOutput(
               // preserving the ghost-box fix.
               let cumHeightShift = 0
               for (const childNode of content.childNodes) {
-                const childElem = childNode as DOMElement
+                if (!isElementNode(childNode)) continue
+                const childElem = childNode
                 const isDirty = dirtyChildren.has(childNode)
                 if (!isDirty && cumHeightShift === 0) {
                   if (nodeCache.has(childElem)) continue
@@ -1266,7 +1289,10 @@ function renderChildren(
   let seenDirtyChild = false
   let seenDirtyClipped = false
   for (const childNode of node.childNodes) {
-    const childElem = childNode as DOMElement
+    if (!isRenderableElementNode(childNode)) {
+      continue
+    }
+    const childElem = childNode
     // Capture dirty before rendering — renderNodeToOutput clears the flag
     const wasDirty = childElem.dirty
     const isAbsolute = childElem.style.position === 'absolute'
@@ -1313,14 +1339,18 @@ function siblingSharesY(node: DOMElement, yogaNode: LayoutNode): boolean {
   const siblings = parent.childNodes
   const idx = siblings.indexOf(node)
   for (let i = idx + 1; i < siblings.length; i++) {
-    const sib = (siblings[i] as DOMElement).yogaNode
+    const sibling = siblings[i]
+    if (!isElementNode(sibling)) continue
+    const sib = sibling.yogaNode
     if (!sib) continue
     return sib.getComputedTop() === myTop
   }
   // No next sibling with a yoga node — check previous. A run of h=0 boxes
   // at the tail would all share y with each other.
   for (let i = idx - 1; i >= 0; i--) {
-    const sib = (siblings[i] as DOMElement).yogaNode
+    const sibling = siblings[i]
+    if (!isElementNode(sibling)) continue
+    const sib = sibling.yogaNode
     if (!sib) continue
     return sib.getComputedTop() === myTop
   }
@@ -1399,7 +1429,10 @@ function renderScrolledChildren(
   // culling since their yogaTop shifted).
   let cumHeightShift = 0
   for (const childNode of node.childNodes) {
-    const childElem = childNode as DOMElement
+    if (!isRenderableElementNode(childNode)) {
+      continue
+    }
+    const childElem = childNode
     const cy = childElem.yogaNode
     if (cy) {
       const cached = nodeCache.get(childElem)
@@ -1460,7 +1493,3 @@ function dropSubtreeCache(node: DOMElement): void {
 export { buildCharToSegmentMap, applyStylesToWrappedText }
 
 export default renderNodeToOutput
-
-
-
-

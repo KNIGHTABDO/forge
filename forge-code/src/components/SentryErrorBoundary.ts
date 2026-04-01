@@ -26,7 +26,3 @@ export class SentryErrorBoundary extends React.Component<Props, State> {
     return this.props.children
   }
 }
-
-
-
-

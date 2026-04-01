@@ -3,12 +3,12 @@ import memoize from 'lodash-es/memoize.js'
 import {
   type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
   logEvent,
-} from '../../services/analytics/index.js'
-import { getOauthAccountInfo, isConsumerSubscriber } from '../../utils/auth.js'
-import { logForDebugging } from '../../utils/debug.js'
-import { gracefulShutdown } from '../../utils/gracefulShutdown.js'
-import { isEssentialTrafficOnly } from '../../utils/privacyLevel.js'
-import { writeToStderr } from '../../utils/process.js'
+} from 'src/services/analytics/index.js'
+import { getOauthAccountInfo, isConsumerSubscriber } from 'src/utils/auth.js'
+import { logForDebugging } from 'src/utils/debug.js'
+import { gracefulShutdown } from 'src/utils/gracefulShutdown.js'
+import { isEssentialTrafficOnly } from 'src/utils/privacyLevel.js'
+import { writeToStderr } from 'src/utils/process.js'
 import { getOauthConfig } from '../../constants/oauth.js'
 import { getGlobalConfig, saveGlobalConfig } from '../../utils/config.js'
 import {
@@ -305,7 +305,7 @@ export function calculateShouldShowGrove(
     return true
   }
   // Check if we need to remind the user to accept the terms and choose
-  // whether to help improve Claude.
+  // whether to help improve Forge.
   const reminderFrequency = config.notice_reminder_frequency
   if (reminderFrequency !== null && settings.grove_notice_viewed_at) {
     const daysSinceViewed = Math.floor(
@@ -343,19 +343,15 @@ export async function checkGroveForNonInteractive(): Promise<void> {
     if (config === null || config.notice_is_grace_period) {
       // Grace period is still active - show informational message and continue
       writeToStderr(
-        '\nAn update to our Consumer Terms and Privacy Policy will take effect on October 8, 2025. Run `claude` to review the updated terms.\n\n',
+        '\nAn update to our Consumer Terms and Privacy Policy will take effect on October 8, 2025. Run `Forge` to review the updated terms.\n\n',
       )
       await markGroveNoticeViewed()
     } else {
       // Grace period has ended - show error message and exit
       writeToStderr(
-        '\n[ACTION REQUIRED] An update to our Consumer Terms and Privacy Policy has taken effect on October 8, 2025. You must run `claude` to review the updated terms.\n\n',
+        '\n[ACTION REQUIRED] An update to our Consumer Terms and Privacy Policy has taken effect on October 8, 2025. You must run `Forge` to review the updated terms.\n\n',
       )
       await gracefulShutdown(1)
     }
   }
 }
-
-
-
-

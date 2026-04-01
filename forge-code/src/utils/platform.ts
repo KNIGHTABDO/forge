@@ -148,7 +148,3 @@ export async function detectVcs(dir?: string): Promise<string[]> {
 
   return [...detected]
 }
-
-
-
-

@@ -23,7 +23,3 @@ export function registerCleanup(cleanupFn: () => Promise<void>): () => void {
 export async function runCleanupFunctions(): Promise<void> {
   await Promise.all(Array.from(cleanupFunctions).map(fn => fn()))
 }
-
-
-
-

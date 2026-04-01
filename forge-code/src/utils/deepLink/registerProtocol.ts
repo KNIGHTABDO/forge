@@ -1,9 +1,9 @@
 /**
  * Protocol Handler Registration
  *
- * Registers the `claude-cli://` custom URI scheme with the OS,
- * so that clicking a `claude-cli://` link in a browser (or any app) will
- * invoke `claude --handle-uri <url>`.
+ * Registers the `Forge-cli://` custom URI scheme with the OS,
+ * so that clicking a `Forge-cli://` link in a browser (or any app) will
+ * invoke `Forge --handle-uri <url>`.
  *
  * Platform details:
  *   macOS  — Creates a minimal .app trampoline in ~/Applications with
@@ -16,11 +16,11 @@
 import { promises as fs } from 'fs'
 import * as os from 'os'
 import * as path from 'path'
-import { getFeatureValue_CACHED_MAY_BE_STALE } from '../../services/analytics/growthbook.js'
+import { getFeatureValue_CACHED_MAY_BE_STALE } from 'src/services/analytics/growthbook.js'
 import {
   type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
   logEvent,
-} from '../../services/analytics/index.js'
+} from 'src/services/analytics/index.js'
 import { logForDebugging } from '../debug.js'
 import { getClaudeConfigHomeDir } from '../envUtils.js'
 import { getErrnoCode } from '../errors.js'
@@ -30,9 +30,9 @@ import { which } from '../which.js'
 import { getUserBinDir, getXDGDataHome } from '../xdg.js'
 import { DEEP_LINK_PROTOCOL } from './parseDeepLink.js'
 
-export const MACOS_BUNDLE_ID = 'com.ForgeTeam.claude-code-url-handler'
+export const MACOS_BUNDLE_ID = 'com.anthropic.Forge-code-url-handler'
 const APP_NAME = 'Forge Code URL Handler'
-const DESKTOP_FILE_NAME = 'claude-code-url-handler.desktop'
+const DESKTOP_FILE_NAME = 'Forge-code-url-handler.desktop'
 const MACOS_APP_NAME = 'Forge Code URL Handler.app'
 
 // Shared between register* (writes these paths/values) and
@@ -43,7 +43,7 @@ const MACOS_SYMLINK_PATH = path.join(
   MACOS_APP_DIR,
   'Contents',
   'MacOS',
-  'claude',
+  'Forge',
 )
 function linuxDesktopPath(): string {
   return path.join(getXDGDataHome(), 'applications', DESKTOP_FILE_NAME)
@@ -64,9 +64,9 @@ function windowsCommandValue(claudePath: string): string {
  * Register the protocol handler on macOS.
  *
  * Creates a .app bundle where the CFBundleExecutable is a symlink to the
- * already-installed (and signed) `claude` binary. When macOS opens a
- * `claude-cli://` URL, it launches `claude` through this app bundle.
- * Claude then uses the url-handler NAPI module to read the URL from the
+ * already-installed (and signed) `Forge` binary. When macOS opens a
+ * `Forge-cli://` URL, it launches `Forge` through this app bundle.
+ * Forge then uses the url-handler NAPI module to read the URL from the
  * Apple Event and handles it normally.
  *
  * This approach avoids shipping a separate executable (which would need
@@ -87,7 +87,7 @@ async function registerMacos(claudePath: string): Promise<void> {
 
   await fs.mkdir(path.dirname(MACOS_SYMLINK_PATH), { recursive: true })
 
-  // Info.plist — registers the URL scheme with claude as the executable
+  // Info.plist — registers the URL scheme with Forge as the executable
   const infoPlist = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -97,7 +97,7 @@ async function registerMacos(claudePath: string): Promise<void> {
   <key>CFBundleName</key>
   <string>${APP_NAME}</string>
   <key>CFBundleExecutable</key>
-  <string>claude</string>
+  <string>Forge</string>
   <key>CFBundleVersion</key>
   <string>1.0</string>
   <key>CFBundlePackageType</key>
@@ -120,7 +120,7 @@ async function registerMacos(claudePath: string): Promise<void> {
 
   await fs.writeFile(path.join(contentsDir, 'Info.plist'), infoPlist)
 
-  // Symlink to the already-signed claude binary — avoids a new executable
+  // Symlink to the already-signed Forge binary — avoids a new executable
   // that would need signing and endpoint-security allowlisting.
   // Written LAST among the throwing fs calls: isProtocolHandlerCurrent reads
   // this symlink, so it acts as the commit marker. If Info.plist write
@@ -209,8 +209,8 @@ async function registerWindows(claudePath: string): Promise<void> {
 }
 
 /**
- * Register the `claude-cli://` protocol handler with the operating system.
- * After registration, clicking a `claude-cli://` link will invoke claude.
+ * Register the `Forge-cli://` protocol handler with the operating system.
+ * After registration, clicking a `Forge-cli://` link will invoke Forge.
  */
 export async function registerProtocolHandler(
   claudePath?: string,
@@ -233,13 +233,13 @@ export async function registerProtocolHandler(
 }
 
 /**
- * Resolve the claude binary path for protocol registration. Prefers the
- * native installer's stable symlink (~/.local/bin/claude) which survives
+ * Resolve the Forge binary path for protocol registration. Prefers the
+ * native installer's stable symlink (~/.local/bin/Forge) which survives
  * auto-updates; falls back to process.execPath when the symlink is absent
  * (dev builds, non-native installs).
  */
 async function resolveClaudePath(): Promise<string> {
-  const binaryName = process.platform === 'win32' ? 'claude.exe' : 'claude'
+  const binaryName = process.platform === 'win32' ? 'Forge.exe' : 'Forge'
   const stablePath = path.join(getUserBinDir(), binaryName)
   try {
     await fs.realpath(stablePath)
@@ -251,9 +251,9 @@ async function resolveClaudePath(): Promise<string> {
 
 /**
  * Check whether the OS-level protocol handler is already registered AND
- * points at the expected `claude` binary. Reads the registration artifact
+ * points at the expected `Forge` binary. Reads the registration artifact
  * directly (symlink target, .desktop Exec line, registry value) rather than
- * a cached flag in ~/.claude.json, so:
+ * a cached flag in ~/.Forge.json, so:
  *   - the check is per-machine (config can sync across machines; OS state can't)
  *   - stale paths self-heal (install-method change → re-register next session)
  *   - deleted artifacts self-heal
@@ -290,7 +290,7 @@ export async function isProtocolHandlerCurrent(
 }
 
 /**
- * Auto-register the claude-cli:// deep link protocol handler when missing
+ * Auto-register the Forge-cli:// deep link protocol handler when missing
  * or stale. Runs every session from backgroundHousekeeping (fire-and-forget),
  * but the artifact check makes it a no-op after the first successful run
  * unless the install path moves or the OS artifact is deleted.
@@ -311,7 +311,7 @@ export async function ensureDeepLinkProtocolRegistered(): Promise<void> {
   // EACCES/ENOSPC are deterministic — retrying next session won't help.
   // Throttle to once per 24h so a read-only ~/.local/share/applications
   // doesn't generate a failure event on every startup. Marker lives in
-  // ~/.claude (per-machine, not synced) rather than ~/.claude.json (can sync).
+  // ~/.Forge (per-machine, not synced) rather than ~/.Forge.json (can sync).
   const failureMarkerPath = path.join(
     getClaudeConfigHomeDir(),
     '.deep-link-register-failed',
@@ -328,7 +328,7 @@ export async function ensureDeepLinkProtocolRegistered(): Promise<void> {
   try {
     await registerProtocolHandler(claudePath)
     logEvent('tengu_deep_link_registered', { success: true })
-    logForDebugging('Auto-registered claude-cli:// deep link protocol handler')
+    logForDebugging('Auto-registered Forge-cli:// deep link protocol handler')
     await fs.rm(failureMarkerPath, { force: true }).catch(() => {})
   } catch (error) {
     const code = getErrnoCode(error)
@@ -346,7 +346,3 @@ export async function ensureDeepLinkProtocolRegistered(): Promise<void> {
     }
   }
 }
-
-
-
-

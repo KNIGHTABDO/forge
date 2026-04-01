@@ -90,7 +90,3 @@ export function registerLoopSkill(): void {
     },
   })
 }
-
-
-
-

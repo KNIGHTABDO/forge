@@ -1,5 +1,5 @@
 import axios, { type AxiosError } from 'axios'
-import type { StdoutMessage } from './entrypoints/sdk/controlTypes.js'
+import type { StdoutMessage } from 'src/entrypoints/sdk/controlTypes.js'
 import { logForDebugging } from '../../utils/debug.js'
 import { logForDiagnosticsNoPII } from '../../utils/diagLogs.js'
 import { getSessionIngressAuthToken } from '../../utils/sessionIngressAuth.js'
@@ -280,10 +280,3 @@ function convertWsUrlToPostUrl(wsUrl: URL): string {
 
   return `${protocol}//${wsUrl.host}${pathname}${wsUrl.search}`
 }
-
-
-
-
-
-
-

@@ -1,17 +1,17 @@
 import { feature } from 'bun:bundle'
-import type ForgeTeam from '@anthropic-ai/sdk'
+import type Anthropic from '@anthropic-ai/sdk'
 import {
   APIConnectionError,
   APIError,
   APIUserAbortError,
 } from '@anthropic-ai/sdk'
-import type { QuerySource } from './constants/querySource.js'
-import type { SystemAPIErrorMessage } from '../../types/message.js'
-import { isAwsCredentialsProviderError } from '../../utils/aws.js'
-import { logForDebugging } from '../../utils/debug.js'
-import { logError } from '../../utils/log.js'
-import { createSystemAPIErrorMessage } from '../../utils/messages.js'
-import { getAPIProviderForStatsig } from '../../utils/model/providers.js'
+import type { QuerySource } from 'src/constants/querySource.js'
+import type { SystemAPIErrorMessage } from 'src/types/message.js'
+import { isAwsCredentialsProviderError } from 'src/utils/aws.js'
+import { logForDebugging } from 'src/utils/debug.js'
+import { logError } from 'src/utils/log.js'
+import { createSystemAPIErrorMessage } from 'src/utils/messages.js'
+import { getAPIProviderForStatsig } from 'src/utils/model/providers.js'
 import {
   clearApiKeyHelperCache,
   clearAwsCredentialsCache,
@@ -168,9 +168,9 @@ export class FallbackTriggeredError extends Error {
 }
 
 export async function* withRetry<T>(
-  getClient: () => Promise<ForgeTeam>,
+  getClient: () => Promise<Anthropic>,
   operation: (
-    client: ForgeTeam,
+    client: Anthropic,
     attempt: number,
     context: RetryContext,
   ) => Promise<T>,
@@ -182,7 +182,7 @@ export async function* withRetry<T>(
     thinkingConfig: options.thinkingConfig,
     ...(isFastModeEnabled() && { fastMode: options.fastMode }),
   }
-  let client: ForgeTeam | null = null
+  let client: Anthropic | null = null
   let consecutive529Errors = options.initialConsecutive529Errors ?? 0
   let lastError: unknown
   let persistentAttempt = 0
@@ -273,7 +273,7 @@ export async function* withRetry<T>(
         // If the 429 is specifically because extra usage (overage) is not
         // available, permanently disable fast mode with a specific message.
         const overageReason = error.headers?.get(
-          'ForgeTeam-ratelimit-unified-overage-disabled-reason',
+          'anthropic-ratelimit-unified-overage-disabled-reason',
         )
         if (overageReason !== null && overageReason !== undefined) {
           handleFastModeOverageRejection(overageReason)
@@ -812,7 +812,7 @@ function getRetryAfterMs(error: APIError): number | null {
 }
 
 function getRateLimitResetDelayMs(error: APIError): number | null {
-  const resetHeader = error.headers?.get?.('ForgeTeam-ratelimit-unified-reset')
+  const resetHeader = error.headers?.get?.('anthropic-ratelimit-unified-reset')
   if (!resetHeader) return null
   const resetUnixSec = Number(resetHeader)
   if (!Number.isFinite(resetUnixSec)) return null
@@ -820,7 +820,3 @@ function getRateLimitResetDelayMs(error: APIError): number | null {
   if (delayMs <= 0) return null
   return Math.min(delayMs, PERSISTENT_RESET_CAP_MS)
 }
-
-
-
-

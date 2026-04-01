@@ -1,7 +1,7 @@
 /**
  * Random word slug generator for plan IDs
  * Inspired by https://github.com/nas5w/random-word-slugs
- * with Claude-flavored words
+ * with Forge-flavored words
  */
 import { randomBytes } from 'crypto'
 
@@ -798,7 +798,3 @@ export function generateShortWordSlug(): string {
   const noun = pickRandom(NOUNS)
   return `${adjective}-${noun}`
 }
-
-
-
-

@@ -1,5 +1,5 @@
 /**
- * Prevents macOS from sleeping while Claude is working.
+ * Prevents macOS from sleeping while Forge is working.
  *
  * Uses the built-in `caffeinate` command to create a power assertion that
  * prevents idle sleep. This keeps the Mac awake during API requests and
@@ -163,7 +163,3 @@ function killCaffeinate(): void {
     }
   }
 }
-
-
-
-

@@ -67,7 +67,3 @@ export function registerSimplifySkill(): void {
     },
   })
 }
-
-
-
-

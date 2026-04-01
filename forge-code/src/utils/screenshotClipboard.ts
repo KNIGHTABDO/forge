@@ -18,7 +18,7 @@ export async function copyAnsiToClipboard(
   options?: AnsiToPngOptions,
 ): Promise<{ success: boolean; message: string }> {
   try {
-    const tempDir = join(tmpdir(), 'claude-code-screenshots')
+    const tempDir = join(tmpdir(), 'Forge-code-screenshots')
     await mkdir(tempDir, { recursive: true })
 
     const pngPath = join(tempDir, `screenshot-${Date.now()}.png`)
@@ -119,7 +119,3 @@ async function copyPngToClipboard(
     message: `Screenshot to clipboard is not supported on ${platform}`,
   }
 }
-
-
-
-

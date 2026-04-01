@@ -20,7 +20,3 @@ export function isInBundledMode(): boolean {
     Bun.embeddedFiles.length > 0
   )
 }
-
-
-
-

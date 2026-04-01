@@ -36,7 +36,3 @@ export class ClickEvent extends Event {
     this.cellIsBlank = cellIsBlank
   }
 }
-
-
-
-

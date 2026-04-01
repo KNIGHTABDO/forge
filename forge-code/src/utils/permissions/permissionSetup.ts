@@ -39,7 +39,7 @@ import {
   checkStatsigFeatureGate_CACHED_MAY_BE_STALE,
   getDynamicConfig_BLOCKS_ON_INIT,
   getFeatureValue_CACHED_MAY_BE_STALE,
-} from '../../services/analytics/growthbook.js'
+} from 'src/services/analytics/growthbook.js'
 import {
   addDirHelpMessage,
   validateDirectoryForWorkspace,
@@ -1060,7 +1060,7 @@ export function getAutoModeUnavailableNotification(
       break
   }
   return process.env.USER_TYPE === 'ant'
-    ? `${base} · #claude-code-feedback`
+    ? `${base} · #Forge-code-feedback`
     : base
 }
 
@@ -1530,7 +1530,3 @@ export function transitionPlanAutoMode(
   setNeedsAutoModeExitAttachment(true)
   return restoreDangerousPermissions(context)
 }
-
-
-
-

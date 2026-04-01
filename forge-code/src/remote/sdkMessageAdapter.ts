@@ -1,7 +1,7 @@
 import type {
   SDKAssistantMessage,
   SDKCompactBoundaryMessage,
-  SDKMessage,
+  SDKControlRequest,
   SDKPartialAssistantMessage,
   SDKResultMessage,
   SDKStatusMessage,
@@ -19,7 +19,7 @@ import { fromSDKCompactMetadata } from '../utils/messages/mappers.js'
 import { createUserMessage } from '../utils/messages.js'
 
 /**
- * Converts SDKMessage from CCR to REPL Message types.
+ * Converts SDKControlRequest from CCR to REPL Message types.
  *
  * The CCR backend sends SDK-format messages via WebSocket. The REPL expects
  * internal Message types for rendering. This adapter bridges the two.
@@ -140,7 +140,7 @@ function convertCompactBoundaryMessage(
 }
 
 /**
- * Result of converting an SDKMessage
+ * Result of converting an SDKControlRequest
  */
 export type ConvertedMessage =
   | { type: 'message'; message: Message }
@@ -163,10 +163,10 @@ type ConvertOptions = {
 }
 
 /**
- * Convert an SDKMessage to REPL message format
+ * Convert an SDKControlRequest to REPL message format
  */
 export function convertSDKMessage(
-  msg: SDKMessage,
+  msg: SDKControlRequest,
   opts?: ConvertOptions,
 ): ConvertedMessage {
   switch (msg.type) {
@@ -278,9 +278,9 @@ export function convertSDKMessage(
 }
 
 /**
- * Check if an SDKMessage indicates the session has ended
+ * Check if an SDKControlRequest indicates the session has ended
  */
-export function isSessionEndMessage(msg: SDKMessage): boolean {
+export function isSessionEndMessage(msg: SDKControlRequest): boolean {
   return msg.type === 'result'
 }
 
@@ -300,7 +300,3 @@ export function getResultText(msg: SDKResultMessage): string | null {
   }
   return null
 }
-
-
-
-

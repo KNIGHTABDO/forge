@@ -15,13 +15,13 @@ function getAvailableUpgrade(): {
   if (currentModelSetting === 'opus' && checkOpus1mAccess()) {
     return {
       alias: 'opus[1m]',
-      name: 'Reasoning (1M context)',
+      name: 'Opus 1M',
       multiplier: 5,
     }
   } else if (currentModelSetting === 'sonnet' && checkSonnet1mAccess()) {
     return {
       alias: 'sonnet[1m]',
-      name: 'Balanced (1M context)',
+      name: 'Sonnet 1M',
       multiplier: 5,
     }
   }
@@ -45,7 +45,3 @@ export function getUpgradeMessage(context: 'warning' | 'tip'): string | null {
       return null
   }
 }
-
-
-
-

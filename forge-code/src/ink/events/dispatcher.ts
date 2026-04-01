@@ -9,6 +9,8 @@ import type { EventTarget, TerminalEvent } from './terminal-event.js'
 
 // --
 
+const NO_EVENT_PRIORITY = 0
+
 type DispatchListener = {
   node: EventTarget
   handler: (event: TerminalEvent) => void
@@ -146,10 +148,6 @@ type DiscreteUpdates = <A, B>(
   d: undefined,
 ) => boolean
 
-// React 19 reconciler constants no longer export NoEventPriority.
-// Keep a local sentinel compatible with previous behavior.
-const NO_EVENT_PRIORITY = 0
-
 /**
  * Owns event dispatch state and the capture/bubble dispatch loop.
  *
@@ -163,7 +161,7 @@ const NO_EVENT_PRIORITY = 0
  */
 export class Dispatcher {
   currentEvent: TerminalEvent | null = null
-  currentUpdatePriority: number = DefaultEventPriority as number
+  currentUpdatePriority: number = NO_EVENT_PRIORITY
   discreteUpdates: DiscreteUpdates | null = null
 
   /**
@@ -234,7 +232,3 @@ export class Dispatcher {
     }
   }
 }
-
-
-
-

@@ -9,12 +9,12 @@
 
 import { CLAUDE_AI_INFERENCE_SCOPE } from '../../constants/oauth.js'
 import {
-  getForgeTeamApiKeyWithSource,
+  getAnthropicApiKeyWithSource,
   getClaudeAIOAuthTokens,
 } from '../../utils/auth.js'
 import {
   getAPIProvider,
-  isFirstPartyForgeTeamBaseUrl,
+  isFirstPartyAnthropicBaseUrl,
 } from '../../utils/model/providers.js'
 
 import {
@@ -55,7 +55,7 @@ export function isRemoteManagedSettingsEligible(): boolean {
   }
 
   // Custom base URL users should not hit the settings endpoint
-  if (!isFirstPartyForgeTeamBaseUrl()) {
+  if (!isFirstPartyAnthropicBaseUrl()) {
     return (cached = setEligibility(false))
   }
 
@@ -67,7 +67,7 @@ export function isRemoteManagedSettingsEligible(): boolean {
     return (cached = setEligibility(false))
   }
 
-  // Check OAuth first: most forge-app.vercel.app users have no API key in the keychain.
+  // Check OAuth first: most Forge.ai users have no API key in the keychain.
   // The API key check spawns `security find-generic-password` (~20-50ms) which
   // returns null for OAuth-only users. Checking OAuth first short-circuits
   // that subprocess for the common case.
@@ -95,10 +95,10 @@ export function isRemoteManagedSettingsEligible(): boolean {
 
   // Console users (API key) are eligible if we can get the actual key
   // Skip apiKeyHelper to avoid circular dependency with getSettings()
-  // Wrap in try-catch because getForgeTeamApiKeyWithSource throws in CI/test environments
+  // Wrap in try-catch because getAnthropicApiKeyWithSource throws in CI/test environments
   // when no API key is available
   try {
-    const { key: apiKey } = getForgeTeamApiKeyWithSource({
+    const { key: apiKey } = getAnthropicApiKeyWithSource({
       skipRetrievingKeyFromApiKeyHelper: true,
     })
     if (apiKey) {
@@ -110,7 +110,3 @@ export function isRemoteManagedSettingsEligible(): boolean {
 
   return (cached = setEligibility(false))
 }
-
-
-
-

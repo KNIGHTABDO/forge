@@ -140,7 +140,7 @@ function logContainsQuery(log: LogOption, queryLower: string): boolean {
 }
 
 /**
- * Performs an agentic search using Claude to find relevant sessions
+ * Performs an agentic search using Forge to find relevant sessions
  * based on semantic understanding of the query.
  */
 export async function agenticSessionSearch(
@@ -305,7 +305,3 @@ Find the sessions that are most relevant to this query.`
     return []
   }
 }
-
-
-
-

@@ -316,7 +316,3 @@ export const ParsedCommand = {
     return lastResult
   },
 }
-
-
-
-

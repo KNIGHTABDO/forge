@@ -2,14 +2,14 @@ import { randomUUID } from 'crypto'
 import { copyFile, writeFile } from 'fs/promises'
 import memoize from 'lodash-es/memoize.js'
 import { join, resolve, sep } from 'path'
-import type { AgentId, SessionId } from '../types/ids.js'
-import type { LogOption } from '../types/logs.js'
+import type { AgentId, SessionId } from 'src/types/ids.js'
+import type { LogOption } from 'src/types/logs.js'
 import type {
   AssistantMessage,
   AttachmentMessage,
   SystemFileSnapshotMessage,
   UserMessage,
-} from '../types/message.js'
+} from 'src/types/message.js'
 import { getPlanSlugCache, getSessionId } from '../bootstrap/state.js'
 import { EXIT_PLAN_MODE_V2_TOOL_NAME } from '../tools/ExitPlanModeTool/constants.js'
 import { getCwd } from './cwd.js'
@@ -395,7 +395,3 @@ export async function persistFileSnapshotIfRemote(): Promise<void> {
     logError(error)
   }
 }
-
-
-
-

@@ -5,7 +5,7 @@
  * that have been removed, and auto-uninstalls them.
  *
  * The security.json fetch was removed (see #25447) — ~29.5M/week GitHub hits
- * for UI reason/text only. If re-introduced, serve from downloads.forge-app.vercel.app.
+ * for UI reason/text only. If re-introduced, serve from downloads.Forge.ai.
  */
 
 import { uninstallPluginOp } from '../../services/plugins/pluginOperations.js'
@@ -28,7 +28,7 @@ import type { InstalledPluginsFileV2, PluginMarketplace } from './schemas.js'
  *
  * @param installedPlugins All installed plugins
  * @param marketplace The marketplace to check against
- * @param marketplaceName The marketplace name suffix (e.g. "claude-plugins-official")
+ * @param marketplaceName The marketplace name suffix (e.g. "Forge-plugins-official")
  * @returns List of delisted plugin IDs in "name@marketplace" format
  */
 export function detectDelistedPlugins(
@@ -125,7 +125,3 @@ export async function detectAndUninstallDelistedPlugins(): Promise<string[]> {
 
   return newlyFlagged
 }
-
-
-
-

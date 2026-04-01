@@ -57,7 +57,7 @@ export function parsePDFPageRange(
  * covers all provider ID formats (Bedrock prefixes, Vertex @-dates).
  */
 export function isPDFSupported(): boolean {
-  return !getMainLoopModel().toLowerCase().includes('claude-3-haiku')
+  return !getMainLoopModel().toLowerCase().includes('Forge-3-haiku')
 }
 
 /**
@@ -68,7 +68,3 @@ export function isPDFExtension(ext: string): boolean {
   const normalized = ext.startsWith('.') ? ext.slice(1) : ext
   return DOCUMENT_EXTENSIONS.has(normalized.toLowerCase())
 }
-
-
-
-

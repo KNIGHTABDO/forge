@@ -2,11 +2,11 @@
 import { isUltrathinkEnabled } from './thinking.js'
 import { getInitialSettings } from './settings/settings.js'
 import { isProSubscriber, isMaxSubscriber, isTeamSubscriber } from './auth.js'
-import { getFeatureValue_CACHED_MAY_BE_STALE } from '../services/analytics/growthbook.js'
+import { getFeatureValue_CACHED_MAY_BE_STALE } from 'src/services/analytics/growthbook.js'
 import { getAPIProvider } from './model/providers.js'
 import { get3PModelCapabilityOverride } from './model/modelSupportOverrides.js'
 import { isEnvTruthy } from './envUtils.js'
-import type { EffortLevel } from '../entrypoints/sdk/runtimeTypes.js'
+import type { EffortLevel } from 'src/entrypoints/sdk/runtimeTypes.js'
 
 export type { EffortLevel }
 
@@ -29,7 +29,7 @@ export function modelSupportsEffort(model: string): boolean {
   if (supported3P !== undefined) {
     return supported3P
   }
-  // Supported by a subset of Claude 4 models
+  // Supported by a subset of Forge 4 models
   if (m.includes('opus-4-6') || m.includes('sonnet-4-6')) {
     return true
   }
@@ -44,12 +44,12 @@ export function modelSupportsEffort(model: string): boolean {
 
   // Default to true for unknown model strings on 1P.
   // Do not default to true for 3P as they have different formats for their
-  // model strings (ex. ForgeTeams/claude-code#30795)
+  // model strings (ex. anthropics/Forge-code#30795)
   return getAPIProvider() === 'firstParty'
 }
 
 // @[MODEL LAUNCH]: Add the new model to the allowlist if it supports 'max' effort.
-// Per API docs, max effort is restricted to specific top-tier reasoning models.
+// Per API docs, 'max' is Opus 4.6 only for public models — other models return an error.
 export function modelSupportsMaxEffort(model: string): boolean {
   const supported3P = get3PModelCapabilityOverride(model, 'max_effort')
   if (supported3P !== undefined) {
@@ -230,7 +230,7 @@ export function getEffortLevelDescription(level: EffortLevel): string {
     case 'high':
       return 'Comprehensive implementation with extensive testing and documentation'
     case 'max':
-      return 'Maximum capability with deepest reasoning (Reasoning profile only)'
+      return 'Maximum capability with deepest reasoning (Opus 4.6 only)'
   }
 }
 
@@ -261,7 +261,7 @@ const OPUS_DEFAULT_EFFORT_CONFIG_DEFAULT: OpusDefaultEffortConfig = {
   enabled: true,
   dialogTitle: 'We recommend medium effort for Opus',
   dialogDescription:
-    'Effort determines how long Claude thinks for when completing your task. We recommend medium effort for most tasks to balance speed and intelligence and maximize rate limits. Use ultrathink to trigger high effort when needed.',
+    'Effort determines how long Forge thinks for when completing your task. We recommend medium effort for most tasks to balance speed and intelligence and maximize rate limits. Use ultrathink to trigger high effort when needed.',
 }
 
 export function getOpusDefaultEffortConfig(): OpusDefaultEffortConfig {
@@ -327,7 +327,3 @@ export function getDefaultEffortForModel(
   // should resolve to high effort level in the API.
   return undefined
 }
-
-
-
-

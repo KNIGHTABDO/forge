@@ -10,7 +10,3 @@ const files = {
 } satisfies Command
 
 export default files
-
-
-
-

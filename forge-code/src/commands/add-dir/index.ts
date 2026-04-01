@@ -9,10 +9,3 @@ const addDir = {
 } satisfies Command
 
 export default addDir
-
-
-
-
-
-
-

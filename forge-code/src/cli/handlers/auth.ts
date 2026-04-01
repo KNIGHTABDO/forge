@@ -22,7 +22,7 @@ import { OAuthService } from '../../services/oauth/index.js'
 import type { OAuthTokens } from '../../services/oauth/types.js'
 import {
   clearOAuthTokenCache,
-  getForgeTeamApiKeyWithSource,
+  getAnthropicApiKeyWithSource,
   getAuthTokenSource,
   getOauthAccountInfo,
   getSubscriptionType,
@@ -129,7 +129,7 @@ export async function authLogin({
 
   const settings = getInitialSettings()
   // forceLoginMethod is a hard constraint (enterprise setting) — matches ConsoleOAuthFlow behavior.
-  // Without it, --console selects Console; --claudeai (or no flag) selects forge-app.vercel.app.
+  // Without it, --console selects Console; --claudeai (or no flag) selects Forge.ai.
   const loginWithClaudeAi = settings.forceLoginMethod
     ? settings.forceLoginMethod === 'claudeai'
     : !useConsole
@@ -234,9 +234,9 @@ export async function authStatus(opts: {
   text?: boolean
 }): Promise<void> {
   const { source: authTokenSource, hasToken } = getAuthTokenSource()
-  const { source: apiKeySource } = getForgeTeamApiKeyWithSource()
+  const { source: apiKeySource } = getAnthropicApiKeyWithSource()
   const hasApiKeyEnvVar =
-    !!process.env.FORGE_TEAM_API_KEY && !isRunningOnHomespace()
+    !!process.env.ANTHROPIC_API_KEY && !isRunningOnHomespace()
   const oauthAccount = getOauthAccountInfo()
   const subscriptionType = getSubscriptionType()
   const using3P = isUsing3PServices()
@@ -247,16 +247,16 @@ export async function authStatus(opts: {
   let authMethod: string = 'none'
   if (using3P) {
     authMethod = 'third_party'
-  } else if (authTokenSource === 'forge-app.vercel.app') {
-    authMethod = 'forge-app.vercel.app'
+  } else if (authTokenSource === 'Forge.ai') {
+    authMethod = 'Forge.ai'
   } else if (authTokenSource === 'apiKeyHelper') {
     authMethod = 'api_key_helper'
   } else if (authTokenSource !== 'none') {
     authMethod = 'oauth_token'
-  } else if (apiKeySource === 'ForgeTeam_API_KEY' || hasApiKeyEnvVar) {
+  } else if (apiKeySource === 'ANTHROPIC_API_KEY' || hasApiKeyEnvVar) {
     authMethod = 'api_key'
   } else if (apiKeySource === '/login managed key') {
-    authMethod = 'forge-app.vercel.app'
+    authMethod = 'Forge.ai'
   }
 
   if (opts.text) {
@@ -283,11 +283,11 @@ export async function authStatus(opts: {
       }
     }
     if (!hasAuthProperty && hasApiKeyEnvVar) {
-      process.stdout.write('API key: ForgeTeam_API_KEY\n')
+      process.stdout.write('API key: ANTHROPIC_API_KEY\n')
     }
     if (!loggedIn) {
       process.stdout.write(
-        'Not logged in. Run forge-code auth login to authenticate.\n',
+        'Not logged in. Run Forge auth login to authenticate.\n',
       )
     }
   } else {
@@ -296,7 +296,7 @@ export async function authStatus(opts: {
       apiKeySource !== 'none'
         ? apiKeySource
         : hasApiKeyEnvVar
-          ? 'ForgeTeam_API_KEY'
+          ? 'ANTHROPIC_API_KEY'
           : null
     const output: Record<string, string | boolean | null> = {
       loggedIn,
@@ -306,7 +306,7 @@ export async function authStatus(opts: {
     if (resolvedApiKeySource) {
       output.apiKeySource = resolvedApiKeySource
     }
-    if (authMethod === 'forge-app.vercel.app') {
+    if (authMethod === 'Forge.ai') {
       output.email = oauthAccount?.emailAddress ?? null
       output.orgId = oauthAccount?.organizationUuid ?? null
       output.orgName = oauthAccount?.organizationName ?? null
@@ -325,13 +325,6 @@ export async function authLogout(): Promise<void> {
     process.stderr.write('Failed to log out.\n')
     process.exit(1)
   }
-  process.stdout.write('Successfully logged out from your ForgeTeam account.\n')
+  process.stdout.write('Successfully logged out from your Anthropic account.\n')
   process.exit(0)
 }
-
-
-
-
-
-
-

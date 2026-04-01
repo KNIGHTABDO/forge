@@ -112,7 +112,7 @@ export const McpSdkServerConfigSchema = lazySchema(() =>
   }),
 )
 
-// Config type for forge-app.vercel.app proxy servers
+// Config type for Forge.ai proxy servers
 export const McpClaudeAIProxyServerConfigSchema = lazySchema(() =>
   z.object({
     type: z.literal('claudeai-proxy'),
@@ -163,7 +163,7 @@ export type McpServerConfig = z.infer<ReturnType<typeof McpServerConfigSchema>>
 export type ScopedMcpServerConfig = McpServerConfig & {
   scope: ConfigScope
   // For plugin-provided servers: the providing plugin's LoadedPlugin.source
-  // (e.g. 'slack@ForgeTeam'). Stashed at config-build time so the channel
+  // (e.g. 'slack@anthropic'). Stashed at config-build time so the channel
   // gate doesn't have to race AppState.plugins.enabled hydration.
   pluginSource?: string
 }
@@ -256,7 +256,3 @@ export interface MCPCliState {
   resources: Record<string, ServerResource[]>
   normalizedNames?: Record<string, string> // Maps normalized names to original names
 }
-
-
-
-

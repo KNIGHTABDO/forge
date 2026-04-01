@@ -6,4 +6,4 @@ node_modules/
 *.tsbuildinfo
 next-env.d.ts
 *.lock
-forge-claude/
+forge-claude/.vercelignore

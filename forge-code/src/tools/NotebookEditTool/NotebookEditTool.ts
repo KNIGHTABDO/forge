@@ -3,7 +3,7 @@ import { extname, isAbsolute, resolve } from 'path'
 import {
   fileHistoryEnabled,
   fileHistoryTrackEdit,
-} from '../../utils/fileHistory.js'
+} from 'src/utils/fileHistory.js'
 import { z } from 'zod/v4'
 import { buildTool, type ToolDef, type ToolUseContext } from '../../Tool.js'
 import type { NotebookCell, NotebookContent } from '../../types/notebook.js'
@@ -488,7 +488,3 @@ export const NotebookEditTool = buildTool({
     }
   },
 } satisfies ToolDef<InputSchema, Output>)
-
-
-
-

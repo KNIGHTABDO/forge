@@ -2,7 +2,7 @@
  * Settings Sync Types
  *
  * Zod schemas and types for the user settings sync API.
- * Based on the backend API contract from ForgeTeam/ForgeTeam#218817.
+ * Based on the backend API contract from anthropic/anthropic#218817.
  */
 
 import { z } from 'zod/v4'
@@ -59,13 +59,9 @@ export type SettingsSyncUploadResult = {
  * Keys used for sync entries
  */
 export const SYNC_KEYS = {
-  USER_SETTINGS: '~/.claude/settings.json',
-  USER_MEMORY: '~/.claude/CLAUDE.md',
+  USER_SETTINGS: '~/.Forge/settings.json',
+  USER_MEMORY: '~/.Forge/Forge.md',
   projectSettings: (projectId: string) =>
-    `projects/${projectId}/.claude/settings.local.json`,
-  projectMemory: (projectId: string) => `projects/${projectId}/CLAUDE.local.md`,
+    `projects/${projectId}/.Forge/settings.local.json`,
+  projectMemory: (projectId: string) => `projects/${projectId}/Forge.local.md`,
 } as const
-
-
-
-

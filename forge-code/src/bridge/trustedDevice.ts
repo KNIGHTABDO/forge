@@ -17,7 +17,7 @@ import { jsonStringify } from '../utils/slowOperations.js'
  *
  * Bridge sessions have SecurityTier=ELEVATED on the server (CCR v2).
  * The server gates ConnectBridgeWorker on its own flag
- * (sessions_elevated_auth_enforcement in ForgeTeam Main); this CLI-side
+ * (sessions_elevated_auth_enforcement in Anthropic Main); this CLI-side
  * flag controls whether the CLI sends X-Trusted-Device-Token at all.
  * Two flags so rollout can be staged: flip CLI-side first (headers
  * start flowing, server still no-ops), then flip server-side.
@@ -26,7 +26,7 @@ import { jsonStringify } from '../utils/slowOperations.js'
  * account_session.created_at < 10min, so it must happen during /login.
  * Token is persistent (90d rolling expiry) and stored in keychain.
  *
- * See ForgeTeams/ForgeTeam#274559 (spec), #310375 (B1b tenant RPCs),
+ * See anthropics/anthropic#274559 (spec), #310375 (B1b tenant RPCs),
  * #295987 (B2 Python routes), #307150 (C1' CCR v2 gate).
  */
 
@@ -208,10 +208,3 @@ export async function enrollTrustedDevice(): Promise<void> {
     logForDebugging(`[trusted-device] Enrollment error: ${errorMessage(err)}`)
   }
 }
-
-
-
-
-
-
-

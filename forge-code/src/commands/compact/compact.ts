@@ -1,6 +1,6 @@
 import { feature } from 'bun:bundle'
 import chalk from 'chalk'
-import { markPostCompaction } from '../../bootstrap/state.js'
+import { markPostCompaction } from 'src/bootstrap/state.js'
 import { getSystemPrompt } from '../../constants/prompts.js'
 import { getSystemContext, getUserContext } from '../../context.js'
 import { getShortcutDisplay } from '../../keybindings/shortcutFormat.js'
@@ -285,8 +285,3 @@ async function getCacheSharingParams(
     forkContextMessages,
   }
 }
-
-
-
-
-

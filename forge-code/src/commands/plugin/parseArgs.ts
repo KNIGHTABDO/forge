@@ -101,7 +101,3 @@ export function parsePluginArgs(args?: string): ParsedCommand {
       return { type: 'menu' }
   }
 }
-
-
-
-

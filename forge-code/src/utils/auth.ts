@@ -4,13 +4,13 @@ import { execa } from 'execa'
 import { mkdir, stat } from 'fs/promises'
 import memoize from 'lodash-es/memoize.js'
 import { join } from 'path'
-import { CLAUDE_AI_PROFILE_SCOPE } from '../constants/oauth.js'
+import { CLAUDE_AI_PROFILE_SCOPE } from 'src/constants/oauth.js'
 import {
   type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
   logEvent,
-} from '../services/analytics/index.js'
-import { getModelStrings } from '../utils/model/modelStrings.js'
-import { getAPIProvider } from '../utils/model/providers.js'
+} from 'src/services/analytics/index.js'
+import { getModelStrings } from 'src/utils/model/modelStrings.js'
+import { getAPIProvider } from 'src/utils/model/providers.js'
 import {
   getIsNonInteractiveSession,
   preferThirdPartyAuthentication,
@@ -81,64 +81,66 @@ import { clearToolSchemaCache } from './toolSchemaCache.js'
 const DEFAULT_API_KEY_HELPER_TTL = 5 * 60 * 1000
 
 /**
- * CCR and Claude Desktop spawn the CLI with OAuth and should never fall back
- * to the user's ~/.claude/settings.json API-key config (apiKeyHelper,
- * env.FORGE_TEAM_API_KEY, env.FORGE_TEAM_AUTH_TOKEN). Those settings exist for
+ * CCR and Forge Desktop spawn the CLI with OAuth and should never fall back
+ * to the user's ~/.Forge/settings.json API-key config (apiKeyHelper,
+ * env.ANTHROPIC_API_KEY, env.ANTHROPIC_AUTH_TOKEN). Those settings exist for
  * the user's terminal CLI, not managed sessions. Without this guard, a user
- * who runs `claude` in their terminal with an API key sees every CCD session
+ * who runs `Forge` in their terminal with an API key sees every CCD session
  * also use that key — and fail if it's stale/wrong-org.
  */
 function isManagedOAuthContext(): boolean {
   return (
     isEnvTruthy(process.env.FORGE_CODE_REMOTE) ||
-    process.env.FORGE_CODE_ENTRYPOINT === 'claude-desktop'
+    process.env.FORGE_CODE_ENTRYPOINT === 'Forge-desktop'
   )
 }
 
 /** Whether we are supporting direct 1P auth. */
 // this code is closely related to getAuthTokenSource
-export function isForgeTeamAuthEnabled(): boolean {
+export function isAnthropicAuthEnabled(): boolean {
   // --bare: API-key-only, never OAuth.
   if (isBareMode()) return false
 
-  // `claude ssh` remote: FORGE_TEAM_UNIX_SOCKET tunnels API calls through a
+  // `Forge ssh` remote: ANTHROPIC_UNIX_SOCKET tunnels API calls through a
   // local auth-injecting proxy. The launcher sets FORGE_CODE_OAUTH_TOKEN as a
   // placeholder iff the local side is a subscriber (so the remote includes the
   // oauth-2025 beta header to match what the proxy will inject). The remote's
-  // ~/.claude settings (apiKeyHelper, settings.env.FORGE_TEAM_API_KEY) MUST NOT
+  // ~/.Forge settings (apiKeyHelper, settings.env.ANTHROPIC_API_KEY) MUST NOT
   // flip this — they'd cause a header mismatch with the proxy and a bogus
   // "invalid x-api-key" from the API. See src/ssh/sshAuthProxy.ts.
-  if (process.env.FORGE_TEAM_UNIX_SOCKET) {
+  if (process.env.ANTHROPIC_UNIX_SOCKET) {
     return !!process.env.FORGE_CODE_OAUTH_TOKEN
   }
 
   const is3P =
     isEnvTruthy(process.env.FORGE_CODE_USE_BEDROCK) ||
     isEnvTruthy(process.env.FORGE_CODE_USE_VERTEX) ||
-    isEnvTruthy(process.env.FORGE_CODE_USE_FOUNDRY)
+    isEnvTruthy(process.env.FORGE_CODE_USE_FOUNDRY) ||
+    isEnvTruthy(process.env.FORGE_CODE_USE_OPENAI) ||
+    isEnvTruthy(process.env.FORGE_CODE_USE_GEMINI)
 
   // Check if user has configured an external API key source
   // This allows externally-provided API keys to work (without requiring proxy configuration)
   const settings = getSettings_DEPRECATED() || {}
   const apiKeyHelper = settings.apiKeyHelper
   const hasExternalAuthToken =
-    process.env.FORGE_TEAM_AUTH_TOKEN ||
+    process.env.ANTHROPIC_AUTH_TOKEN ||
     apiKeyHelper ||
     process.env.FORGE_CODE_API_KEY_FILE_DESCRIPTOR
 
   // Check if API key is from an external source (not managed by /login)
-  const { source: apiKeySource } = getForgeTeamApiKeyWithSource({
+  const { source: apiKeySource } = getAnthropicApiKeyWithSource({
     skipRetrievingKeyFromApiKeyHelper: true,
   })
   const hasExternalApiKey =
-    apiKeySource === 'FORGE_TEAM_API_KEY' || apiKeySource === 'apiKeyHelper'
+    apiKeySource === 'ANTHROPIC_API_KEY' || apiKeySource === 'apiKeyHelper'
 
-  // Disable ForgeTeam auth if:
+  // Disable Anthropic auth if:
   // 1. Using 3rd party services (Bedrock/Vertex/Foundry)
   // 2. User has an external API key (regardless of proxy configuration)
   // 3. User has an external auth token (regardless of proxy configuration)
   // this may cause issues if users have complex proxy / gateway "client-side creds" auth scenarios,
-  // e.g. if they want to set X-Api-Key to a gateway key but use ForgeTeam OAuth for the Authorization
+  // e.g. if they want to set X-Api-Key to a gateway key but use Anthropic OAuth for the Authorization
   // if we get reports of that, we should probably add an env var to force OAuth enablement
   const shouldDisableAuth =
     is3P ||
@@ -149,7 +151,7 @@ export function isForgeTeamAuthEnabled(): boolean {
 }
 
 /** Where the auth token is being sourced from, if any. */
-// this code is closely related to isForgeTeamAuthEnabled
+// this code is closely related to isAnthropicAuthEnabled
 export function getAuthTokenSource() {
   // --bare: API-key-only. apiKeyHelper (from --settings) is the only
   // bearer-token-shaped source allowed. OAuth env vars, FD tokens, and
@@ -161,8 +163,8 @@ export function getAuthTokenSource() {
     return { source: 'none' as const, hasToken: false }
   }
 
-  if (process.env.FORGE_TEAM_AUTH_TOKEN && !isManagedOAuthContext()) {
-    return { source: 'FORGE_TEAM_AUTH_TOKEN' as const, hasToken: true }
+  if (process.env.ANTHROPIC_AUTH_TOKEN && !isManagedOAuthContext()) {
+    return { source: 'ANTHROPIC_AUTH_TOKEN' as const, hasToken: true }
   }
 
   if (process.env.FORGE_CODE_OAUTH_TOKEN) {
@@ -199,42 +201,42 @@ export function getAuthTokenSource() {
 
   const oauthTokens = getClaudeAIOAuthTokens()
   if (shouldUseClaudeAIAuth(oauthTokens?.scopes) && oauthTokens?.accessToken) {
-    return { source: 'forge-app.vercel.app' as const, hasToken: true }
+    return { source: 'Forge.ai' as const, hasToken: true }
   }
 
   return { source: 'none' as const, hasToken: false }
 }
 
 export type ApiKeySource =
-  | 'FORGE_TEAM_API_KEY'
+  | 'ANTHROPIC_API_KEY'
   | 'apiKeyHelper'
   | '/login managed key'
   | 'none'
 
-export function getForgeTeamApiKey(): null | string {
-  const { key } = getForgeTeamApiKeyWithSource()
+export function getAnthropicApiKey(): null | string {
+  const { key } = getAnthropicApiKeyWithSource()
   return key
 }
 
-export function hasForgeTeamApiKeyAuth(): boolean {
-  const { key, source } = getForgeTeamApiKeyWithSource({
+export function hasAnthropicApiKeyAuth(): boolean {
+  const { key, source } = getAnthropicApiKeyWithSource({
     skipRetrievingKeyFromApiKeyHelper: true,
   })
   return key !== null && source !== 'none'
 }
 
-export function getForgeTeamApiKeyWithSource(
+export function getAnthropicApiKeyWithSource(
   opts: { skipRetrievingKeyFromApiKeyHelper?: boolean } = {},
 ): {
   key: null | string
   source: ApiKeySource
 } {
-  // --bare: hermetic auth. Only FORGE_TEAM_API_KEY env or apiKeyHelper from
+  // --bare: hermetic auth. Only ANTHROPIC_API_KEY env or apiKeyHelper from
   // the --settings flag. Never touches keychain, config file, or approval
   // lists. 3P (Bedrock/Vertex/Foundry) uses provider creds, not this path.
   if (isBareMode()) {
-    if (process.env.FORGE_TEAM_API_KEY) {
-      return { key: process.env.FORGE_TEAM_API_KEY, source: 'FORGE_TEAM_API_KEY' }
+    if (process.env.ANTHROPIC_API_KEY) {
+      return { key: process.env.ANTHROPIC_API_KEY, source: 'ANTHROPIC_API_KEY' }
     }
     if (getConfiguredApiKeyHelper()) {
       return {
@@ -247,18 +249,18 @@ export function getForgeTeamApiKeyWithSource(
     return { key: null, source: 'none' }
   }
 
-  // On homespace, don't use FORGE_TEAM_API_KEY (use Console key instead)
-  // https://ForgeTeam.slack.com/archives/C08428WSLKV/p1747331773214779
+  // On homespace, don't use ANTHROPIC_API_KEY (use Console key instead)
+  // https://anthropic.slack.com/archives/C08428WSLKV/p1747331773214779
   const apiKeyEnv = isRunningOnHomespace()
     ? undefined
-    : process.env.FORGE_TEAM_API_KEY
+    : process.env.ANTHROPIC_API_KEY
 
-  // Always check for direct environment variable when the user ran claude --print.
+  // Always check for direct environment variable when the user ran Forge --print.
   // This is useful for CI, etc.
   if (preferThirdPartyAuthentication() && apiKeyEnv) {
     return {
       key: apiKeyEnv,
-      source: 'FORGE_TEAM_API_KEY',
+      source: 'ANTHROPIC_API_KEY',
     }
   }
 
@@ -268,24 +270,25 @@ export function getForgeTeamApiKeyWithSource(
     if (apiKeyFromFd) {
       return {
         key: apiKeyFromFd,
-        source: 'FORGE_TEAM_API_KEY',
+        source: 'ANTHROPIC_API_KEY',
       }
     }
 
     if (
+      !isUsing3PServices() &&
       !apiKeyEnv &&
       !process.env.FORGE_CODE_OAUTH_TOKEN &&
       !process.env.FORGE_CODE_OAUTH_TOKEN_FILE_DESCRIPTOR
     ) {
       throw new Error(
-        'FORGE_TEAM_API_KEY or FORGE_CODE_OAUTH_TOKEN env var is required',
+        'ANTHROPIC_API_KEY or FORGE_CODE_OAUTH_TOKEN env var is required',
       )
     }
 
     if (apiKeyEnv) {
       return {
         key: apiKeyEnv,
-        source: 'FORGE_TEAM_API_KEY',
+        source: 'ANTHROPIC_API_KEY',
       }
     }
 
@@ -295,7 +298,7 @@ export function getForgeTeamApiKeyWithSource(
       source: 'none',
     }
   }
-  // Check for FORGE_TEAM_API_KEY before checking the apiKeyHelper or /login-managed key
+  // Check for ANTHROPIC_API_KEY before checking the apiKeyHelper or /login-managed key
   if (
     apiKeyEnv &&
     getGlobalConfig().customApiKeyResponses?.approved?.includes(
@@ -304,7 +307,7 @@ export function getForgeTeamApiKeyWithSource(
   ) {
     return {
       key: apiKeyEnv,
-      source: 'FORGE_TEAM_API_KEY',
+      source: 'ANTHROPIC_API_KEY',
     }
   }
 
@@ -313,7 +316,7 @@ export function getForgeTeamApiKeyWithSource(
   if (apiKeyFromFd) {
     return {
       key: apiKeyFromFd,
-      source: 'FORGE_TEAM_API_KEY',
+      source: 'ANTHROPIC_API_KEY',
     }
   }
 
@@ -350,7 +353,7 @@ export function getForgeTeamApiKeyWithSource(
 /**
  * Get the configured apiKeyHelper from settings.
  * In bare mode, only the --settings flag source is consulted — apiKeyHelper
- * from ~/.claude/settings.json or project settings is ignored.
+ * from ~/.Forge/settings.json or project settings is ignored.
  */
 export function getConfiguredApiKeyHelper(): string | undefined {
   if (isBareMode()) {
@@ -687,7 +690,7 @@ export function refreshAwsAuth(awsAuthRefresh: string): Promise<boolean> {
               'AWS auth refresh timed out after 3 minutes. Run your auth command manually in a separate terminal.',
             )
           : chalk.red(
-              'Error running awsAuthRefresh (in settings or ~/.claude.json):',
+              'Error running awsAuthRefresh (in settings or ~/.Forge.json):',
             )
         // biome-ignore lint/suspicious/noConsole:: intentional console output
         console.error(message)
@@ -765,7 +768,7 @@ async function getAwsCredsFromCredentialExport(): Promise<{
       }
     } catch (e) {
       const message = chalk.red(
-        'Error getting AWS credentials from awsCredentialExport (in settings or ~/.claude.json):',
+        'Error getting AWS credentials from awsCredentialExport (in settings or ~/.Forge.json):',
       )
       if (e instanceof Error) {
         // biome-ignore lint/suspicious/noConsole:: intentional console output
@@ -955,7 +958,7 @@ export function refreshGcpAuth(gcpAuthRefresh: string): Promise<boolean> {
               'GCP auth refresh timed out after 3 minutes. Run your auth command manually in a separate terminal.',
             )
           : chalk.red(
-              'Error running gcpAuthRefresh (in settings or ~/.claude.json):',
+              'Error running gcpAuthRefresh (in settings or ~/.Forge.json):',
             )
         // biome-ignore lint/suspicious/noConsole:: intentional console output
         console.error(message)
@@ -1047,7 +1050,7 @@ export function prefetchAwsCredentialsAndBedRockInfoIfSafe(): void {
   getModelStrings()
 }
 
-/** @private Use {@link getForgeTeamApiKey} or {@link getForgeTeamApiKeyWithSource} */
+/** @private Use {@link getAnthropicApiKey} or {@link getAnthropicApiKeyWithSource} */
 export const getApiKeyFromConfigOrMacOSKeychain = memoize(
   (): { key: string; source: ApiKeySource } | null => {
     if (isBareMode()) return null
@@ -1335,7 +1338,7 @@ async function invalidateOAuthCacheIfDiskChanged(): Promise<void> {
   }
 }
 
-// In-flight dedup: when N forge-app.vercel.app proxy connectors hit 401 with the same
+// In-flight dedup: when N Forge.ai proxy connectors hit 401 with the same
 // token simultaneously (common at startup — #20930), only one should clear
 // caches and re-read the keychain. Without this, each call's clearOAuthTokenCache()
 // nukes readInFlight in macOsKeychainStorage and triggers a fresh spawn —
@@ -1529,7 +1532,7 @@ async function checkAndRefreshOAuthTokenIfNeededImpl(
 
     logEvent('tengu_oauth_token_refresh_starting', {})
     const refreshedTokens = await refreshOAuthToken(lockedTokens.refreshToken, {
-      // For forge-app.vercel.app subscribers, omit scopes so the default
+      // For Forge.ai subscribers, omit scopes so the default
       // CLAUDE_AI_OAUTH_SCOPES applies — this allows scope expansion
       // (e.g. adding user:file_upload) on refresh without re-login.
       scopes: shouldUseClaudeAIAuth(lockedTokens.scopes)
@@ -1562,7 +1565,7 @@ async function checkAndRefreshOAuthTokenIfNeededImpl(
 }
 
 export function isClaudeAISubscriber(): boolean {
-  if (!isForgeTeamAuthEnabled()) {
+  if (!isAnthropicAuthEnabled()) {
     return false
   }
 
@@ -1585,7 +1588,7 @@ export function hasProfileScope(): boolean {
 
 export function is1PApiCustomer(): boolean {
   // 1P API customers are users who are NOT:
-  // 1. forge-app.vercel.app subscribers (Max, Pro, Enterprise, Team)
+  // 1. Forge.ai subscribers (Max, Pro, Enterprise, Team)
   // 2. Vertex AI users
   // 3. AWS Bedrock users
   // 4. Foundry users
@@ -1599,7 +1602,7 @@ export function is1PApiCustomer(): boolean {
     return false
   }
 
-  // Exclude forge-app.vercel.app subscribers
+  // Exclude Forge.ai subscribers
   if (isClaudeAISubscriber()) {
     return false
   }
@@ -1609,22 +1612,22 @@ export function is1PApiCustomer(): boolean {
 }
 
 /**
- * Gets OAuth account information when ForgeTeam auth is enabled.
+ * Gets OAuth account information when Anthropic auth is enabled.
  * Returns undefined when using external API keys or third-party services.
  */
 export function getOauthAccountInfo(): AccountInfo | undefined {
-  return isForgeTeamAuthEnabled() ? getGlobalConfig().oauthAccount : undefined
+  return isAnthropicAuthEnabled() ? getGlobalConfig().oauthAccount : undefined
 }
 
 /**
  * Checks if overage/extra usage provisioning is allowed for this organization.
- * This mirrors the logic in apps/claude-ai `useIsOverageProvisioningAllowed` hook as closely as possible.
+ * This mirrors the logic in apps/Forge-ai `useIsOverageProvisioningAllowed` hook as closely as possible.
  */
 export function isOverageProvisioningAllowed(): boolean {
   const accountInfo = getOauthAccountInfo()
   const billingType = accountInfo?.billingType
 
-  // Must be a Claude subscriber with a supported subscription type
+  // Must be a Forge subscriber with a supported subscription type
   if (!isClaudeAISubscriber() || !billingType) {
     return false
   }
@@ -1665,7 +1668,7 @@ export function getSubscriptionType(): SubscriptionType | null {
     return getMockSubscriptionType()
   }
 
-  if (!isForgeTeamAuthEnabled()) {
+  if (!isAnthropicAuthEnabled()) {
     return null
   }
   const oauthTokens = getClaudeAIOAuthTokens()
@@ -1700,7 +1703,7 @@ export function isProSubscriber(): boolean {
 }
 
 export function getRateLimitTier(): string | null {
-  if (!isForgeTeamAuthEnabled()) {
+  if (!isAnthropicAuthEnabled()) {
     return null
   }
   const oauthTokens = getClaudeAIOAuthTokens()
@@ -1716,24 +1719,26 @@ export function getSubscriptionName(): string {
 
   switch (subscriptionType) {
     case 'enterprise':
-      return 'Claude Enterprise'
+      return 'Forge Enterprise'
     case 'team':
-      return 'Claude Team'
+      return 'Forge Team'
     case 'max':
-      return 'Claude Max'
+      return 'Forge Max'
     case 'pro':
-      return 'Claude Pro'
+      return 'Forge Pro'
     default:
-      return 'Claude API'
+      return 'Forge API'
   }
 }
 
-/** Check if using third-party services (Bedrock or Vertex or Foundry) */
+/** Check if using third-party services (Bedrock or Vertex or Foundry or OpenAI-compatible or Gemini) */
 export function isUsing3PServices(): boolean {
   return !!(
     isEnvTruthy(process.env.FORGE_CODE_USE_BEDROCK) ||
     isEnvTruthy(process.env.FORGE_CODE_USE_VERTEX) ||
-    isEnvTruthy(process.env.FORGE_CODE_USE_FOUNDRY)
+    isEnvTruthy(process.env.FORGE_CODE_USE_FOUNDRY) ||
+    isEnvTruthy(process.env.FORGE_CODE_USE_OPENAI) ||
+    isEnvTruthy(process.env.FORGE_CODE_USE_GEMINI)
   )
 }
 
@@ -1862,7 +1867,7 @@ export type UserAccountInfo = {
 
 export function getAccountInformation() {
   const apiProvider = getAPIProvider()
-  // Only provide account info for first-party ForgeTeam API
+  // Only provide account info for first-party Anthropic API
   if (apiProvider !== 'firstParty') {
     return undefined
   }
@@ -1878,14 +1883,14 @@ export function getAccountInformation() {
   } else {
     accountInfo.tokenSource = authTokenSource
   }
-  const { key: apiKey, source: apiKeySource } = getForgeTeamApiKeyWithSource()
+  const { key: apiKey, source: apiKeySource } = getAnthropicApiKeyWithSource()
   if (apiKey) {
     accountInfo.apiKeySource = apiKeySource
   }
 
   // We don't know the organization if we're relying on an external API key or auth token
   if (
-    authTokenSource === 'forge-app.vercel.app' ||
+    authTokenSource === 'Forge.ai' ||
     apiKeySource === '/login managed key'
   ) {
     // Get organization name from OAuth account info
@@ -1896,7 +1901,7 @@ export function getAccountInformation() {
   }
   const email = getOauthAccountInfo()?.emailAddress
   if (
-    (authTokenSource === 'forge-app.vercel.app' ||
+    (authTokenSource === 'Forge.ai' ||
       apiKeySource === '/login managed key') &&
     email
   ) {
@@ -1921,14 +1926,14 @@ export type OrgValidationResult =
  * token's org (network error, missing profile data), validation fails.
  */
 export async function validateForceLoginOrg(): Promise<OrgValidationResult> {
-  // `claude ssh` remote: real auth lives on the local machine and is injected
+  // `Forge ssh` remote: real auth lives on the local machine and is injected
   // by the proxy. The placeholder token can't be validated against the profile
   // endpoint. The local side already ran this check before establishing the session.
-  if (process.env.FORGE_TEAM_UNIX_SOCKET) {
+  if (process.env.ANTHROPIC_UNIX_SOCKET) {
     return { valid: true }
   }
 
-  if (!isForgeTeamAuthEnabled()) {
+  if (!isAnthropicAuthEnabled()) {
     return { valid: true }
   }
 
@@ -1949,7 +1954,7 @@ export async function validateForceLoginOrg(): Promise<OrgValidationResult> {
 
   // Always fetch the authoritative org UUID from the profile endpoint.
   // Even keychain-sourced tokens verify server-side: the cached org UUID
-  // in ~/.claude.json is user-writable and cannot be trusted.
+  // in ~/.Forge.json is user-writable and cannot be trusted.
   const { source } = getAuthTokenSource()
   const isEnvVarToken =
     source === 'FORGE_CODE_OAUTH_TOKEN' ||
@@ -1964,8 +1969,8 @@ export async function validateForceLoginOrg(): Promise<OrgValidationResult> {
         `Unable to verify organization for the current authentication token.\n` +
         `This machine requires organization ${requiredOrgUuid} but the profile could not be fetched.\n` +
         `This may be a network error, or the token may lack the user:profile scope required for\n` +
-        `verification (tokens from 'claude setup-token' do not include this scope).\n` +
-        `Try again, or obtain a full-scope token via 'claude auth login'.`,
+        `verification (tokens from 'Forge setup-token' do not include this scope).\n` +
+        `Try again, or obtain a full-scope token via 'Forge auth login'.`,
     }
   }
 
@@ -1995,12 +2000,8 @@ export async function validateForceLoginOrg(): Promise<OrgValidationResult> {
     message:
       `Your authentication token belongs to organization ${tokenOrgUuid},\n` +
       `but this machine requires organization ${requiredOrgUuid}.\n\n` +
-      `Please log in with the correct organization: claude auth login`,
+      `Please log in with the correct organization: Forge auth login`,
   }
 }
 
 class GcpCredentialsTimeoutError extends Error {}
-
-
-
-

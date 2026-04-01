@@ -1,9 +1,9 @@
 import { randomUUID } from 'crypto'
 import { basename } from 'path'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { logEvent } from '../services/analytics/index.js'
-import { readFileSync } from '../utils/fileRead.js'
-import { expandPath } from '../utils/path.js'
+import { logEvent } from 'src/services/analytics/index.js'
+import { readFileSync } from 'src/utils/fileRead.js'
+import { expandPath } from 'src/utils/path.js'
 import type { PermissionOption } from '../components/permissions/FilePermissionDialog/permissionOptions.js'
 import type {
   MCPServerConnection,
@@ -377,7 +377,3 @@ function isSaveMessage(
     typeof data[1].text === 'string'
   )
 }
-
-
-
-

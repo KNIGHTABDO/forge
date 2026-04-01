@@ -6,16 +6,16 @@ import {
   HOOK_EVENTS,
   type HookInput,
   type PermissionUpdate,
-} from '../entrypoints/agentSdkTypes.js'
+} from 'src/entrypoints/agentSdkTypes.js'
 import type {
   HookJSONOutput,
   AsyncHookJSONOutput,
   SyncHookJSONOutput,
-} from '../entrypoints/agentSdkTypes.js'
-import type { Message } from '../types/message.js'
-import type { PermissionResult } from '../utils/permissions/PermissionResult.js'
-import { permissionBehaviorSchema } from '../utils/permissions/PermissionRule.js'
-import { permissionUpdateSchema } from '../utils/permissions/PermissionUpdateSchema.js'
+} from 'src/entrypoints/agentSdkTypes.js'
+import type { Message } from 'src/types/message.js'
+import type { PermissionResult } from 'src/utils/permissions/PermissionResult.js'
+import { permissionBehaviorSchema } from 'src/utils/permissions/PermissionRule.js'
+import { permissionUpdateSchema } from 'src/utils/permissions/PermissionUpdateSchema.js'
 import type { AppState } from '../state/AppState.js'
 import type { AttributionState } from '../utils/commitAttribution.js'
 
@@ -51,7 +51,7 @@ export const syncHookResponseSchema = lazySchema(() =>
   z.object({
     continue: z
       .boolean()
-      .describe('Whether Claude should continue after hook (default: true)')
+      .describe('Whether Forge should continue after hook (default: true)')
       .optional(),
     suppressOutput: z
       .boolean()
@@ -288,7 +288,3 @@ export type AggregatedHookResult = {
   permissionRequestResult?: PermissionRequestResult
   retry?: boolean
 }
-
-
-
-
