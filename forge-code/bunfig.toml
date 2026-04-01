@@ -1,0 +1,13 @@
+[install.alias]
+"@ant/claude-flood-monitor" = "./src/stubs/ant-stub.ts"
+"@ant/tengu-exp-sdk" = "./src/stubs/ant-stub.ts"
+"@ant/tengu-settings" = "./src/stubs/ant-stub.ts"
+"@ant/tengu-common" = "./src/stubs/ant-stub.ts"
+"@ant/tengu-mcp" = "./src/stubs/ant-stub.ts"
+"@ant/computer-use-mcp" = "./src/stubs/ant-stub.ts"
+"@ant/computer-use-input" = "./src/stubs/ant-stub.ts"
+"@ant/computer-use-swift" = "./src/stubs/ant-stub.ts"
+"@ant/computer-use-system-permission" = "./src/stubs/ant-stub.ts"
+"@ant/claude-for-chrome-mcp" = "./src/stubs/ant-stub.ts"
+"@ant-ai/sandbox-runtime" = "./src/stubs/ant-stub.ts"
+"@ant-ai/mcpb" = "./src/stubs/ant-stub.ts"
