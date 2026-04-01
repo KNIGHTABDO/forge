@@ -1,7 +1,7 @@
 {
-  "name": "forge-code",
-  "version": "0.1.4",
-  "description": "Claude Code opened to any LLM — OpenAI, Gemini, DeepSeek, Ollama, and 200+ models",
+  "name": "forge-ai-coder",
+  "version": "0.1.5",
+  "description": "Forge Code CLI — The ultimate terminal-native AI coding assistant and agentic pair programmer.",
   "type": "module",
   "bin": {
     "forge-code": "./bin/forge-code.mjs"
@@ -126,17 +126,18 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://gitlawb.com/z6MkqDnb7Siv3Cwj7pGJq4T5EsUisECqR8KpnDLwcaZq5TPr/openclaude"
+    "url": "https://github.com/KNIGHTABDO/forge.git",
+    "directory": "forge-code"
   },
   "keywords": [
-    "claude-code",
-    "openai",
-    "llm",
+    "forge-code",
+    "forge",
+    "ai",
+    "coder",
     "cli",
     "agent",
-    "deepseek",
-    "ollama",
-    "gemini"
+    "gemini",
+    "github-copilot"
   ],
   "license": "MIT",
   "publishConfig": {

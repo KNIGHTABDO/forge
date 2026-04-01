@@ -21,7 +21,7 @@
 
 1. **Install Globally**
    ```bash
-   npm install -g forge-code
+   npm install -g forge-ai-coder
    ```
 
 2. **Launch with Gemini**
