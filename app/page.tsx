@@ -449,8 +449,8 @@ export default function Home() {
               <div className="cli-terminal-body">
                 <div className="cli-line">
                   <span className="cli-prompt">$</span>
-                  <code className="cli-code">npm install -g forge-code</code>
-                  <button className="cli-copy" onClick={() => navigator.clipboard.writeText('npm install -g forge-code')}>
+                  <code className="cli-code">npm install -g forge-ai-coder</code>
+                  <button className="cli-copy" onClick={() => navigator.clipboard.writeText('npm install -g forge-ai-coder')}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                       <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
@@ -459,7 +459,7 @@ export default function Home() {
                 </div>
                 <div className="cli-line">
                   <span className="cli-prompt">$</span>
-                  <code className="cli-code">npm update -g forge-code</code>
+                  <code className="cli-code">npm update -g forge-ai-coder</code>
                 </div>
               </div>
             </div>
@@ -481,7 +481,7 @@ export default function Home() {
           </div>
           
           <div className="cli-footer-links">
-             <Link href="https://github.com/KNIGHTABDO/forge-code" className="btn-ghost">CLI Repo (Live)</Link>
+              <Link href="https://github.com/KNIGHTABDO/forge" className="btn-ghost">CLI Repo (Live)</Link>
              <Link href="/changelog" className="btn-ghost">Read CLI Changelog</Link>
           </div>
         </div>
