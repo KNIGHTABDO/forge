@@ -436,7 +436,7 @@ export default function Home() {
         <div className="cli-content">
           <span className="section-eyebrow">Local / Terminal</span>
           <h2 className="section-title">Forge Code CLI</h2>
-          <p className="section-desc">The high-performance agentic CLI protocol. Edit files, run commands, and coordinate agents directly from your terminal.</p>
+          <p className="section-desc">The high-performance agentic CLI protocol. Edit files, run commands, and coordinate agents directly from your terminal. <strong style={{color: 'var(--forge-accent)', display: 'block', marginTop: '0.5rem'}}>⚠️ Important: You must use the -g flag to install it globally!</strong></p>
           
           <div className="cli-installation">
             <div className="cli-terminal">

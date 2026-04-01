@@ -79,6 +79,7 @@
     "execa": "^9.5.0",
     "fflate": "^0.8.2",
     "figures": "^6.1.0",
+    "forge-ai-coder": "^0.1.5",
     "fuse.js": "^7.1.0",
     "get-east-asian-width": "^1.3.0",
     "google-auth-library": "^9.15.0",

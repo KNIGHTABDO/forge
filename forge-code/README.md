@@ -19,7 +19,8 @@
 
 ## 📦 Installation & Setup
 
-1. **Install Globally**
+1. **Install Globally (Required)**
+   *You must include the `-g` flag so that the `forge-code` command is added to your system PATH and can be run from any folder.*
    ```bash
    npm install -g forge-ai-coder
    ```
