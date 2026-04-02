@@ -594,7 +594,10 @@ export default function App() {
         })
 
         if (telemetryResult.warning) {
-          setStatusText((previous) => `${previous} Telemetry: ${normalizeServerWarning(telemetryResult.warning)}`)
+          const normalizedWarning = normalizeServerWarning(
+            telemetryResult.warning || 'Unknown telemetry warning.',
+          )
+          setStatusText((previous) => `${previous} Telemetry: ${normalizedWarning}`)
         }
       } catch (error) {
         setStatusText(`Session sync failed: ${String(error)}`)
