@@ -2,7 +2,6 @@
   "name": "forge",
   "version": "0.1.0",
   "private": true,
-
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -16,6 +15,8 @@
     "@google/generative-ai": "^0.21.0",
     "@octokit/rest": "^21.0.2",
     "ai": "^6.0.134",
+    "firebase": "^12.11.0",
+    "firebase-admin": "^13.7.0",
     "next": "16.1.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

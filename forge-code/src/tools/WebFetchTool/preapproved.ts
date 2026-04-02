@@ -14,7 +14,7 @@
 export const PREAPPROVED_HOSTS = new Set([
   // Anthropic
   'platform.Forge.com',
-  'code.Forge.com',
+  'forge.com',
   'modelcontextprotocol.io',
   'github.com/anthropics',
   'agentskills.io',

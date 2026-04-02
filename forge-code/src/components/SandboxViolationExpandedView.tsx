@@ -32,7 +32,18 @@ export function SandboxViolationExpandedView() {
   let t2;
   if ($[1] === Symbol.for("react.memo_cache_sentinel")) {
     t1 = () => {
-      const store = SandboxManager.getSandboxViolationStore();
+      const store = SandboxManager.getSandboxViolationStore() as
+        | {
+            subscribe: (
+              cb: (allViolations: SandboxViolationEvent[]) => void,
+            ) => () => void;
+            getTotalCount: () => number;
+          }
+        | null
+        | undefined;
+      if (!store || typeof store.subscribe !== "function") {
+        return;
+      }
       const unsubscribe = store.subscribe(allViolations => {
         setViolations(allViolations.slice(-10));
         setTotalCount(store.getTotalCount());

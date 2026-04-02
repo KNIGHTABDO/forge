@@ -70,11 +70,12 @@ export default function TermsPage() {
             <li><a href="#use-of-service">03 — Use of the Service</a></li>
             <li><a href="#content">04 — User Content</a></li>
             <li><a href="#intellectual-property">05 — Intellectual Property</a></li>
-            <li><a href="#disclaimers">06 — Disclaimers</a></li>
-            <li><a href="#limitation">07 — Limitation of Liability</a></li>
-            <li><a href="#termination">08 — Termination</a></li>
-            <li><a href="#changes">09 — Changes to Terms</a></li>
-            <li><a href="#contact">10 — Contact</a></li>
+            <li><a href="#cli-access">06 — CLI Access & Keys</a></li>
+            <li><a href="#disclaimers">07 — Disclaimers</a></li>
+            <li><a href="#limitation">08 — Limitation of Liability</a></li>
+            <li><a href="#termination">09 — Termination</a></li>
+            <li><a href="#changes">10 — Changes to Terms</a></li>
+            <li><a href="#contact">11 — Contact</a></li>
           </ul>
         </aside>
 
@@ -162,8 +163,19 @@ export default function TermsPage() {
             </p>
           </div>
 
-          <div className="legal-section" id="disclaimers">
+          <div className="legal-section" id="cli-access">
             <span className="legal-section-num">06</span>
+            <h2 className="legal-section-title">CLI Access & Keys</h2>
+            <p>
+              Users of the Forge CLI have the option to authenticate their local devices with our Service via the Web Dashboard. This synchronization securely transfers environment variables required for operations (e.g., LLM and Code APIs).
+            </p>
+            <p>
+              You are responsible for safely maintaining the devices connected to your account. FORGE can revoke the authorization of any CLI instance at its discretion, or at your command via the Web Dashboard, if a token compromise is detected.
+            </p>
+          </div>
+
+          <div className="legal-section" id="disclaimers">
+            <span className="legal-section-num">07</span>
             <h2 className="legal-section-title">Disclaimers</h2>
             <p>
               THE SERVICE IS PROVIDED &quot;AS IS&quot; AND &quot;AS AVAILABLE&quot; WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED. WE DO NOT WARRANT THAT:
@@ -180,7 +192,7 @@ export default function TermsPage() {
           </div>
 
           <div className="legal-section" id="limitation">
-            <span className="legal-section-num">07</span>
+            <span className="legal-section-num">08</span>
             <h2 className="legal-section-title">Limitation of Liability</h2>
             <p>
               TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, FORGE DIGITAL SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING LOSS OF PROFITS, DATA, OR GOODWILL, ARISING FROM YOUR USE OF THE SERVICE.
@@ -191,7 +203,7 @@ export default function TermsPage() {
           </div>
 
           <div className="legal-section" id="termination">
-            <span className="legal-section-num">08</span>
+            <span className="legal-section-num">09</span>
             <h2 className="legal-section-title">Termination</h2>
             <p>
               We may terminate or suspend your access to the Service immediately, without prior notice, for conduct that we determine violates these Terms or is harmful to other users, us, third parties, or for any other reason at our sole discretion.
@@ -202,7 +214,7 @@ export default function TermsPage() {
           </div>
 
           <div className="legal-section" id="changes">
-            <span className="legal-section-num">09</span>
+            <span className="legal-section-num">10</span>
             <h2 className="legal-section-title">Changes to Terms</h2>
             <p>
               We reserve the right to modify these Terms at any time. When we make changes, we will update the &quot;Last updated&quot; date at the top of this page.
@@ -213,7 +225,7 @@ export default function TermsPage() {
           </div>
 
           <div className="legal-section" id="contact">
-            <span className="legal-section-num">10</span>
+            <span className="legal-section-num">11</span>
             <h2 className="legal-section-title">Contact</h2>
             <p>
               If you have any questions about these Terms of Service, please contact us:

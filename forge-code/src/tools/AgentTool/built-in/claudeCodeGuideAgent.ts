@@ -15,7 +15,7 @@ import type {
 } from '../loadAgentsDir.js'
 
 const FORGE_CODE_DOCS_MAP_URL =
-  'https://code.Forge.com/docs/en/FORGE_CODE_docs_map.md'
+  'https://forge.com/cli/docs/en/FORGE_CODE_docs_map.md'
 const CDP_DOCS_MAP_URL = 'https://platform.Forge.com/llms.txt'
 
 export const FORGE_CODE_GUIDE_AGENT_TYPE = 'Forge-code-guide'

@@ -40,13 +40,20 @@ import {
 interface OpenAIMessage {
   role: 'system' | 'user' | 'assistant' | 'tool'
   content?: string | Array<{ type: string; text?: string; image_url?: { url: string } }>
-  tool_calls?: Array<{
-    id: string
-    type: 'function'
-    function: { name: string; arguments: string }
-  }>
+  tool_calls?: OpenAIToolCall[]
   tool_call_id?: string
   name?: string
+}
+
+interface OpenAIToolCall {
+  id: string
+  type: 'function'
+  function: {
+    name: string
+    arguments: string
+    [key: string]: unknown
+  }
+  [key: string]: unknown
 }
 
 interface OpenAITool {
@@ -57,6 +64,55 @@ interface OpenAITool {
     parameters: Record<string, unknown>
     strict?: boolean
   }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object'
+}
+
+function extractFunctionMetadata(
+  fn: unknown,
+): Record<string, unknown> | undefined {
+  if (!isRecord(fn)) return undefined
+
+  const metadata: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(fn)) {
+    if (key === 'name' || key === 'arguments') continue
+    metadata[key] = value
+  }
+
+  return Object.keys(metadata).length > 0 ? metadata : undefined
+}
+
+function buildStoredOpenAIToolCallMetadata(toolCall: {
+  id?: string
+  type?: string
+  function?: Record<string, unknown>
+}): Record<string, unknown> | undefined {
+  const metadata: Record<string, unknown> = {}
+
+  if (typeof toolCall.id === 'string') {
+    metadata.id = toolCall.id
+  }
+  if (typeof toolCall.type === 'string') {
+    metadata.type = toolCall.type
+  }
+
+  const functionMetadata = extractFunctionMetadata(toolCall.function)
+  if (functionMetadata) {
+    metadata.function = functionMetadata
+  }
+
+  return Object.keys(metadata).length > 0 ? metadata : undefined
+}
+
+function getStoredOpenAIToolCall(
+  toolUse: unknown,
+): Record<string, unknown> | undefined {
+  if (!isRecord(toolUse)) return undefined
+  const raw = toolUse.openai_tool_call
+  if (!isRecord(raw)) return undefined
+  return raw
 }
 
 function convertSystemPrompt(
@@ -190,17 +246,35 @@ function convertMessages(
 
         if (toolUses.length > 0) {
           assistantMsg.tool_calls = toolUses.map(
-            (tu: { id?: string; name?: string; input?: unknown }) => ({
-              id: tu.id ?? `call_${Math.random().toString(36).slice(2)}`,
-              type: 'function' as const,
-              function: {
-                name: tu.name ?? 'unknown',
-                arguments:
-                  typeof tu.input === 'string'
-                    ? tu.input
-                    : JSON.stringify(tu.input ?? {}),
-              },
-            }),
+            (tu: { id?: string; name?: string; input?: unknown }) => {
+              const storedToolCall = getStoredOpenAIToolCall(tu)
+              const storedFunction = isRecord(storedToolCall?.function)
+                ? storedToolCall.function
+                : undefined
+              const functionMetadata = extractFunctionMetadata(storedFunction)
+
+              return {
+                ...(storedToolCall ?? {}),
+                id:
+                  tu.id ??
+                  (typeof storedToolCall?.id === 'string'
+                    ? storedToolCall.id
+                    : `call_${Math.random().toString(36).slice(2)}`),
+                type: 'function' as const,
+                function: {
+                  ...(functionMetadata ?? {}),
+                  name:
+                    tu.name ??
+                    (typeof storedFunction?.name === 'string'
+                      ? storedFunction.name
+                      : 'unknown'),
+                  arguments:
+                    typeof tu.input === 'string'
+                      ? tu.input
+                      : JSON.stringify(tu.input ?? {}),
+                },
+              }
+            },
           )
         }
 
@@ -264,7 +338,8 @@ interface OpenAIStreamChunk {
         index: number
         id?: string
         type?: string
-        function?: { name?: string; arguments?: string }
+        function?: { name?: string; arguments?: string; [key: string]: unknown }
+        [key: string]: unknown
       }>
     }
     finish_reason: string | null
@@ -303,7 +378,14 @@ async function* openaiStreamToAnthropic(
 ): AsyncGenerator<AnthropicStreamEvent> {
   const messageId = makeMessageId()
   let contentBlockIndex = 0
-  const activeToolCalls = new Map<number, { id: string; name: string; index: number }>()
+  const activeToolCalls = new Map<
+    number,
+    {
+      id: string
+      name: string
+      index: number
+    }
+  >()
   let hasEmittedContentStart = false
   let lastStopReason: 'tool_use' | 'max_tokens' | 'end_turn' | null = null
   let hasEmittedFinalUsage = false
@@ -392,21 +474,31 @@ async function* openaiStreamToAnthropic(
               }
 
               const toolBlockIndex = contentBlockIndex
+              const openaiToolCall = buildStoredOpenAIToolCallMetadata({
+                id: tc.id,
+                type: tc.type,
+                function: isRecord(tc.function) ? tc.function : undefined,
+              })
               activeToolCalls.set(tc.index, {
                 id: tc.id,
                 name: tc.function.name,
                 index: toolBlockIndex,
               })
 
+              const toolUseContentBlock: Record<string, unknown> = {
+                type: 'tool_use',
+                id: tc.id,
+                name: tc.function.name,
+                input: {},
+              }
+              if (openaiToolCall) {
+                toolUseContentBlock.openai_tool_call = openaiToolCall
+              }
+
               yield {
                 type: 'content_block_start',
                 index: toolBlockIndex,
-                content_block: {
-                  type: 'tool_use',
-                  id: tc.id,
-                  name: tc.function.name,
-                  input: {},
-                },
+                content_block: toolUseContentBlock,
               }
               contentBlockIndex++
 
@@ -686,7 +778,13 @@ class OpenAIShimMessages {
           content?: string | null
           tool_calls?: Array<{
             id: string
-            function: { name: string; arguments: string }
+            type?: string
+            function: {
+              name: string
+              arguments: string
+              [key: string]: unknown
+            }
+            [key: string]: unknown
           }>
         }
         finish_reason?: string
@@ -707,6 +805,11 @@ class OpenAIShimMessages {
 
     if (choice?.message?.tool_calls) {
       for (const tc of choice.message.tool_calls) {
+        const openAIToolCallMetadata = buildStoredOpenAIToolCallMetadata({
+          id: tc.id,
+          type: tc.type,
+          function: tc.function,
+        })
         let input: unknown
         try {
           input = JSON.parse(tc.function.arguments)
@@ -718,6 +821,9 @@ class OpenAIShimMessages {
           id: tc.id,
           name: tc.function.name,
           input,
+          ...(openAIToolCallMetadata
+            ? { openai_tool_call: openAIToolCallMetadata }
+            : {}),
         })
       }
     }

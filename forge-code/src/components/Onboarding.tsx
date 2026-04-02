@@ -86,7 +86,7 @@ export function Onboarding({
             <Text dimColor wrap="wrap">
               For more details see:
               <Newline />
-              <Link url="https://code.Forge.com/docs/en/security" />
+              <Link url="https://forge.com/cli/docs/en/security" />
             </Text>
           </OrderedList.Item>
         </OrderedList>

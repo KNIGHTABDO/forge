@@ -7,6 +7,26 @@ import {
   isAnthropicAuthEnabled,
   isClaudeAISubscriber,
 } from '../utils/auth.js'
+import { getGlobalConfig } from '../utils/config.js'
+import { getAPIProvider } from '../utils/model/providers.js'
+
+function hasThirdPartyCredentials(): boolean {
+  const provider = getAPIProvider()
+
+  if (provider === 'gemini') {
+    return Boolean(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY)
+  }
+
+  if (provider === 'openai') {
+    return Boolean(
+      process.env.OPENAI_API_KEY ||
+        process.env.GITHUB_TOKEN ||
+        process.env.CODEX_API_KEY,
+    )
+  }
+
+  return false
+}
 
 export type VerificationStatus =
   | 'loading'
@@ -23,6 +43,14 @@ export type ApiKeyVerificationResult = {
 
 export function useApiKeyVerification(): ApiKeyVerificationResult {
   const [status, setStatus] = useState<VerificationStatus>(() => {
+    if (getGlobalConfig().firebaseToken) {
+      return 'valid'
+    }
+
+    if (hasThirdPartyCredentials()) {
+      return 'valid'
+    }
+
     if (!isAnthropicAuthEnabled() || isClaudeAISubscriber()) {
       return 'valid'
     }
@@ -41,6 +69,16 @@ export function useApiKeyVerification(): ApiKeyVerificationResult {
   const [error, setError] = useState<Error | null>(null)
 
   const verify = useCallback(async (): Promise<void> => {
+    if (getGlobalConfig().firebaseToken) {
+      setStatus('valid')
+      return
+    }
+
+    if (hasThirdPartyCredentials()) {
+      setStatus('valid')
+      return
+    }
+
     if (!isAnthropicAuthEnabled() || isClaudeAISubscriber()) {
       setStatus('valid')
       return

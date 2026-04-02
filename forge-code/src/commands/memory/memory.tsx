@@ -74,7 +74,7 @@ function MemoryCommand({
 
         <Box marginTop={1}>
           <Text dimColor>
-            Learn more: <Link url="https://code.Forge.com/docs/en/memory" />
+            Learn more: <Link url="https://forge.com/cli/docs/en/memory" />
           </Text>
         </Box>
       </Box>

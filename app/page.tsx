@@ -481,8 +481,9 @@ export default function Home() {
           </div>
           
           <div className="cli-footer-links">
-              <Link href="https://github.com/KNIGHTABDO/forge" className="btn-ghost">CLI Repo (Live)</Link>
+             <Link href="https://github.com/KNIGHTABDO/forge" className="btn-ghost">CLI Repo (Live)</Link>
              <Link href="/changelog" className="btn-ghost">Read CLI Changelog</Link>
+             <Link href="/cli" className="btn-ghost" style={{ border: '1px solid var(--sidebar-border)' }}>Manage CLI Settings</Link>
           </div>
         </div>
       </section>

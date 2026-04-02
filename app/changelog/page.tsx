@@ -38,6 +38,19 @@ export default function ChangelogPage() {
 
   const updates = [
     {
+      version: 'v3.3',
+      date: 'April 2026',
+      title: 'Unified CLI Auth & Web Dashboard',
+      description: 'We have introduced a secure, Firebase-backed authentication layer for the Forge CLI. Connect your CLI instances to your web account to automatically stream securely stored API keys from the cloud to the terminal.',
+      items: [
+        'Secure Firebase Auth integration with Email and Google OAuth',
+        'Headless CLI login flow via Web App callback (https://forge-app-peach.vercel.app/cli)',
+        'Device Management: View and revoke active CLI sessions directly from your Web Dashboard',
+        'Usage Analytics: Track command executions and file edits across all devices',
+        'Zero Setup: No more fiddling with local .env files; keys are seamlessly injected from Vercel'
+      ]
+    },
+    {
       version: 'v3.2',
       date: 'March 2026',
       title: 'Forge Code: The Agentic CLI Protocol',

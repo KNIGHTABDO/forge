@@ -37,6 +37,14 @@
    forge-code dev:github
    ```
 
+### 🔐 Unified Authentication (New in v3.3)
+You can directly link your CLI to the Forge Web App Dashboard running anywhere. This lets you stream API keys directly to the CLI rather than storing them via local `.env`.
+```bash
+forge-code login
+```
+* **Dashboard Management:** Revoke device tokens or monitor instance executions entirely from `https://forge-app-peach.vercel.app/cli` (or localhost for development).
+* **Cross-Environment Sync:** Keys fetched from the callback are securely held in `~/.Forge/` and injected dynamically into standard Node procedures safely at boot.
+
 ---
 
 ## 🛠️ Local Development & Ecosystem

@@ -10,7 +10,7 @@ import { useStartupNotification } from './notifs/useStartupNotification.js';
  * notifications for success/failure in the bottom right of the REPL.
  */
 export function useOfficialMarketplaceNotification() {
-  useStartupNotification(_temp);
+  // Bypassed for Forge - No marketplace notifications at startup
 }
 async function _temp() {
   const result = await checkAndInstallOfficialMarketplace();

@@ -117,11 +117,19 @@ export function getDefaultOpusModel(): ModelName {
   }
   // Gemini provider
   if (getAPIProvider() === 'gemini') {
-    return process.env.GEMINI_MODEL || 'gemini-2.5-pro-preview-03-25'
+    return (
+      process.env.GEMINI_MODEL ||
+      process.env.GITHUB_MODEL ||
+      'gemini-3.1-pro-preview'
+    )
   }
   // OpenAI provider: use user-specified model or default
   if (getAPIProvider() === 'openai') {
-    return process.env.OPENAI_MODEL || 'gpt-4o'
+    return (
+      process.env.OPENAI_MODEL ||
+      process.env.GITHUB_MODEL ||
+      'gemini-3.1-pro-preview'
+    )
   }
   // 3P providers (Bedrock, Vertex, Foundry) — kept as a separate branch
   // even when values match, since 3P availability lags firstParty and
@@ -139,11 +147,19 @@ export function getDefaultSonnetModel(): ModelName {
   }
   // Gemini provider
   if (getAPIProvider() === 'gemini') {
-    return process.env.GEMINI_MODEL || 'gemini-2.0-flash'
+    return (
+      process.env.GEMINI_MODEL ||
+      process.env.GITHUB_MODEL ||
+      'gemini-3.1-flash-lite-preview'
+    )
   }
   // OpenAI provider
   if (getAPIProvider() === 'openai') {
-    return process.env.OPENAI_MODEL || 'gpt-4o'
+    return (
+      process.env.OPENAI_MODEL ||
+      process.env.GITHUB_MODEL ||
+      'gemini-3.1-flash-lite-preview'
+    )
   }
   // Default to Sonnet 4.5 for 3P since they may not have 4.6 yet
   if (getAPIProvider() !== 'firstParty') {
@@ -159,11 +175,19 @@ export function getDefaultHaikuModel(): ModelName {
   }
   // Gemini provider
   if (getAPIProvider() === 'gemini') {
-    return process.env.GEMINI_MODEL || 'gemini-2.0-flash-lite'
+    return (
+      process.env.GEMINI_MODEL ||
+      process.env.GITHUB_MODEL ||
+      'gemini-3.1-flash-lite-preview'
+    )
   }
   // OpenAI provider
   if (getAPIProvider() === 'openai') {
-    return process.env.OPENAI_MODEL || 'gpt-4o-mini'
+    return (
+      process.env.OPENAI_MODEL ||
+      process.env.GITHUB_MODEL ||
+      'gemini-3.1-flash-lite-preview'
+    )
   }
 
   // Haiku 4.5 is available on all platforms (first-party, Foundry, Bedrock, Vertex)
@@ -211,11 +235,19 @@ export function getRuntimeMainLoopModel(params: {
 export function getDefaultMainLoopModelSetting(): ModelName | ModelAlias {
   // Gemini provider: always use the configured Gemini model
   if (getAPIProvider() === 'gemini') {
-    return process.env.GEMINI_MODEL || 'gemini-2.0-flash'
+    return (
+      process.env.GEMINI_MODEL ||
+      process.env.GITHUB_MODEL ||
+      'gemini-3.1-flash-lite-preview'
+    )
   }
   // OpenAI provider: always use the configured OpenAI model
   if (getAPIProvider() === 'openai') {
-    return process.env.OPENAI_MODEL || 'gpt-4o'
+    return (
+      process.env.OPENAI_MODEL ||
+      process.env.GITHUB_MODEL ||
+      'gemini-3.1-pro-preview'
+    )
   }
 
   // Ants default to defaultModel from flag config, or Opus 1M if not configured
@@ -328,6 +360,13 @@ export function getCanonicalName(fullModelName: ModelName): ModelShortName {
 export function getClaudeAiUserDefaultModelDescription(
   fastMode = false,
 ): string {
+  if (getAPIProvider() === 'gemini') {
+    return 'Gemini 3.1 Flash Lite Preview · Default Forge model'
+  }
+  if (getAPIProvider() === 'openai') {
+    return 'Gemini 3.1 Pro Preview · GitHub Models compatible default'
+  }
+
   if (isMaxSubscriber() || isTeamPremiumSubscriber()) {
     if (isOpus1mMergeEnabled()) {
       return `Opus 4.6 with 1M context · Most capable for complex work${fastMode ? getOpus46PricingSuffix(true) : ''}`

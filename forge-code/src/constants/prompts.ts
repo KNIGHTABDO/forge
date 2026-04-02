@@ -100,7 +100,7 @@ import type { OutputStyleConfig } from './outputStyles.js'
 import { CYBER_RISK_INSTRUCTION } from './cyberRiskInstruction.js'
 
 export const FORGE_CODE_DOCS_MAP_URL =
-  'https://code.Forge.com/docs/en/FORGE_CODE_docs_map.md'
+  'https://forge.com/cli/docs/en/FORGE_CODE_docs_map.md'
 
 /**
  * Boundary marker separating static (cross-org cacheable) content from dynamic content.

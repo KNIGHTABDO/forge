@@ -113,7 +113,7 @@ function generateReservedShortcuts(): string {
 
 const FILE_FORMAT_EXAMPLE: KeybindingsSchemaType = {
   $schema: 'https://www.schemastore.org/Forge-code-keybindings.json',
-  $docs: 'https://code.Forge.com/docs/en/keybindings',
+  $docs: 'https://forge.com/cli/docs/en/keybindings',
   bindings: [
     {
       context: 'Chat',

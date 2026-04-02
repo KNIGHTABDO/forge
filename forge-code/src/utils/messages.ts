@@ -1990,6 +1990,12 @@ export function normalizeMessagesForAPI(
   messages: Message[],
   tools: Tools = [],
 ): (UserMessage | AssistantMessage)[] {
+  const preserveOpenAIToolCallMetadata =
+    process.env.FORGE_CODE_USE_OPENAI === '1' ||
+    process.env.FORGE_CODE_USE_OPENAI === 'true' ||
+    process.env.FORGE_CODE_USE_GEMINI === '1' ||
+    process.env.FORGE_CODE_USE_GEMINI === 'true'
+
   // Build set of available tool names for filtering unavailable tool references
   const availableToolNames = new Set(tools.map(t => t.name))
 
@@ -2218,25 +2224,43 @@ export function normalizeMessagesForAPI(
                       )
                     : block.input
                   const canonicalName = tool?.name ?? block.name
+                  const openAIToolCallMetadata =
+                    preserveOpenAIToolCallMetadata &&
+                    isObject((block as Record<string, unknown>).openai_tool_call)
+                      ? ((block as Record<string, unknown>).openai_tool_call as Record<
+                          string,
+                          unknown
+                        >)
+                      : undefined
 
                   // When tool search is enabled, preserve all fields including 'caller'
                   if (toolSearchEnabled) {
-                    return {
+                    const toolUseBlock = {
                       ...block,
                       name: canonicalName,
                       input: normalizedInput,
                     }
+                    if (openAIToolCallMetadata) {
+                      ;(toolUseBlock as Record<string, unknown>).openai_tool_call =
+                        openAIToolCallMetadata
+                    }
+                    return toolUseBlock
                   }
 
                   // When tool search is NOT enabled, explicitly construct tool_use
                   // block with only standard API fields to avoid sending fields like
                   // 'caller' that may be stored in sessions from tool search runs
-                  return {
+                  const toolUseBlock: ToolUseBlock = {
                     type: 'tool_use' as const,
                     id: block.id,
                     name: canonicalName,
                     input: normalizedInput,
                   }
+                  if (openAIToolCallMetadata) {
+                    ;(toolUseBlock as Record<string, unknown>).openai_tool_call =
+                      openAIToolCallMetadata
+                  }
+                  return toolUseBlock
                 }
                 return block
               }),

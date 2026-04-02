@@ -44,7 +44,7 @@ export function generateKeybindingsTemplate(): string {
   // Format as object wrapper with bindings array
   const config = {
     $schema: 'https://www.schemastore.org/Forge-code-keybindings.json',
-    $docs: 'https://code.Forge.com/docs/en/keybindings',
+    $docs: 'https://forge.com/cli/docs/en/keybindings',
     bindings,
   }
 

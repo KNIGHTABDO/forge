@@ -185,6 +185,7 @@ export type GlobalConfig = {
    * @deprecated Use settings.apiKeyHelper instead.
    */
   apiKeyHelper?: string
+  firebaseToken?: string
   projects?: Record<string, ProjectConfig>
   numStartups: number
   installMethod?: InstallMethod
@@ -626,6 +627,7 @@ export const DEFAULT_GLOBAL_CONFIG: GlobalConfig = createDefaultGlobalConfig()
 
 export const GLOBAL_CONFIG_KEYS = [
   'apiKeyHelper',
+  'firebaseToken',
   'installMethod',
   'autoUpdates',
   'autoUpdatesProtectedForNative',

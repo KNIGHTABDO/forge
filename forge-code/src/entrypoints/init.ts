@@ -3,6 +3,7 @@ import '../bootstrap/state.js'
 import '../utils/config.js'
 import type { Attributes, MetricOptions } from '@opentelemetry/api'
 import memoize from 'lodash-es/memoize.js'
+import os from 'os'
 import { getIsNonInteractiveSession } from 'src/bootstrap/state.js'
 import type { AttributedCounter } from '../bootstrap/state.js'
 import { getSessionCounter, setMeter } from '../bootstrap/state.js'
@@ -20,7 +21,13 @@ import {
 import { preconnectAnthropicApi } from '../utils/apiPreconnect.js'
 import { applyExtraCACertsFromConfig } from '../utils/caCertsConfig.js'
 import { registerCleanup } from '../utils/cleanupRegistry.js'
-import { enableConfigs, recordFirstStartTime } from '../utils/config.js'
+import {
+  enableConfigs,
+  recordFirstStartTime,
+  getGlobalConfig,
+  getOrCreateUserID,
+  saveGlobalConfig,
+} from '../utils/config.js'
 import { logForDebugging } from '../utils/debug.js'
 import { detectCurrentRepository } from '../utils/detectRepository.js'
 import { logForDiagnosticsNoPII } from '../utils/diagLogs.js'
@@ -54,6 +61,78 @@ import { setShellIfWindows } from '../utils/windowsPaths.js'
 // Track if telemetry has been initialized to prevent double initialization
 let telemetryInitialized = false
 
+const DEFAULT_FORGE_WEB_APP_URL = 'https://forge.com'
+const DEFAULT_GEMINI_MODEL = 'gemini-3.1-flash-lite-preview'
+const DEFAULT_GITHUB_MODEL = 'gemini-3.1-pro-preview'
+
+type CliKeysResponse = {
+  keys?: {
+    GEMINI_API_KEY?: string | null
+    GITHUB_TOKEN?: string | null
+    GEMINI_MODEL?: string | null
+    GITHUB_MODEL?: string | null
+  }
+}
+
+function normalizeBaseUrl(url: string): string {
+  return url.replace(/\/+$/, '')
+}
+
+function getForgeWebBaseUrl(): string {
+  if (process.env.FORGE_LOCAL_DEV) {
+    return 'http://localhost:3000'
+  }
+
+  return normalizeBaseUrl(
+    process.env.FORGE_WEB_APP_URL ||
+      process.env.NEXT_PUBLIC_BASE_URL ||
+      DEFAULT_FORGE_WEB_APP_URL,
+  )
+}
+
+function applyRemoteKeys(keys?: CliKeysResponse['keys']): boolean {
+  if (!keys) {
+    return false
+  }
+
+  const geminiKey = keys.GEMINI_API_KEY?.trim()
+  const githubToken = keys.GITHUB_TOKEN?.trim()
+  let appliedAny = false
+
+  if (geminiKey) {
+    process.env.GEMINI_API_KEY = geminiKey
+    process.env.GEMINI_MODEL =
+      keys.GEMINI_MODEL?.trim() ||
+      process.env.GEMINI_MODEL ||
+      DEFAULT_GEMINI_MODEL
+    process.env.FORGE_CODE_USE_GEMINI = '1'
+    delete process.env.FORGE_CODE_USE_OPENAI
+    appliedAny = true
+  }
+
+  if (githubToken) {
+    process.env.GITHUB_TOKEN = githubToken
+    process.env.GITHUB_MODEL =
+      keys.GITHUB_MODEL?.trim() ||
+      process.env.GITHUB_MODEL ||
+      DEFAULT_GITHUB_MODEL
+
+    if (!geminiKey) {
+      process.env.OPENAI_API_KEY = githubToken
+      process.env.OPENAI_BASE_URL =
+        process.env.OPENAI_BASE_URL || 'https://models.inference.ai.azure.com'
+      process.env.OPENAI_MODEL =
+        process.env.GITHUB_MODEL || process.env.OPENAI_MODEL || DEFAULT_GITHUB_MODEL
+      process.env.FORGE_CODE_USE_OPENAI = '1'
+      delete process.env.FORGE_CODE_USE_GEMINI
+    }
+
+    appliedAny = true
+  }
+
+  return appliedAny
+}
+
 export const init = memoize(async (): Promise<void> => {
   const initStartTime = Date.now()
   logForDiagnosticsNoPII('info', 'init_started')
@@ -77,6 +156,73 @@ export const init = memoize(async (): Promise<void> => {
     // before any TLS connections. Bun caches the TLS cert store at boot
     // via BoringSSL, so this must happen before the first TLS handshake.
     applyExtraCACertsFromConfig()
+
+    // Fetch API keys from /api/cli/keys BEFORE provider profiles load
+    const firebaseToken = getGlobalConfig()?.firebaseToken || null
+    if (firebaseToken) {
+      const deviceId = getOrCreateUserID()
+      const deviceName = os.hostname()
+      const osName = `${os.type()} ${os.release()}`
+      const encodedDeviceId = encodeURIComponent(deviceId)
+      const encodedDeviceName = encodeURIComponent(deviceName)
+      const encodedOsName = encodeURIComponent(osName)
+      const baseUrl = getForgeWebBaseUrl()
+
+      try {
+        const res = await fetch(
+          `${baseUrl}/api/cli/keys?deviceId=${encodedDeviceId}&deviceName=${encodedDeviceName}&os=${encodedOsName}`,
+          {
+          method: 'GET',
+          headers: { Authorization: `Bearer ${firebaseToken}` }
+          },
+        )
+        
+        if (res.ok) {
+          const body = (await res.json()) as CliKeysResponse
+          const hasAnyKey = applyRemoteKeys(body.keys)
+          if (!hasAnyKey) {
+            logForDebugging(
+              'Web auth token is valid but no GEMINI_API_KEY/GITHUB_TOKEN is configured on the web app',
+              { level: 'warn' },
+            )
+          }
+        } else if (res.status === 401 || res.status === 403) {
+          // Stale token: clear it so we do not keep reporting a fake logged-in state.
+          saveGlobalConfig(config => ({ ...config, firebaseToken: undefined }))
+          logForDebugging(
+            'Stored web token was rejected. Cleared firebaseToken; run /login again.',
+            { level: 'warn' },
+          )
+        } else {
+          const responseBody = await res.text().catch(() => '')
+          logForDebugging(
+            `Failed to fetch CLI keys (${res.status}): ${responseBody}`,
+            { level: 'warn' },
+          )
+        }
+      } catch (err) {
+        logForDebugging(`Failed to fetch CLI keys: ${err}`, { level: 'warn' })
+      }
+      
+      // Fire usage tracking analytics telemetry in the background
+      try {
+        void fetch(`${baseUrl}/api/cli/telemetry`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${firebaseToken}`
+          },
+          body: JSON.stringify({
+            deviceId,
+            deviceName,
+            os: osName,
+            commandsExecuted: 1
+          })
+        }).catch(() => {})
+      } catch (err) {
+        // ignore telemetry errors
+      }
+    }
 
     logForDiagnosticsNoPII('info', 'init_safe_env_vars_applied', {
       duration_ms: Date.now() - envVarsStart,

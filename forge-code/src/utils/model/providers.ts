@@ -3,18 +3,35 @@ import { isEnvTruthy } from '../envUtils.js'
 
 export type APIProvider = 'firstParty' | 'bedrock' | 'vertex' | 'foundry' | 'openai' | 'gemini'
 
+function hasNonEmptyValue(value: string | undefined): boolean {
+  return typeof value === 'string' && value.trim().length > 0
+}
+
 export function getAPIProvider(): APIProvider {
-  return isEnvTruthy(process.env.FORGE_CODE_USE_GEMINI)
-    ? 'gemini'
-    : isEnvTruthy(process.env.FORGE_CODE_USE_OPENAI)
-      ? 'openai'
-      : isEnvTruthy(process.env.FORGE_CODE_USE_BEDROCK)
-        ? 'bedrock'
-        : isEnvTruthy(process.env.FORGE_CODE_USE_VERTEX)
-          ? 'vertex'
-          : isEnvTruthy(process.env.FORGE_CODE_USE_FOUNDRY)
-            ? 'foundry'
-            : 'firstParty'
+  // Explicit provider switches always win.
+  if (isEnvTruthy(process.env.FORGE_CODE_USE_GEMINI)) return 'gemini'
+  if (isEnvTruthy(process.env.FORGE_CODE_USE_OPENAI)) return 'openai'
+  if (isEnvTruthy(process.env.FORGE_CODE_USE_BEDROCK)) return 'bedrock'
+  if (isEnvTruthy(process.env.FORGE_CODE_USE_VERTEX)) return 'vertex'
+  if (isEnvTruthy(process.env.FORGE_CODE_USE_FOUNDRY)) return 'foundry'
+
+  // Auto-detect a sensible provider from injected credentials.
+  if (
+    hasNonEmptyValue(process.env.GEMINI_API_KEY) ||
+    hasNonEmptyValue(process.env.GOOGLE_API_KEY)
+  ) {
+    return 'gemini'
+  }
+
+  if (
+    hasNonEmptyValue(process.env.OPENAI_API_KEY) ||
+    hasNonEmptyValue(process.env.GITHUB_TOKEN)
+  ) {
+    return 'openai'
+  }
+
+  // Forge default: Gemini-first when no explicit provider configuration exists.
+  return 'gemini'
 }
 
 export function getAPIProviderForStatsig(): AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS {

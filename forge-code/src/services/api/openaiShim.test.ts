@@ -133,3 +133,98 @@ test('preserves usage from final OpenAI stream chunk with empty choices', async 
   expect(usageEvent?.usage?.input_tokens).toBe(123)
   expect(usageEvent?.usage?.output_tokens).toBe(45)
 })
+
+test('preserves provider tool-call metadata on roundtrip', async () => {
+  let capturedBody: Record<string, unknown> | null = null
+
+  globalThis.fetch = (async (_input, init) => {
+    const url = typeof _input === 'string' ? _input : _input.url
+    expect(url).toBe('http://example.test/v1/chat/completions')
+
+    capturedBody = JSON.parse(String(init?.body)) as Record<string, unknown>
+
+    return new Response(
+      JSON.stringify({
+        id: 'chatcmpl-roundtrip',
+        model: 'fake-model',
+        choices: [
+          {
+            message: {
+              role: 'assistant',
+              content: 'done',
+            },
+            finish_reason: 'stop',
+          },
+        ],
+        usage: {
+          prompt_tokens: 10,
+          completion_tokens: 5,
+        },
+      }),
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    )
+  }) as FetchType
+
+  const client = createOpenAIShimClient({}) as {
+    beta: {
+      messages: {
+        create: (params: Record<string, unknown>) => Promise<unknown>
+      }
+    }
+  }
+
+  await client.beta.messages.create({
+    model: 'fake-model',
+    system: 'test system',
+    messages: [
+      {
+        role: 'assistant',
+        content: [
+          {
+            type: 'tool_use',
+            id: 'call_read_1',
+            name: 'Read',
+            input: { file_path: 'README.md' },
+            openai_tool_call: {
+              id: 'call_read_1',
+              type: 'function',
+              function: {
+                thought_signature: 'sig_test_123',
+              },
+            },
+          },
+        ],
+      },
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'tool_result',
+            tool_use_id: 'call_read_1',
+            content: 'ok',
+          },
+        ],
+      },
+    ],
+    max_tokens: 64,
+    stream: false,
+  })
+
+  expect(capturedBody).toBeDefined()
+  const messages = (capturedBody?.messages ?? []) as Array<Record<string, unknown>>
+  const assistantMessage = messages.find(msg => msg.role === 'assistant') as
+    | Record<string, unknown>
+    | undefined
+  expect(assistantMessage).toBeDefined()
+
+  const toolCalls = (assistantMessage?.tool_calls ?? []) as Array<Record<string, unknown>>
+  expect(toolCalls.length).toBeGreaterThan(0)
+
+  const firstCall = toolCalls[0] ?? {}
+  const fn = (firstCall.function ?? {}) as Record<string, unknown>
+  expect(fn.thought_signature).toBe('sig_test_123')
+})

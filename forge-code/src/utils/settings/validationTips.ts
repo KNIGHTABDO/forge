@@ -23,7 +23,7 @@ type TipMatcher = {
   tip: ValidationTip
 }
 
-const DOCUMENTATION_BASE = 'https://code.Forge.com/docs/en'
+const DOCUMENTATION_BASE = 'https://forge.com/cli/docs/en'
 
 const TIP_MATCHERS: TipMatcher[] = [
   {
