@@ -99,6 +99,48 @@ type CliCallbackParams = {
   hasCliIntent: boolean;
 };
 
+function buildCallbackAttemptKey(params: {
+  callbackUrl: string;
+  deviceId: string | null;
+  authState: string | null;
+}): string {
+  const encodedCallback =
+    typeof window !== 'undefined'
+      ? window.btoa(unescape(encodeURIComponent(params.callbackUrl))).slice(0, 120)
+      : params.callbackUrl;
+
+  return [
+    'forge-device-callback',
+    encodedCallback,
+    params.deviceId || 'no-device',
+    params.authState || 'no-state',
+  ].join(':');
+}
+
+function hasAttemptedCallback(callbackKey: string): boolean {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  try {
+    return window.sessionStorage.getItem(callbackKey) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function markAttemptedCallback(callbackKey: string): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    window.sessionStorage.setItem(callbackKey, '1');
+  } catch {
+    // Ignore storage write errors; callback logic still has ref-based guard.
+  }
+}
+
 function readCliCallbackParams(searchParams: URLSearchParams): CliCallbackParams {
   let callbackUrl = searchParams.get('callback') || searchParams.get('cb');
   let deviceId = searchParams.get('deviceId') || searchParams.get('did');
@@ -186,10 +228,22 @@ function CliDashboard() {
 
         // If there's a CLI callback, we should redirect there or provide the token.
         if (callbackUrl) {
+          const callbackAttemptKey = buildCallbackAttemptKey({
+            callbackUrl,
+            deviceId,
+            authState,
+          });
+
           if (callbackAttemptedRef.current) {
             return;
           }
+
+          if (hasAttemptedCallback(callbackAttemptKey)) {
+            return;
+          }
+
           callbackAttemptedRef.current = true;
+          markAttemptedCallback(callbackAttemptKey);
 
           (async () => {
             try {
