@@ -134,6 +134,7 @@ type DesktopAgentChatPayload = {
   workspaceLabel?: string
   workspaceFiles?: string[]
   modelPreference?: string
+  geminiApiKey?: string
   providerPreference?: string
   sessionId?: string
 }

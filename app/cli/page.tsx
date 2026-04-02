@@ -5,7 +5,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { signInWithEmailAndPassword, signInWithPopup, createUserWithEmailAndPassword, signOut, onAuthStateChanged, User } from 'firebase/auth';
-import { collection, doc, onSnapshot, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, googleProvider, db } from '@/lib/firebase';
 import { ThemeToggle } from '@/components/theme-toggle';
 import '../home.css';
@@ -39,6 +39,9 @@ interface Analytics {
 
 function toMillis(timestamp: any): number {
   if (!timestamp) return 0;
+  if (typeof timestamp === 'number' && Number.isFinite(timestamp)) {
+    return timestamp;
+  }
   if (typeof timestamp.toMillis === 'function') {
     return timestamp.toMillis();
   }
@@ -334,47 +337,115 @@ function CliDashboard() {
   useEffect(() => {
     if (!user) return;
 
-    // Fetch analytics
-    const unsubAnalytics = onSnapshot(doc(db, 'users', user.uid, 'analytics', 'current'), (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data() as Analytics;
-        setAnalytics({
-          commandsExecuted: data.commandsExecuted || 0,
-          filesEdited: data.filesEdited || 0,
-          activeSwarms: data.activeSwarms || 0,
-          messagesSent: data.messagesSent || 0,
-          assistantResponses: data.assistantResponses || 0,
-          searchQueries: data.searchQueries || 0,
-          toolCalls: data.toolCalls || 0,
-          sessionsStarted: data.sessionsStarted || 0,
-          failedTurns: data.failedTurns || 0,
-          lastModel: data.lastModel,
-          lastProvider: data.lastProvider,
-          lastWorkspacePath: data.lastWorkspacePath,
+    let cancelled = false;
+
+    const loadDashboard = async () => {
+      try {
+        const token = await user.getIdToken();
+        const response = await fetch('/api/cli/dashboard', {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          cache: 'no-store',
         });
-      }
-    });
 
-    // Fetch devices
-    const devicesRef = collection(db, 'users', user.uid, 'devices');
+        const payload = await response.json().catch(() => null);
+        if (!response.ok) {
+          throw new Error(
+            typeof payload?.error === 'string'
+              ? payload.error
+              : `Dashboard request failed (${response.status})`,
+          );
+        }
 
-    const unsubDevices = onSnapshot(
-      devicesRef,
-      (snapshot) => {
-        const devs = snapshot.docs
-          .map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as Device))
-          .filter(device => device.active !== false)
+        if (cancelled || !payload || typeof payload !== 'object') {
+          return;
+        }
+
+        const body = payload as {
+          analytics?: Partial<Analytics>;
+          devices?: Array<Record<string, unknown>>;
+          warnings?: unknown;
+        };
+
+        const data = body.analytics || {};
+        setAnalytics({
+          commandsExecuted: Number(data.commandsExecuted) || 0,
+          filesEdited: Number(data.filesEdited) || 0,
+          activeSwarms: Number(data.activeSwarms) || 0,
+          messagesSent: Number(data.messagesSent) || 0,
+          assistantResponses: Number(data.assistantResponses) || 0,
+          searchQueries: Number(data.searchQueries) || 0,
+          toolCalls: Number(data.toolCalls) || 0,
+          sessionsStarted: Number(data.sessionsStarted) || 0,
+          failedTurns: Number(data.failedTurns) || 0,
+          lastModel: typeof data.lastModel === 'string' ? data.lastModel : undefined,
+          lastProvider: typeof data.lastProvider === 'string' ? data.lastProvider : undefined,
+          lastWorkspacePath:
+            typeof data.lastWorkspacePath === 'string' ? data.lastWorkspacePath : undefined,
+        });
+
+        const mappedDevices: Array<Device | null> = (Array.isArray(body.devices) ? body.devices : [])
+          .map((entry) => {
+            if (!entry || typeof entry !== 'object') {
+              return null;
+            }
+
+            const row = entry as Record<string, unknown>;
+            const id = typeof row.id === 'string' ? row.id : '';
+            if (!id) {
+              return null;
+            }
+
+            const device: Device = {
+              id,
+              name:
+                typeof row.name === 'string' && row.name.trim()
+                  ? row.name
+                  : 'Unknown Device',
+              os:
+                typeof row.os === 'string' && row.os.trim() ? row.os : 'Unknown OS',
+              active: row.active !== false,
+              lastUsed: row.lastUsed,
+            };
+
+            if (typeof row.platform === 'string') {
+              device.platform = row.platform;
+            }
+            if (typeof row.deviceType === 'string') {
+              device.deviceType = row.deviceType;
+            }
+            if (typeof row.appVersion === 'string') {
+              device.appVersion = row.appVersion;
+            }
+
+            return device;
+          });
+
+        const normalizedDevices = mappedDevices
+          .filter((device): device is Device => device !== null)
+          .filter((device) => device.active !== false)
           .sort((a, b) => toMillis(b.lastUsed) - toMillis(a.lastUsed));
-        setDevices(devs);
-      },
-      (err) => {
-        console.error('Failed to load devices snapshot', err);
-      },
-    );
+
+        setDevices(normalizedDevices);
+
+        if (Array.isArray(body.warnings) && body.warnings.length > 0) {
+          console.warn('CLI dashboard warnings:', body.warnings);
+        }
+      } catch (err) {
+        console.error('Failed to load CLI dashboard data', err);
+      }
+    };
+
+    void loadDashboard();
+    const intervalId = window.setInterval(() => {
+      void loadDashboard();
+    }, 6000);
 
     return () => {
-      unsubAnalytics();
-      unsubDevices();
+      cancelled = true;
+      window.clearInterval(intervalId);
     };
   }, [user]);
 

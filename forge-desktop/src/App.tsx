@@ -193,7 +193,28 @@ function extractReadTarget(prompt: string): string | null {
 
   const naturalRead = prompt.match(/(?:read|open|cat)\s+(?:the\s+)?(?:file\s+)?([^\n]+)/i)
   if (naturalRead?.[1]) {
-    return naturalRead[1].trim().replace(/^['"]|['"]$/g, '')
+    const candidate = naturalRead[1].trim().replace(/^['"]|['"]$/g, '')
+    if (!candidate) {
+      return null
+    }
+
+    if (/\breadme\b/i.test(candidate)) {
+      return 'README.md'
+    }
+
+    const lowered = candidate.toLowerCase()
+    const readsLikeReference = /^(it|this|that|the\s+project|the\s+repo|project|repo)\b/.test(
+      lowered,
+    )
+    const readsLikeFollowup = /\b(and|then)\s+(tell|summarize|explain|describe)\b/.test(
+      lowered,
+    )
+
+    if (readsLikeReference || readsLikeFollowup) {
+      return null
+    }
+
+    return candidate
   }
 
   return null
@@ -386,6 +407,7 @@ export default function App() {
   const [hasSavedSession, setHasSavedSession] = useState(false)
   const [sessionToken, setSessionToken] = useState<string | null>(null)
   const [remoteKeySummary, setRemoteKeySummary] = useState<RemoteKeySummary | null>(null)
+  const [remoteKeys, setRemoteKeys] = useState<CliKeys | null>(null)
   const [selectedModel, setSelectedModel] = useState('')
 
   const [bootstrap, setBootstrap] = useState<BootstrapPayload>({
@@ -553,16 +575,19 @@ export default function App() {
             setSessionToken(null)
             setHasSavedSession(false)
             setRemoteKeySummary(null)
+            setRemoteKeys(null)
             setStatusText('Session expired or revoked. Please sign in again.')
             return
           }
 
+          setRemoteKeys(null)
           setStatusText(`Session saved, but key sync failed: ${keyResult.error}`)
           return
         }
 
         const keySummary = summarizeRemoteKeys(keyResult.keys)
         setRemoteKeySummary(keySummary)
+        setRemoteKeys(keyResult.keys)
         setSelectedModel((previous) => previous.trim() || keySummary.geminiModel)
 
         const keyReadinessMessage =
@@ -654,6 +679,7 @@ export default function App() {
     setSessionToken(null)
     setHasSavedSession(false)
     setRemoteKeySummary(null)
+    setRemoteKeys(null)
     setStatusText('Stored desktop session cleared.')
   }, [])
 
@@ -850,7 +876,7 @@ export default function App() {
         const readTarget = extractReadTarget(prompt)
         const shouldAutoReadReadme =
           !readTarget &&
-          /\breadme\b|project\s+overview|repo\s+overview|project\s+summary/i.test(
+          /\breadme\b|project\s+overview|repo\s+overview|project\s+summary|\bread\s+it\b/i.test(
             prompt,
           )
 
@@ -940,6 +966,7 @@ export default function App() {
                 setSessionToken(null)
                 setHasSavedSession(false)
                 setRemoteKeySummary(null)
+                setRemoteKeys(null)
               }
 
               pushTool('searchDesktopWeb', 'error', searchResult.error)
@@ -984,9 +1011,18 @@ export default function App() {
           workspaceLabel: getWorkspaceLabel(workspacePath),
           workspaceFiles: activeSession.indexedFiles.slice(0, 120),
           modelPreference: selectedModel || undefined,
+          geminiApiKey: remoteKeys?.GEMINI_API_KEY || undefined,
           providerPreference: 'gemini',
           sessionId,
         })
+
+        if (!chatResult.ok && (chatResult.status === 401 || chatResult.status === 403)) {
+          await clearSessionToken()
+          setSessionToken(null)
+          setHasSavedSession(false)
+          setRemoteKeySummary(null)
+          setRemoteKeys(null)
+        }
 
         const assistantContent = chatResult.ok
           ? chatResult.reply
@@ -1046,6 +1082,7 @@ export default function App() {
     [
       activeSession,
       forgeWebBase,
+      remoteKeys,
       runningSessionId,
       selectedModel,
       sessionToken,

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import * as admin from 'firebase-admin';
+import { upsertRuntimeDevice } from '@/lib/runtime-telemetry';
 
 type CliKeys = {
   GEMINI_API_KEY: string | null;
@@ -51,6 +52,41 @@ function normalizeDeviceType(value: string | null): DeviceType {
   return 'cli';
 }
 
+function decodeUidFromJwtWithoutVerification(token: string | null): string | null {
+  if (!token) {
+    return null;
+  }
+
+  const parts = token.split('.');
+  if (parts.length < 2) {
+    return null;
+  }
+
+  try {
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
+    const decoded = JSON.parse(Buffer.from(padded, 'base64').toString('utf8')) as {
+      sub?: unknown;
+      user_id?: unknown;
+      uid?: unknown;
+    };
+
+    if (typeof decoded.user_id === 'string' && decoded.user_id.trim()) {
+      return decoded.user_id.trim();
+    }
+    if (typeof decoded.uid === 'string' && decoded.uid.trim()) {
+      return decoded.uid.trim();
+    }
+    if (typeof decoded.sub === 'string' && decoded.sub.trim()) {
+      return decoded.sub.trim();
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export async function GET(req: Request) {
   try {
     const authHeader = req.headers.get('Authorization');
@@ -73,8 +109,20 @@ export async function GET(req: Request) {
     const keys = getKeysFromEnv();
 
     const idToken = authHeader.split('Bearer ')[1];
-    
-    if (!adminAuth || !adminDb) {
+
+    let uid: string | null = null;
+    if (adminAuth) {
+      try {
+        const decodedToken = await adminAuth.verifyIdToken(idToken);
+        uid = decodedToken.uid;
+      } catch (e) {
+        if (process.env.NODE_ENV === 'production') {
+          return NextResponse.json({ error: 'Invalid or expired token', details: String(e) }, { status: 401 });
+        }
+
+        uid = decodeUidFromJwtWithoutVerification(idToken);
+      }
+    } else {
       if (process.env.NODE_ENV === 'production') {
         return NextResponse.json(
           { error: 'Firebase Admin is not configured in production' },
@@ -82,23 +130,34 @@ export async function GET(req: Request) {
         );
       }
 
+      uid = decodeUidFromJwtWithoutVerification(idToken);
+    }
+
+    if (!uid) {
+      return NextResponse.json({ error: 'Unable to resolve user identity from token' }, { status: 401 });
+    }
+
+    upsertRuntimeDevice(uid, {
+      id: deviceId,
+      name: deviceName,
+      os: deviceOs,
+      platform,
+      deviceType,
+      appVersion: appVersion || undefined,
+      active: true,
+    });
+
+    if (!adminAuth || !adminDb) {
       return NextResponse.json(
         {
           keys,
-          warning: 'Firebase Admin unavailable; token verification skipped in development mode',
+          warning: 'Firebase Admin unavailable; using runtime fallback for device/session visibility.',
         },
         { status: 200 },
       );
     }
 
-    let decodedToken;
-    try {
-      decodedToken = await adminAuth.verifyIdToken(idToken);
-    } catch (e) {
-      return NextResponse.json({ error: 'Invalid or expired token', details: String(e) }, { status: 401 });
-    }
-
-    const userRef = adminDb.collection('users').doc(decodedToken.uid);
+    const userRef = adminDb.collection('users').doc(uid);
     const deviceRef = userRef.collection('devices').doc(deviceId);
 
     let warning: string | undefined;

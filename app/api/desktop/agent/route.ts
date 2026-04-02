@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import * as admin from 'firebase-admin';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
+import { mergeRuntimeAnalytics } from '@/lib/runtime-telemetry';
 
 type ChatMessage = {
   role: 'user' | 'assistant';
@@ -102,8 +103,60 @@ function normalizeWorkspaceFiles(value: unknown): string[] {
     .slice(0, 120);
 }
 
+function decodeUidFromJwtWithoutVerification(token: string | null): string | null {
+  if (!token) {
+    return null;
+  }
+
+  const parts = token.split('.');
+  if (parts.length < 2) {
+    return null;
+  }
+
+  try {
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
+    const decoded = JSON.parse(Buffer.from(padded, 'base64').toString('utf8')) as {
+      sub?: unknown;
+      user_id?: unknown;
+      uid?: unknown;
+    };
+
+    if (typeof decoded.user_id === 'string' && decoded.user_id.trim()) {
+      return decoded.user_id.trim();
+    }
+
+    if (typeof decoded.uid === 'string' && decoded.uid.trim()) {
+      return decoded.uid.trim();
+    }
+
+    if (typeof decoded.sub === 'string' && decoded.sub.trim()) {
+      return decoded.sub.trim();
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 async function recordDesktopAgentUsage(uid: string | null, metrics: AgentUsageMetrics): Promise<void> {
-  if (!uid || !adminDb) {
+  if (!uid) {
+    return;
+  }
+
+  mergeRuntimeAnalytics(uid, {
+    commandsExecuted: 1,
+    messagesSent: 1,
+    assistantResponses: 1,
+    toolCalls: Math.max(0, metrics.toolCalls),
+    failedTurns: metrics.failedTurn ? 1 : 0,
+    lastModel: metrics.modelName,
+    lastProvider: metrics.providerName,
+    lastWorkspacePath: metrics.workspacePath,
+  });
+
+  if (!adminDb) {
     return;
   }
 
@@ -133,10 +186,10 @@ async function recordDesktopAgentUsage(uid: string | null, metrics: AgentUsageMe
 function buildFallbackReply(message: string, toolResults: ToolResult[]): string {
   const toolsUsed = toolResults.map((tool) => tool.name).join(', ');
   if (toolsUsed) {
-    return `I processed your request: "${message}" and executed these tools: ${toolsUsed}. Configure GEMINI_API_KEY to enable model-generated answers.`;
+    return `I processed your request: "${message}" and executed these tools: ${toolsUsed}. Model output was unavailable on this turn.`;
   }
 
-  return `I received your request: "${message}". Configure GEMINI_API_KEY to enable model-generated answers.`;
+  return `I received your request: "${message}". Model output was unavailable on this turn.`;
 }
 
 function buildThinking(toolResults: ToolResult[], hints: string[]): string[] {
@@ -150,11 +203,11 @@ function buildThinking(toolResults: ToolResult[], hints: string[]): string[] {
 }
 
 export async function POST(request: Request) {
-  try {
-    const authHeader = request.headers.get('Authorization');
-    const token = authHeader?.startsWith('Bearer ') ? authHeader.split('Bearer ')[1] : null;
-    let verifiedUid: string | null = null;
+  const authHeader = request.headers.get('Authorization');
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.split('Bearer ')[1] : null;
+  let verifiedUid: string | null = null;
 
+  try {
     if (process.env.NODE_ENV === 'production') {
       if (!token || !adminAuth) {
         return NextResponse.json(
@@ -174,8 +227,10 @@ export async function POST(request: Request) {
         const decoded = await adminAuth.verifyIdToken(token);
         verifiedUid = decoded.uid;
       } catch {
-        // In development mode, invalid tokens do not block local testing.
+        verifiedUid = decodeUidFromJwtWithoutVerification(token);
       }
+    } else if (token) {
+      verifiedUid = decodeUidFromJwtWithoutVerification(token);
     }
 
     let body: Record<string, unknown>;
@@ -198,25 +253,27 @@ export async function POST(request: Request) {
     const workspaceFiles = normalizeWorkspaceFiles(body.workspaceFiles);
     const providerPreference = asTrimmedString(body.providerPreference, 40) || 'gemini';
     const modelPreference = asTrimmedString(body.modelPreference, 80);
-
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      void recordDesktopAgentUsage(verifiedUid, {
-        modelName: modelPreference || process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite-preview',
-        providerName: providerPreference,
-        workspacePath,
-        toolCalls: toolResults.length,
-        failedTurn: false,
-      });
-
-      return NextResponse.json({
-        reply: buildFallbackReply(message, toolResults),
-        thinking: buildThinking(toolResults, thinkingHints),
-      });
-    }
+    const payloadGeminiApiKey = asTrimmedString(body.geminiApiKey, 400);
 
     const fallbackModelName = process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite-preview';
     const modelName = modelPreference || fallbackModelName;
+
+    const apiKey = payloadGeminiApiKey || process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      void recordDesktopAgentUsage(verifiedUid, {
+        modelName,
+        providerName: providerPreference,
+        workspacePath,
+        toolCalls: toolResults.length,
+        failedTurn: true,
+      });
+
+      return NextResponse.json({
+        error:
+          'No Gemini API key is configured for this desktop session. Sync a key or configure GEMINI_API_KEY on the server.',
+      }, { status: 503 });
+    }
+
     const genAI = new GoogleGenerativeAI(apiKey);
 
     const historyBlock = history
@@ -262,6 +319,7 @@ export async function POST(request: Request) {
     ].join('\n');
 
     let reply = '';
+    let resolvedModelName = modelName;
 
     try {
       const model = genAI.getGenerativeModel({ model: modelName });
@@ -272,13 +330,14 @@ export async function POST(request: Request) {
         const fallbackModel = genAI.getGenerativeModel({ model: fallbackModelName });
         const result = await fallbackModel.generateContent(prompt);
         reply = result.response.text().trim();
+        resolvedModelName = fallbackModelName;
       } else {
         throw new Error(`Unable to generate model output for ${modelName}`);
       }
     }
 
     void recordDesktopAgentUsage(verifiedUid, {
-      modelName,
+      modelName: resolvedModelName,
       providerName: providerPreference,
       workspacePath,
       toolCalls: toolResults.length,
@@ -290,22 +349,13 @@ export async function POST(request: Request) {
       thinking: buildThinking(toolResults, thinkingHints),
     });
   } catch (error) {
-    const authHeader = request.headers.get('Authorization');
-    const token = authHeader?.startsWith('Bearer ') ? authHeader.split('Bearer ')[1] : null;
-    if (token && adminAuth) {
-      adminAuth
-        .verifyIdToken(token)
-        .then((decoded) =>
-          recordDesktopAgentUsage(decoded.uid, {
-            modelName: process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite-preview',
-            providerName: 'gemini',
-            workspacePath: 'Unknown workspace',
-            toolCalls: 0,
-            failedTurn: true,
-          }),
-        )
-        .catch(() => null);
-    }
+    void recordDesktopAgentUsage(verifiedUid, {
+      modelName: process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite-preview',
+      providerName: 'gemini',
+      workspacePath: 'Unknown workspace',
+      toolCalls: 0,
+      failedTurn: true,
+    });
 
     return NextResponse.json(
       {

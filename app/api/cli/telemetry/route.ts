@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import * as admin from 'firebase-admin';
+import { mergeRuntimeAnalytics, upsertRuntimeDevice } from '@/lib/runtime-telemetry';
 
 type DeviceType = 'cli' | 'desktop_app' | 'web';
 
@@ -65,6 +66,41 @@ function normalizeDeviceType(value: unknown): DeviceType {
   return 'cli';
 }
 
+function decodeUidFromJwtWithoutVerification(token: string | null): string | null {
+  if (!token) {
+    return null;
+  }
+
+  const parts = token.split('.');
+  if (parts.length < 2) {
+    return null;
+  }
+
+  try {
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
+    const decoded = JSON.parse(Buffer.from(padded, 'base64').toString('utf8')) as {
+      sub?: unknown;
+      user_id?: unknown;
+      uid?: unknown;
+    };
+
+    if (typeof decoded.user_id === 'string' && decoded.user_id.trim()) {
+      return decoded.user_id.trim();
+    }
+    if (typeof decoded.uid === 'string' && decoded.uid.trim()) {
+      return decoded.uid.trim();
+    }
+    if (typeof decoded.sub === 'string' && decoded.sub.trim()) {
+      return decoded.sub.trim();
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const authHeader = request.headers.get('Authorization');
@@ -73,7 +109,22 @@ export async function POST(request: Request) {
     }
 
     const token = authHeader.split('Bearer ')[1];
-    if (!adminAuth || !adminDb) {
+    let uid: string | null = null;
+    if (adminAuth) {
+      try {
+        const decodedToken = await adminAuth.verifyIdToken(token);
+        uid = decodedToken.uid;
+      } catch (error) {
+        if (process.env.NODE_ENV === 'production') {
+          return NextResponse.json(
+            { error: 'Invalid or expired token', details: String(error) },
+            { status: 401 },
+          );
+        }
+
+        uid = decodeUidFromJwtWithoutVerification(token);
+      }
+    } else {
       if (process.env.NODE_ENV === 'production') {
         return NextResponse.json(
           { error: 'Firebase Admin not initialized properly' },
@@ -81,26 +132,12 @@ export async function POST(request: Request) {
         );
       }
 
-      return NextResponse.json(
-        {
-          success: true,
-          warning:
-            'Firebase Admin is unavailable; telemetry persistence skipped in development mode',
-        },
-        { status: 200 },
-      );
+      uid = decodeUidFromJwtWithoutVerification(token);
     }
 
-    let decodedToken;
-    try {
-      decodedToken = await adminAuth.verifyIdToken(token);
-    } catch (error) {
-      return NextResponse.json(
-        { error: 'Invalid or expired token', details: String(error) },
-        { status: 401 },
-      );
+    if (!uid) {
+      return NextResponse.json({ error: 'Unable to resolve user identity from token' }, { status: 401 });
     }
-    const uid = decodedToken.uid;
 
     let data: Record<string, unknown>;
     try {
@@ -134,7 +171,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing deviceId in payload' }, { status: 400 });
     }
 
-    const userRef = adminDb.collection('users').doc(uid);
     const warnings: string[] = [];
 
     const normalizedDeviceType = normalizeDeviceType(deviceType);
@@ -142,6 +178,57 @@ export async function POST(request: Request) {
     const normalizedOs = normalizeDeviceField(os, 'Unknown OS');
     const normalizedPlatform = normalizeOptionalField(platform, 40) || normalizedOs;
     const normalizedAppVersion = normalizeOptionalField(appVersion, 40);
+
+    const deltaCommandsExecuted = asNonNegativeNumber(commandsExecuted);
+    const deltaFilesEdited = asNonNegativeNumber(filesEdited);
+    const deltaActiveSwarms = asNonNegativeNumber(activeSwarms);
+    const deltaMessagesSent = asNonNegativeNumber(messagesSent);
+    const deltaAssistantResponses = asNonNegativeNumber(assistantResponses);
+    const deltaSearchQueries = asNonNegativeNumber(searchQueries);
+    const deltaToolCalls = asNonNegativeNumber(toolCalls);
+    const deltaSessionsStarted = asNonNegativeNumber(sessionsStarted);
+    const deltaFailedTurns = asNonNegativeNumber(failedTurns);
+    const normalizedLastModel = normalizeOptionalField(lastModel, 120);
+    const normalizedLastProvider = normalizeOptionalField(lastProvider, 60);
+    const normalizedLastWorkspacePath = normalizeOptionalField(lastWorkspacePath, 260);
+
+    upsertRuntimeDevice(uid, {
+      id: String(deviceId),
+      name: normalizedDeviceName,
+      os: normalizedOs,
+      platform: normalizedPlatform,
+      deviceType: normalizedDeviceType,
+      appVersion: normalizedAppVersion || undefined,
+      active: true,
+    });
+
+    mergeRuntimeAnalytics(uid, {
+      commandsExecuted: deltaCommandsExecuted,
+      filesEdited: deltaFilesEdited,
+      activeSwarms: deltaActiveSwarms,
+      messagesSent: deltaMessagesSent,
+      assistantResponses: deltaAssistantResponses,
+      searchQueries: deltaSearchQueries,
+      toolCalls: deltaToolCalls,
+      sessionsStarted: deltaSessionsStarted,
+      failedTurns: deltaFailedTurns,
+      ...(normalizedLastModel ? { lastModel: normalizedLastModel } : {}),
+      ...(normalizedLastProvider ? { lastProvider: normalizedLastProvider } : {}),
+      ...(normalizedLastWorkspacePath ? { lastWorkspacePath: normalizedLastWorkspacePath } : {}),
+    });
+
+    if (!adminDb || !adminAuth) {
+      return NextResponse.json(
+        {
+          success: true,
+          warning:
+            'Firestore telemetry persistence is unavailable; using runtime dashboard fallback counters.',
+        },
+        { status: 200 },
+      );
+    }
+
+    const userRef = adminDb.collection('users').doc(uid);
 
     try {
       await userRef.set(
@@ -193,18 +280,6 @@ export async function POST(request: Request) {
 
     // 2. Update usage analytics
     const analyticsRef = userRef.collection('analytics').doc('current');
-    const deltaCommandsExecuted = asNonNegativeNumber(commandsExecuted);
-    const deltaFilesEdited = asNonNegativeNumber(filesEdited);
-    const deltaActiveSwarms = asNonNegativeNumber(activeSwarms);
-    const deltaMessagesSent = asNonNegativeNumber(messagesSent);
-    const deltaAssistantResponses = asNonNegativeNumber(assistantResponses);
-    const deltaSearchQueries = asNonNegativeNumber(searchQueries);
-    const deltaToolCalls = asNonNegativeNumber(toolCalls);
-    const deltaSessionsStarted = asNonNegativeNumber(sessionsStarted);
-    const deltaFailedTurns = asNonNegativeNumber(failedTurns);
-    const normalizedLastModel = normalizeOptionalField(lastModel, 120);
-    const normalizedLastProvider = normalizeOptionalField(lastProvider, 60);
-    const normalizedLastWorkspacePath = normalizeOptionalField(lastWorkspacePath, 260);
 
     try {
       await analyticsRef.set(
