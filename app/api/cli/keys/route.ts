@@ -9,6 +9,8 @@ type CliKeys = {
   GITHUB_MODEL: string;
 };
 
+type DeviceType = 'cli' | 'desktop_app' | 'web';
+
 let deviceRegistryAvailable = true;
 
 function isFirestoreNotFoundError(error: unknown): boolean {
@@ -38,6 +40,19 @@ function normalizeDeviceField(value: string | null, fallback: string): string {
   return trimmed.slice(0, 120);
 }
 
+function normalizeOptionalField(value: string | null, maxLength = 80): string | null {
+  const trimmed = (value || '').trim();
+  if (!trimmed) return null;
+  return trimmed.slice(0, maxLength);
+}
+
+function normalizeDeviceType(value: string | null): DeviceType {
+  const normalized = (value || '').trim().toLowerCase();
+  if (normalized === 'desktop_app') return 'desktop_app';
+  if (normalized === 'web') return 'web';
+  return 'cli';
+}
+
 export async function GET(req: Request) {
   try {
     const authHeader = req.headers.get('Authorization');
@@ -54,6 +69,9 @@ export async function GET(req: Request) {
 
     const deviceName = normalizeDeviceField(searchParams.get('deviceName'), 'Forge CLI Device');
     const deviceOs = normalizeDeviceField(searchParams.get('os'), 'Unknown OS');
+    const deviceType = normalizeDeviceType(searchParams.get('deviceType'));
+    const appVersion = normalizeOptionalField(searchParams.get('appVersion'), 40);
+    const platform = normalizeOptionalField(searchParams.get('platform'), 40) || deviceOs;
     const keys = getKeysFromEnv();
 
     const idToken = authHeader.split('Bearer ')[1];
@@ -93,6 +111,10 @@ export async function GET(req: Request) {
         await userRef.set(
           {
             lastCliAuthAt: admin.firestore.FieldValue.serverTimestamp(),
+            lastAuthAt: admin.firestore.FieldValue.serverTimestamp(),
+            ...(deviceType === 'desktop_app'
+              ? { lastDesktopAuthAt: admin.firestore.FieldValue.serverTimestamp() }
+              : {}),
           },
           { merge: true },
         );
@@ -106,6 +128,9 @@ export async function GET(req: Request) {
           {
             name: deviceName,
             os: deviceOs,
+            platform,
+            deviceType,
+            ...(appVersion ? { appVersion } : {}),
             active: true,
             lastUsed: admin.firestore.FieldValue.serverTimestamp(),
           },

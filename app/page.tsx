@@ -246,6 +246,7 @@ export default function Home() {
           <Link href="/research/new" className="nav-link">Deep Research</Link>
           <Link href="/changelog" className="nav-link">Changelog</Link>
           <Link href="/pricing" className="nav-link">Pricing</Link>
+          <a href="#desktop" className="nav-link">Desktop</a>
           <a href="#cli" className="nav-link">CLI</a>
         </div>
         <div className="nav-right">
@@ -429,6 +430,41 @@ export default function Home() {
       {/* Demo Section */}
       <section className="demo-section">
         <InteractiveDemo />
+      </section>
+
+      {/* Desktop Section */}
+      <section className="desktop-section" id="desktop">
+        <div className="desktop-content">
+          <span className="section-eyebrow">Native / Windows First</span>
+          <h2 className="section-title">Forge Desktop App</h2>
+          <p className="section-desc">Bring Forge to your desktop with the same visual language as the web app, plus dedicated panels for thinking streams, tool calling, extension controls, and authenticated web search.</p>
+
+          <div className="desktop-visual-grid">
+            <article className="desktop-card">
+              <h3>Thinking Stream</h3>
+              <p>Structured reasoning timeline cards designed for long-running workflows and transparent decision flow.</p>
+            </article>
+            <article className="desktop-card">
+              <h3>Tool Call Surface</h3>
+              <p>Real-time status rows for file operations, orchestration hooks, and execution lifecycle visibility.</p>
+            </article>
+            <article className="desktop-card">
+              <h3>Extension Dock</h3>
+              <p>Toggle advanced capabilities per desktop profile while staying inside Forge-native styling and controls.</p>
+            </article>
+            <article className="desktop-card">
+              <h3>Web Search Panel</h3>
+              <p>Session-authenticated source discovery routed through the Forge backend.</p>
+            </article>
+          </div>
+
+          <div className="desktop-download-row">
+            <button className="desktop-download" type="button" disabled>
+              Download for Windows (Coming Soon)
+            </button>
+            <p className="desktop-download-note">Placeholder only. The release link will be connected after GitHub packaging is published.</p>
+          </div>
+        </div>
       </section>
       
       {/* CLI Section */}

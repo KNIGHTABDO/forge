@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import * as admin from 'firebase-admin';
 
+type DeviceType = 'cli' | 'desktop_app' | 'web';
+
 let telemetryRegistryAvailable = true;
 
 function isFirestoreNotFoundError(error: unknown): boolean {
@@ -22,6 +24,47 @@ function asNonNegativeNumber(value: unknown): number {
     return 0;
   }
   return parsed;
+}
+
+function normalizeDeviceField(value: unknown, fallback: string, maxLength = 120): string {
+  if (typeof value !== 'string') {
+    return fallback;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return fallback;
+  }
+
+  return trimmed.slice(0, maxLength);
+}
+
+function normalizeOptionalField(value: unknown, maxLength = 80): string | null {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  return trimmed.slice(0, maxLength);
+}
+
+function normalizeDeviceType(value: unknown): DeviceType {
+  if (typeof value !== 'string') {
+    return 'cli';
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'desktop_app') {
+    return 'desktop_app';
+  }
+  if (normalized === 'web') {
+    return 'web';
+  }
+  return 'cli';
 }
 
 export async function POST(request: Request) {
@@ -68,7 +111,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 });
     }
 
-    const { deviceId, deviceName, os, commandsExecuted, filesEdited, activeSwarms } = data;
+    const {
+      deviceId,
+      deviceName,
+      os,
+      deviceType,
+      appVersion,
+      platform,
+      commandsExecuted,
+      filesEdited,
+      activeSwarms,
+    } = data;
 
     if (!deviceId) {
       return NextResponse.json({ error: 'Missing deviceId in payload' }, { status: 400 });
@@ -76,6 +129,12 @@ export async function POST(request: Request) {
 
     const userRef = adminDb.collection('users').doc(uid);
     const warnings: string[] = [];
+
+    const normalizedDeviceType = normalizeDeviceType(deviceType);
+    const normalizedDeviceName = normalizeDeviceField(deviceName, 'Unknown Device');
+    const normalizedOs = normalizeDeviceField(os, 'Unknown OS');
+    const normalizedPlatform = normalizeOptionalField(platform, 40) || normalizedOs;
+    const normalizedAppVersion = normalizeOptionalField(appVersion, 40);
 
     if (!telemetryRegistryAvailable) {
       return NextResponse.json({
@@ -110,8 +169,11 @@ export async function POST(request: Request) {
     try {
       await userRef.collection('devices').doc(String(deviceId)).set(
         {
-          name: (typeof deviceName === 'string' && deviceName.trim()) || 'Unknown Device',
-          os: (typeof os === 'string' && os.trim()) || 'Unknown OS',
+          name: normalizedDeviceName,
+          os: normalizedOs,
+          platform: normalizedPlatform,
+          deviceType: normalizedDeviceType,
+          ...(normalizedAppVersion ? { appVersion: normalizedAppVersion } : {}),
           lastUsed: admin.firestore.FieldValue.serverTimestamp(),
           active: true,
         },

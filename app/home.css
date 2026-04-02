@@ -1217,6 +1217,90 @@ html[data-theme="dark"] .cta-button:hover {
 
 .footer-link:hover { color: var(--text); }
 
+/* ── Desktop Section ── */
+.desktop-section {
+  padding: 120px 48px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-alt);
+}
+
+.desktop-content {
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+.desktop-visual-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  border: 1px solid var(--border);
+}
+
+.desktop-card {
+  padding: 34px 30px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  transition: transform 0.24s ease, background 0.24s ease;
+}
+
+.desktop-card:nth-child(2n) {
+  border-right: none;
+}
+
+.desktop-card:nth-last-child(-n+2) {
+  border-bottom: none;
+}
+
+.desktop-card h3 {
+  font-family: var(--font-label);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 12px;
+}
+
+.desktop-card p {
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--text-muted);
+}
+
+.desktop-card:hover {
+  background: var(--bg-alt);
+  transform: translateY(-2px);
+}
+
+.desktop-download-row {
+  margin-top: 34px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.desktop-download {
+  padding: 14px 26px;
+  border: 2px solid var(--text);
+  border-radius: 6px;
+  font-family: var(--font-label);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--bg);
+  background: var(--text);
+  opacity: 0.58;
+  cursor: not-allowed;
+}
+
+.desktop-download-note {
+  font-family: var(--font-label);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-light);
+}
+
 /* ============================================================
    Responsive
    ============================================================ */
@@ -1261,6 +1345,26 @@ html[data-theme="dark"] .cta-button:hover {
 
   .research-preview-grid {
     grid-template-columns: 1fr;
+  }
+
+  .desktop-visual-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .desktop-card,
+  .desktop-card:nth-child(2n),
+  .desktop-card:nth-last-child(-n+2) {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .desktop-card:last-child {
+    border-bottom: none;
+  }
+
+  .desktop-download-row {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .research-preview-card {
@@ -1320,6 +1424,7 @@ html[data-theme="dark"] .cta-button:hover {
 
   .how,
   .research-preview,
+  .desktop-section,
   .exhibition,
   .demo-section {
     padding: 64px 20px;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -15,6 +15,9 @@ interface Device {
   id: string;
   name: string;
   os: string;
+  platform?: string;
+  deviceType?: string;
+  appVersion?: string;
   lastUsed: any;
   active: boolean;
 }
@@ -46,20 +49,66 @@ function isAllowedCliCallbackHost(hostname: string): boolean {
   return hostname === '127.0.0.1' || hostname === 'localhost' || hostname === '::1';
 }
 
+function sanitizeCliCallbackUrl(rawCallbackUrl: string): URL {
+  const callback = new URL(rawCallbackUrl);
+  const protocol = callback.protocol.toLowerCase();
+
+  if (protocol !== 'http:' && protocol !== 'https:') {
+    throw new Error('Callback protocol is not allowed.');
+  }
+
+  if (!isAllowedCliCallbackHost(callback.hostname)) {
+    throw new Error('Callback host is not allowed.');
+  }
+
+  if (!callback.pathname || callback.pathname.length > 120) {
+    throw new Error('Callback path is invalid.');
+  }
+
+  return callback;
+}
+
+function normalizeCallbackDeviceType(value: string | null): 'cli' | 'desktop_app' | 'web' {
+  const normalized = (value || '').trim().toLowerCase();
+  if (normalized === 'desktop_app') return 'desktop_app';
+  if (normalized === 'web') return 'web';
+  return 'cli';
+}
+
+function normalizeOptionalCallbackField(value: string | null, maxLength = 40): string | null {
+  const trimmed = (value || '').trim();
+  if (!trimmed) return null;
+  return trimmed.slice(0, maxLength);
+}
+
+function formatDeviceType(value: string | undefined): string {
+  if (value === 'desktop_app') return 'Forge Desktop';
+  if (value === 'web') return 'Web Session';
+  return 'Forge CLI';
+}
+
 type CliCallbackParams = {
   callbackUrl: string | null;
   deviceId: string | null;
+  authState: string | null;
   deviceName: string;
   deviceOs: string;
+  deviceType: 'cli' | 'desktop_app' | 'web';
+  appVersion: string | null;
+  platform: string | null;
   hasCliIntent: boolean;
 };
 
 function readCliCallbackParams(searchParams: URLSearchParams): CliCallbackParams {
   let callbackUrl = searchParams.get('callback') || searchParams.get('cb');
   let deviceId = searchParams.get('deviceId') || searchParams.get('did');
+  let authState = searchParams.get('authState') || searchParams.get('state');
   let deviceName =
     searchParams.get('deviceName') || searchParams.get('dn') || 'Forge CLI Device';
   let deviceOs = searchParams.get('os') || 'Unknown OS';
+  let deviceType = normalizeCallbackDeviceType(searchParams.get('deviceType'));
+  let appVersion = searchParams.get('appVersion');
+  let platform = searchParams.get('platform');
   let hasCliIntent = searchParams.get('cliLogin') === '1' || Boolean(callbackUrl);
 
   if (typeof window !== 'undefined' && window.location.hash) {
@@ -70,6 +119,7 @@ function readCliCallbackParams(searchParams: URLSearchParams): CliCallbackParams
 
     callbackUrl = callbackUrl || hashParams.get('callback') || hashParams.get('cb');
     deviceId = deviceId || hashParams.get('deviceId') || hashParams.get('did');
+    authState = authState || hashParams.get('authState') || hashParams.get('state');
 
     if (deviceName === 'Forge CLI Device') {
       deviceName = hashParams.get('deviceName') || hashParams.get('dn') || deviceName;
@@ -78,13 +128,27 @@ function readCliCallbackParams(searchParams: URLSearchParams): CliCallbackParams
       deviceOs = hashParams.get('os') || deviceOs;
     }
 
+    deviceType = normalizeCallbackDeviceType(hashParams.get('deviceType') || deviceType);
+    appVersion = appVersion || hashParams.get('appVersion');
+    platform = platform || hashParams.get('platform');
+
     hasCliIntent =
       hasCliIntent ||
       hashParams.get('cliLogin') === '1' ||
       Boolean(hashParams.get('callback') || hashParams.get('cb'));
   }
 
-  return { callbackUrl, deviceId, deviceName, deviceOs, hasCliIntent };
+  return {
+    callbackUrl,
+    deviceId,
+    authState: normalizeOptionalCallbackField(authState, 120),
+    deviceName,
+    deviceOs,
+    deviceType,
+    appVersion: normalizeOptionalCallbackField(appVersion),
+    platform: normalizeOptionalCallbackField(platform),
+    hasCliIntent,
+  };
 }
 
 function CliDashboard() {
@@ -99,6 +163,7 @@ function CliDashboard() {
   const [cliCallbackState, setCliCallbackState] = useState<'idle' | 'processing' | 'error'>('idle');
   const [cliCallbackMessage, setCliCallbackMessage] = useState('');
   const [manualCallbackUrl, setManualCallbackUrl] = useState<string | null>(null);
+  const callbackAttemptedRef = useRef(false);
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -110,22 +175,28 @@ function CliDashboard() {
         const {
           callbackUrl,
           deviceId,
+          authState,
           deviceName,
           deviceOs,
+          deviceType,
+          appVersion,
+          platform,
           hasCliIntent,
         } = readCliCallbackParams(searchParams);
 
         // If there's a CLI callback, we should redirect there or provide the token.
         if (callbackUrl) {
+          if (callbackAttemptedRef.current) {
+            return;
+          }
+          callbackAttemptedRef.current = true;
+
           (async () => {
             try {
               setCliCallbackState('processing');
-              setCliCallbackMessage('Completing CLI login and returning to your terminal...');
+              setCliCallbackMessage('Completing device login and returning to Forge Desktop...');
 
-              const callback = new URL(callbackUrl);
-              if (!isAllowedCliCallbackHost(callback.hostname)) {
-                throw new Error('Callback host is not allowed.');
-              }
+              const callback = sanitizeCliCallbackUrl(callbackUrl);
 
               // Do not block callback redirect on Firestore writes.
               if (deviceId) {
@@ -134,6 +205,9 @@ function CliDashboard() {
                   {
                     name: deviceName,
                     os: deviceOs,
+                    platform: platform || deviceOs,
+                    deviceType,
+                    ...(appVersion ? { appVersion } : {}),
                     active: true,
                     lastUsed: serverTimestamp(),
                   },
@@ -143,18 +217,26 @@ function CliDashboard() {
                 });
               }
 
-              const token = await u.getIdToken();
+              const token = await u.getIdToken(true);
               callback.searchParams.set('token', token);
+
+              if (authState) {
+                callback.searchParams.set('authState', authState);
+                callback.searchParams.set('state', authState);
+              }
+
               const redirectUrl = callback.toString();
               setManualCallbackUrl(redirectUrl);
-              window.location.assign(redirectUrl);
+              window.location.replace(redirectUrl);
 
               // Fallback message when browser navigation is blocked or cancelled.
               setTimeout(() => {
-                setCliCallbackState('error');
-                setCliCallbackMessage(
-                  'Automatic callback redirect was blocked. Use the manual callback link below.',
-                );
+                if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+                  setCliCallbackState('error');
+                  setCliCallbackMessage(
+                    'Automatic callback redirect was blocked. Use the manual callback link below.',
+                  );
+                }
               }, 2000);
             } catch (err: any) {
               console.error('CLI callback redirect failed', err);
@@ -284,12 +366,12 @@ function CliDashboard() {
   if (!user) {
     return (
       <div className="legal-page">
-        <Head><title>CLI Authentication | Forge</title></Head>
+        <Head><title>Device Authentication | Forge</title></Head>
         {navBar}
         <main className="legal-hero">
           <div className="legal-hero-inner" style={{ maxWidth: '400px', margin: '0 auto', textAlign: 'center' }}>
-            <h1 className="legal-title">Sign In</h1>
-            <p className="legal-subtitle" style={{marginBottom: '2rem'}}>Authenticate your CLI to securely access workspace capabilities.</p>
+            <h1 className="legal-title">Sign In to Forge</h1>
+            <p className="legal-subtitle" style={{marginBottom: '2rem'}}>Authenticate Forge CLI and Forge Desktop to securely access workspace capabilities.</p>
             
             {error && <div style={{ color: 'red', marginBottom: '1rem' }}>{error}</div>}
 
@@ -341,15 +423,15 @@ function CliDashboard() {
   return (
     <div className="legal-page">
       <Head>
-        <title>CLI Dashboard | Forge</title>
+        <title>Device Dashboard | Forge</title>
       </Head>
       {navBar}
       <main className="legal-hero" style={{ paddingBottom: '40px' }}>
         <div className="legal-hero-inner">
           <span className="legal-date">Welcome back</span>
-          <h1 className="legal-title">CLI Dashboard</h1>
+          <h1 className="legal-title">Device Dashboard</h1>
           <p className="legal-subtitle">
-            Manage your connected instances, view CLI usage metrics, and revoke access securely.
+            Manage your connected Forge CLI and Forge Desktop sessions, view usage metrics, and revoke access securely.
             <br/>Logged in as: <strong>{user.email}</strong>
           </p>
           {(cliCallbackState !== 'idle' || error) && (
@@ -398,7 +480,7 @@ function CliDashboard() {
 
         <div className="legal-section">
           <h2>Connected Devices</h2>
-          <p className="legal-desc">Securely manage devices that currently have access to environment APIs.</p>
+          <p className="legal-desc">Securely manage devices and desktop sessions that currently have access to environment APIs.</p>
           <div style={{ marginTop: '1rem', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem 2rem' }}>
             {devices.length === 0 ? (
               <div style={{ padding: '1rem 0', color: 'var(--text-muted)' }}>No active devices found.</div>
@@ -408,7 +490,7 @@ function CliDashboard() {
                   <div>
                     <strong>{device.name}</strong>
                     <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                      Last used: {formatTimestamp(device.lastUsed)} • {device.os}
+                      Last used: {formatTimestamp(device.lastUsed)} • {device.platform || device.os} • {formatDeviceType(device.deviceType)}{device.appVersion ? ` • v${device.appVersion}` : ''}
                     </div>
                   </div>
                   <button 
