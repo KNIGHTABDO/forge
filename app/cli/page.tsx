@@ -26,6 +26,15 @@ interface Analytics {
   commandsExecuted: number;
   filesEdited: number;
   activeSwarms: number;
+  messagesSent: number;
+  assistantResponses: number;
+  searchQueries: number;
+  toolCalls: number;
+  sessionsStarted: number;
+  failedTurns: number;
+  lastModel?: string;
+  lastProvider?: string;
+  lastWorkspacePath?: string;
 }
 
 function toMillis(timestamp: any): number {
@@ -201,7 +210,17 @@ function CliDashboard() {
   const [error, setError] = useState('');
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [devices, setDevices] = useState<Device[]>([]);
-  const [analytics, setAnalytics] = useState<Analytics>({ commandsExecuted: 0, filesEdited: 0, activeSwarms: 0 });
+  const [analytics, setAnalytics] = useState<Analytics>({
+    commandsExecuted: 0,
+    filesEdited: 0,
+    activeSwarms: 0,
+    messagesSent: 0,
+    assistantResponses: 0,
+    searchQueries: 0,
+    toolCalls: 0,
+    sessionsStarted: 0,
+    failedTurns: 0,
+  });
   const [cliCallbackState, setCliCallbackState] = useState<'idle' | 'processing' | 'error'>('idle');
   const [cliCallbackMessage, setCliCallbackMessage] = useState('');
   const [manualCallbackUrl, setManualCallbackUrl] = useState<string | null>(null);
@@ -322,7 +341,16 @@ function CliDashboard() {
         setAnalytics({
           commandsExecuted: data.commandsExecuted || 0,
           filesEdited: data.filesEdited || 0,
-          activeSwarms: data.activeSwarms || 0
+          activeSwarms: data.activeSwarms || 0,
+          messagesSent: data.messagesSent || 0,
+          assistantResponses: data.assistantResponses || 0,
+          searchQueries: data.searchQueries || 0,
+          toolCalls: data.toolCalls || 0,
+          sessionsStarted: data.sessionsStarted || 0,
+          failedTurns: data.failedTurns || 0,
+          lastModel: data.lastModel,
+          lastProvider: data.lastProvider,
+          lastWorkspacePath: data.lastWorkspacePath,
         });
       }
     });
@@ -515,7 +543,7 @@ function CliDashboard() {
       <section className="legal-body" style={{ maxWidth: '1000px', margin: '0 auto', display: 'grid', gap: '40px', padding: '0 48px 80px' }}>
         <div className="legal-section">
           <h2>Usage Analytics</h2>
-          <p className="legal-desc">Your command executions and agent swarms.</p>
+          <p className="legal-desc">Live telemetry from desktop requests, including messages, model usage, and tool activity.</p>
           <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', marginTop: '1rem' }}>
             <div style={{ flex: 1, minWidth: '200px', padding: '2rem', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--card-bg)' }}>
               <h3 style={{ margin: 0, fontSize: '2rem' }}>{analytics.commandsExecuted}</h3>
@@ -529,6 +557,35 @@ function CliDashboard() {
               <h3 style={{ margin: 0, fontSize: '2rem' }}>{analytics.activeSwarms}</h3>
               <p style={{ color: 'var(--text-muted)' }}>Active Swarms</p>
             </div>
+            <div style={{ flex: 1, minWidth: '200px', padding: '2rem', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--card-bg)' }}>
+              <h3 style={{ margin: 0, fontSize: '2rem' }}>{analytics.messagesSent}</h3>
+              <p style={{ color: 'var(--text-muted)' }}>Messages Sent</p>
+            </div>
+            <div style={{ flex: 1, minWidth: '200px', padding: '2rem', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--card-bg)' }}>
+              <h3 style={{ margin: 0, fontSize: '2rem' }}>{analytics.assistantResponses}</h3>
+              <p style={{ color: 'var(--text-muted)' }}>Assistant Responses</p>
+            </div>
+            <div style={{ flex: 1, minWidth: '200px', padding: '2rem', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--card-bg)' }}>
+              <h3 style={{ margin: 0, fontSize: '2rem' }}>{analytics.searchQueries}</h3>
+              <p style={{ color: 'var(--text-muted)' }}>Web Searches</p>
+            </div>
+            <div style={{ flex: 1, minWidth: '200px', padding: '2rem', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--card-bg)' }}>
+              <h3 style={{ margin: 0, fontSize: '2rem' }}>{analytics.toolCalls}</h3>
+              <p style={{ color: 'var(--text-muted)' }}>Tool Calls</p>
+            </div>
+            <div style={{ flex: 1, minWidth: '200px', padding: '2rem', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--card-bg)' }}>
+              <h3 style={{ margin: 0, fontSize: '2rem' }}>{analytics.sessionsStarted}</h3>
+              <p style={{ color: 'var(--text-muted)' }}>Sessions Started</p>
+            </div>
+            <div style={{ flex: 1, minWidth: '200px', padding: '2rem', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--card-bg)' }}>
+              <h3 style={{ margin: 0, fontSize: '2rem' }}>{analytics.failedTurns}</h3>
+              <p style={{ color: 'var(--text-muted)' }}>Failed Turns</p>
+            </div>
+          </div>
+          <div style={{ marginTop: '1rem', color: 'var(--text-muted)', fontSize: '0.92rem' }}>
+            Last provider: <strong>{analytics.lastProvider || 'N/A'}</strong> • Last model: <strong>{analytics.lastModel || 'N/A'}</strong>
+            <br />
+            Last workspace path: <strong>{analytics.lastWorkspacePath || 'N/A'}</strong>
           </div>
         </div>
 

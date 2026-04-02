@@ -57,6 +57,15 @@ type TelemetryCounters = {
   commandsExecuted: number
   filesEdited: number
   activeSwarms: number
+  messagesSent: number
+  assistantResponses: number
+  searchQueries: number
+  toolCalls: number
+  sessionsStarted: number
+  failedTurns: number
+  lastModel?: string
+  lastProvider?: string
+  lastWorkspacePath?: string
 }
 
 type ViteImportMeta = ImportMeta & {
@@ -121,6 +130,12 @@ type DesktopAgentChatPayload = {
   history: DesktopAgentMessage[]
   toolResults: DesktopAgentToolResult[]
   thinkingHints?: string[]
+  workspacePath?: string
+  workspaceLabel?: string
+  workspaceFiles?: string[]
+  modelPreference?: string
+  providerPreference?: string
+  sessionId?: string
 }
 
 type DesktopHttpHeader = {
@@ -241,6 +256,10 @@ function normalizeDeviceContext(device: DesktopDeviceContext): DesktopDeviceCont
 }
 
 function defaultTelemetryCounters(counters?: Partial<TelemetryCounters>): TelemetryCounters {
+  const normalizedModel = asString(counters?.lastModel)
+  const normalizedProvider = asString(counters?.lastProvider)
+  const normalizedWorkspacePath = asString(counters?.lastWorkspacePath)
+
   return {
     commandsExecuted: Number.isFinite(counters?.commandsExecuted)
       ? Math.max(0, Number(counters?.commandsExecuted))
@@ -251,6 +270,27 @@ function defaultTelemetryCounters(counters?: Partial<TelemetryCounters>): Teleme
     activeSwarms: Number.isFinite(counters?.activeSwarms)
       ? Math.max(0, Number(counters?.activeSwarms))
       : 0,
+    messagesSent: Number.isFinite(counters?.messagesSent)
+      ? Math.max(0, Number(counters?.messagesSent))
+      : 0,
+    assistantResponses: Number.isFinite(counters?.assistantResponses)
+      ? Math.max(0, Number(counters?.assistantResponses))
+      : 0,
+    searchQueries: Number.isFinite(counters?.searchQueries)
+      ? Math.max(0, Number(counters?.searchQueries))
+      : 0,
+    toolCalls: Number.isFinite(counters?.toolCalls)
+      ? Math.max(0, Number(counters?.toolCalls))
+      : 0,
+    sessionsStarted: Number.isFinite(counters?.sessionsStarted)
+      ? Math.max(0, Number(counters?.sessionsStarted))
+      : 0,
+    failedTurns: Number.isFinite(counters?.failedTurns)
+      ? Math.max(0, Number(counters?.failedTurns))
+      : 0,
+    ...(normalizedModel ? { lastModel: normalizedModel } : {}),
+    ...(normalizedProvider ? { lastProvider: normalizedProvider } : {}),
+    ...(normalizedWorkspacePath ? { lastWorkspacePath: normalizedWorkspacePath } : {}),
   }
 }
 
@@ -462,6 +502,15 @@ export async function postDesktopTelemetry(
           commandsExecuted: safeCounters.commandsExecuted,
           filesEdited: safeCounters.filesEdited,
           activeSwarms: safeCounters.activeSwarms,
+          messagesSent: safeCounters.messagesSent,
+          assistantResponses: safeCounters.assistantResponses,
+          searchQueries: safeCounters.searchQueries,
+          toolCalls: safeCounters.toolCalls,
+          sessionsStarted: safeCounters.sessionsStarted,
+          failedTurns: safeCounters.failedTurns,
+          lastModel: safeCounters.lastModel,
+          lastProvider: safeCounters.lastProvider,
+          lastWorkspacePath: safeCounters.lastWorkspacePath,
         }),
       },
     )

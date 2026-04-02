@@ -386,6 +386,7 @@ export default function App() {
   const [hasSavedSession, setHasSavedSession] = useState(false)
   const [sessionToken, setSessionToken] = useState<string | null>(null)
   const [remoteKeySummary, setRemoteKeySummary] = useState<RemoteKeySummary | null>(null)
+  const [selectedModel, setSelectedModel] = useState('')
 
   const [bootstrap, setBootstrap] = useState<BootstrapPayload>({
     appName: 'Forge Desktop',
@@ -410,6 +411,16 @@ export default function App() {
   const sortedSessions = useMemo(() => {
     return [...sessions].sort((a, b) => b.updatedAt - a.updatedAt)
   }, [sessions])
+
+  const availableModels = useMemo(() => {
+    if (!remoteKeySummary) return []
+    return Array.from(
+      new Set([
+        remoteKeySummary.geminiModel,
+        remoteKeySummary.githubModel,
+      ].filter((value) => value.trim().length > 0)),
+    )
+  }, [remoteKeySummary])
 
   const activeSession = useMemo(() => {
     if (!sessions.length) return null
@@ -455,6 +466,64 @@ export default function App() {
     }
   }, [])
 
+  const normalizeServerWarning = useCallback((warning: string): string => {
+    if (/NOT_FOUND/i.test(warning)) {
+      return 'Usage registry is unavailable on server (Firestore not initialized or unreachable). Login remains valid.'
+    }
+
+    return warning
+  }, [])
+
+  const sendUsageTelemetry = useCallback(
+    async (delta: {
+      commandsExecuted?: number
+      filesEdited?: number
+      activeSwarms?: number
+      messagesSent?: number
+      assistantResponses?: number
+      searchQueries?: number
+      toolCalls?: number
+      sessionsStarted?: number
+      failedTurns?: number
+      lastModel?: string
+      lastProvider?: string
+      lastWorkspacePath?: string
+    }) => {
+      if (!sessionToken) {
+        return
+      }
+
+      const context: DesktopDeviceContext = {
+        deviceId: (deviceId || getOrCreateDesktopDeviceId()).trim(),
+        deviceName: 'Forge Desktop',
+        os: bootstrap.platform,
+        platform: bootstrap.platform,
+        appVersion: bootstrap.appVersion,
+        deviceType: 'desktop_app',
+      }
+
+      const result = await postDesktopTelemetry(sessionToken, forgeWebBase, context, {
+        commandsExecuted: delta.commandsExecuted ?? 0,
+        filesEdited: delta.filesEdited ?? 0,
+        activeSwarms: delta.activeSwarms ?? 0,
+        messagesSent: delta.messagesSent ?? 0,
+        assistantResponses: delta.assistantResponses ?? 0,
+        searchQueries: delta.searchQueries ?? 0,
+        toolCalls: delta.toolCalls ?? 0,
+        sessionsStarted: delta.sessionsStarted ?? 0,
+        failedTurns: delta.failedTurns ?? 0,
+        ...(delta.lastModel ? { lastModel: delta.lastModel } : {}),
+        ...(delta.lastProvider ? { lastProvider: delta.lastProvider } : {}),
+        ...(delta.lastWorkspacePath ? { lastWorkspacePath: delta.lastWorkspacePath } : {}),
+      })
+
+      if (result.warning) {
+        console.warn('Desktop telemetry warning:', result.warning)
+      }
+    },
+    [bootstrap.appVersion, bootstrap.platform, deviceId, forgeWebBase, sessionToken],
+  )
+
   const syncSessionWithForge = useCallback(
     async (
       token: string,
@@ -494,6 +563,7 @@ export default function App() {
 
         const keySummary = summarizeRemoteKeys(keyResult.keys)
         setRemoteKeySummary(keySummary)
+        setSelectedModel((previous) => previous.trim() || keySummary.geminiModel)
 
         const keyReadinessMessage =
           keySummary.geminiReady && keySummary.githubReady
@@ -505,7 +575,7 @@ export default function App() {
                 : 'Authenticated, but no model keys are configured on the server yet.'
 
         if (keyResult.warning) {
-          setStatusText(`${keyReadinessMessage} Warning: ${keyResult.warning}`)
+          setStatusText(`${keyReadinessMessage} Warning: ${normalizeServerWarning(keyResult.warning)}`)
         } else {
           setStatusText(keyReadinessMessage)
         }
@@ -514,10 +584,17 @@ export default function App() {
           commandsExecuted: 0,
           filesEdited: 0,
           activeSwarms: 0,
+          messagesSent: 0,
+          assistantResponses: 0,
+          searchQueries: 0,
+          toolCalls: 0,
+          sessionsStarted: 0,
+          lastModel: keySummary.geminiModel,
+          lastProvider: 'gemini',
         })
 
         if (telemetryResult.warning) {
-          setStatusText((previous) => `${previous} Telemetry: ${telemetryResult.warning}`)
+          setStatusText((previous) => `${previous} Telemetry: ${normalizeServerWarning(telemetryResult.warning)}`)
         }
       } catch (error) {
         setStatusText(`Session sync failed: ${String(error)}`)
@@ -525,7 +602,7 @@ export default function App() {
         setIsSyncingSession(false)
       }
     },
-    [forgeWebBase],
+    [forgeWebBase, normalizeServerWarning],
   )
 
   const startSignIn = useCallback(async () => {
@@ -590,7 +667,8 @@ export default function App() {
     setSidebarOpen(true)
     setStartupStep('chat')
     setStatusText(`Workspace selected: ${selectedFolder}`)
-  }, [chooseWorkspaceFolder])
+    void sendUsageTelemetry({ sessionsStarted: 1, lastWorkspacePath: selectedFolder })
+  }, [chooseWorkspaceFolder, sendUsageTelemetry])
 
   const continueWithSession = useCallback((sessionId: string) => {
     setActiveSessionId(sessionId)
@@ -619,6 +697,7 @@ export default function App() {
       setActiveSessionId(session.id)
       setStartupStep('chat')
       setStatusText(`New empty session created for ${selectedFolder}`)
+      void sendUsageTelemetry({ sessionsStarted: 1, lastWorkspacePath: selectedFolder })
       return
     }
 
@@ -627,7 +706,8 @@ export default function App() {
     setActiveSessionId(session.id)
     setStartupStep('chat')
     setStatusText(`New empty session created in ${baseWorkspace}`)
-  }, [activeSession, chooseWorkspaceFolder])
+    void sendUsageTelemetry({ sessionsStarted: 1, lastWorkspacePath: baseWorkspace })
+  }, [activeSession, chooseWorkspaceFolder, sendUsageTelemetry])
 
   const closeSession = useCallback(
     (sessionId: string) => {
@@ -765,6 +845,12 @@ export default function App() {
         }
 
         const readTarget = extractReadTarget(prompt)
+        const shouldAutoReadReadme =
+          !readTarget &&
+          /\breadme\b|project\s+overview|repo\s+overview|project\s+summary/i.test(
+            prompt,
+          )
+
         if (readTarget) {
           const resolvedPath = resolveWorkspaceFilePath(workspacePath, readTarget)
 
@@ -789,6 +875,39 @@ export default function App() {
             } catch (error) {
               pushTool('read_workspace_file', 'error', String(error))
             }
+          }
+        } else if (shouldAutoReadReadme && workspacePath) {
+          const candidates = ['README.md', 'readme.md', 'README.MD']
+          let readmeLoaded = false
+
+          for (const candidate of candidates) {
+            const resolvedPath = resolveWorkspaceFilePath(workspacePath, candidate)
+            if (!resolvedPath) {
+              continue
+            }
+
+            pushTool('read_workspace_file', 'running', resolvedPath)
+            try {
+              const fileContent = await readWorkspaceFile(resolvedPath, 80000)
+              toolResults.push({
+                name: 'read_workspace_file',
+                output: trimToolOutput(`Path: ${resolvedPath}\n\n${fileContent}`, 7000),
+              })
+              pushTool('read_workspace_file', 'done', `Loaded ${resolvedPath}.`)
+              thinking.push(`Read project README from ${resolvedPath}.`)
+              readmeLoaded = true
+              break
+            } catch {
+              pushTool('read_workspace_file', 'error', `Could not open ${resolvedPath}.`)
+            }
+          }
+
+          if (!readmeLoaded) {
+            pushTool(
+              'read_workspace_file',
+              'error',
+              'README was not found in the selected workspace root.',
+            )
           }
         }
 
@@ -858,6 +977,12 @@ export default function App() {
           history,
           toolResults,
           thinkingHints: thinking,
+          workspacePath,
+          workspaceLabel: getWorkspaceLabel(workspacePath),
+          workspaceFiles: activeSession.indexedFiles.slice(0, 120),
+          modelPreference: selectedModel || undefined,
+          providerPreference: 'gemini',
+          sessionId,
         })
 
         const assistantContent = chatResult.ok
@@ -919,6 +1044,7 @@ export default function App() {
       activeSession,
       forgeWebBase,
       runningSessionId,
+      selectedModel,
       sessionToken,
       updateSession,
     ],
@@ -1126,7 +1252,10 @@ export default function App() {
             <span className="top-pill">
               {isSyncingSession ? 'Syncing' : sessionToken ? 'Signed In' : 'Guest'}
             </span>
-            {remoteKeySummary && <span className="top-pill">{remoteKeySummary.geminiModel}</span>}
+            {remoteKeySummary && <span className="top-pill">provider: gemini</span>}
+            {remoteKeySummary && (
+              <span className="top-pill">{selectedModel || remoteKeySummary.geminiModel}</span>
+            )}
 
             {startupStep === 'chat' && (
               <button type="button" className="secondary-btn" onClick={() => void changeWorkspaceFolder()}>
@@ -1307,6 +1436,22 @@ export default function App() {
               <p className="muted">
                 Key sync status: Gemini {remoteKeySummary.geminiReady ? 'ready' : 'missing'}; GitHub {remoteKeySummary.githubReady ? 'ready' : 'missing'}.
               </p>
+            )}
+            <p className="muted">Active provider: Gemini API</p>
+            {!!remoteKeySummary && availableModels.length > 0 && (
+              <label className="auth-model-row">
+                <span className="muted">Active model</span>
+                <select
+                  value={selectedModel || remoteKeySummary.geminiModel}
+                  onChange={(event) => setSelectedModel(event.target.value)}
+                >
+                  {availableModels.map((model) => (
+                    <option key={model} value={model}>
+                      {model}
+                    </option>
+                  ))}
+                </select>
+              </label>
             )}
             {sessionToken && !remoteKeySummary && (
               <p className="muted">

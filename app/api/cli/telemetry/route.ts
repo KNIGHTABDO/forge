@@ -4,8 +4,6 @@ import * as admin from 'firebase-admin';
 
 type DeviceType = 'cli' | 'desktop_app' | 'web';
 
-let telemetryRegistryAvailable = true;
-
 function isFirestoreNotFoundError(error: unknown): boolean {
   if (!error || typeof error !== 'object') {
     return false;
@@ -121,6 +119,15 @@ export async function POST(request: Request) {
       commandsExecuted,
       filesEdited,
       activeSwarms,
+      messagesSent,
+      assistantResponses,
+      searchQueries,
+      toolCalls,
+      sessionsStarted,
+      failedTurns,
+      lastModel,
+      lastProvider,
+      lastWorkspacePath,
     } = data;
 
     if (!deviceId) {
@@ -136,25 +143,18 @@ export async function POST(request: Request) {
     const normalizedPlatform = normalizeOptionalField(platform, 40) || normalizedOs;
     const normalizedAppVersion = normalizeOptionalField(appVersion, 40);
 
-    if (!telemetryRegistryAvailable) {
-      return NextResponse.json({
-        success: true,
-        warnings: ['Telemetry registry currently unavailable; writes are temporarily skipped.'],
-      });
-    }
-
     try {
       await userRef.set(
         {
           lastCliSeenAt: admin.firestore.FieldValue.serverTimestamp(),
+          ...(normalizedDeviceType === 'desktop_app'
+            ? { lastDesktopSeenAt: admin.firestore.FieldValue.serverTimestamp() }
+            : {}),
         },
         { merge: true },
       );
     } catch (dbError) {
       const isNotFound = isFirestoreNotFoundError(dbError);
-      if (isNotFound) {
-        telemetryRegistryAvailable = false;
-      }
       warnings.push(
         isNotFound
           ? 'User registry unavailable (Firestore NOT_FOUND).'
@@ -181,9 +181,6 @@ export async function POST(request: Request) {
       );
     } catch (dbError) {
       const isNotFound = isFirestoreNotFoundError(dbError);
-      if (isNotFound) {
-        telemetryRegistryAvailable = false;
-      }
       warnings.push(
         isNotFound
           ? 'Device telemetry skipped (Firestore NOT_FOUND).'
@@ -199,6 +196,15 @@ export async function POST(request: Request) {
     const deltaCommandsExecuted = asNonNegativeNumber(commandsExecuted);
     const deltaFilesEdited = asNonNegativeNumber(filesEdited);
     const deltaActiveSwarms = asNonNegativeNumber(activeSwarms);
+    const deltaMessagesSent = asNonNegativeNumber(messagesSent);
+    const deltaAssistantResponses = asNonNegativeNumber(assistantResponses);
+    const deltaSearchQueries = asNonNegativeNumber(searchQueries);
+    const deltaToolCalls = asNonNegativeNumber(toolCalls);
+    const deltaSessionsStarted = asNonNegativeNumber(sessionsStarted);
+    const deltaFailedTurns = asNonNegativeNumber(failedTurns);
+    const normalizedLastModel = normalizeOptionalField(lastModel, 120);
+    const normalizedLastProvider = normalizeOptionalField(lastProvider, 60);
+    const normalizedLastWorkspacePath = normalizeOptionalField(lastWorkspacePath, 260);
 
     try {
       await analyticsRef.set(
@@ -206,15 +212,21 @@ export async function POST(request: Request) {
           commandsExecuted: admin.firestore.FieldValue.increment(deltaCommandsExecuted),
           filesEdited: admin.firestore.FieldValue.increment(deltaFilesEdited),
           activeSwarms: admin.firestore.FieldValue.increment(deltaActiveSwarms),
+          messagesSent: admin.firestore.FieldValue.increment(deltaMessagesSent),
+          assistantResponses: admin.firestore.FieldValue.increment(deltaAssistantResponses),
+          searchQueries: admin.firestore.FieldValue.increment(deltaSearchQueries),
+          toolCalls: admin.firestore.FieldValue.increment(deltaToolCalls),
+          sessionsStarted: admin.firestore.FieldValue.increment(deltaSessionsStarted),
+          failedTurns: admin.firestore.FieldValue.increment(deltaFailedTurns),
+          ...(normalizedLastModel ? { lastModel: normalizedLastModel } : {}),
+          ...(normalizedLastProvider ? { lastProvider: normalizedLastProvider } : {}),
+          ...(normalizedLastWorkspacePath ? { lastWorkspacePath: normalizedLastWorkspacePath } : {}),
           lastUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
         },
         { merge: true },
       );
     } catch (dbError) {
       const isNotFound = isFirestoreNotFoundError(dbError);
-      if (isNotFound) {
-        telemetryRegistryAvailable = false;
-      }
       warnings.push(
         isNotFound
           ? 'Analytics telemetry skipped (Firestore NOT_FOUND).'

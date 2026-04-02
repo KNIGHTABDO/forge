@@ -553,6 +553,22 @@
   flex-wrap: wrap;
 }
 
+.auth-model-row {
+  margin-top: 10px;
+  display: grid;
+  gap: 6px;
+}
+
+.auth-model-row select {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 9px 10px;
+  background: var(--panel);
+  color: var(--text);
+  font-family: var(--font-body);
+}
+
 .copy-status {
   margin: 8px 0 0;
   color: var(--text-muted);

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { adminAuth } from '@/lib/firebase-admin';
+import * as admin from 'firebase-admin';
+import { adminAuth, adminDb } from '@/lib/firebase-admin';
 
 type SearchHit = {
   title: string;
@@ -7,6 +8,30 @@ type SearchHit = {
   snippet: string;
   source: string;
 };
+
+async function recordDesktopSearchUsage(uid: string | null): Promise<void> {
+  if (!uid || !adminDb) {
+    return;
+  }
+
+  try {
+    const analyticsRef = adminDb
+      .collection('users')
+      .doc(uid)
+      .collection('analytics')
+      .doc('current');
+
+    await analyticsRef.set(
+      {
+        searchQueries: admin.firestore.FieldValue.increment(1),
+        lastUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
+  } catch (error) {
+    console.warn('Desktop search telemetry warning:', error);
+  }
+}
 
 function normalizeQuery(value: unknown): string {
   if (typeof value !== 'string') {
@@ -186,6 +211,7 @@ export async function POST(request: Request) {
     }
 
     const idToken = authHeader.split('Bearer ')[1];
+    let verifiedUid: string | null = null;
 
     if (!adminAuth) {
       if (process.env.NODE_ENV === 'production') {
@@ -193,7 +219,8 @@ export async function POST(request: Request) {
       }
     } else {
       try {
-        await adminAuth.verifyIdToken(idToken);
+        const decoded = await adminAuth.verifyIdToken(idToken);
+        verifiedUid = decoded.uid;
       } catch {
         return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 });
       }
@@ -217,6 +244,8 @@ export async function POST(request: Request) {
     if (results.length === 0) {
       results = await searchDuckDuckGo(query, limit);
     }
+
+    void recordDesktopSearchUsage(verifiedUid);
 
     return NextResponse.json({
       results: results.slice(0, limit),

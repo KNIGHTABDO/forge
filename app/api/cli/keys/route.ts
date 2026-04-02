@@ -11,8 +11,6 @@ type CliKeys = {
 
 type DeviceType = 'cli' | 'desktop_app' | 'web';
 
-let deviceRegistryAvailable = true;
-
 function isFirestoreNotFoundError(error: unknown): boolean {
   if (!error || typeof error !== 'object') {
     return false;
@@ -106,52 +104,45 @@ export async function GET(req: Request) {
     let warning: string | undefined;
 
     // Enforce revocation and refresh heartbeat metadata on every successful key fetch.
-    if (deviceRegistryAvailable) {
-      try {
-        await userRef.set(
-          {
-            lastCliAuthAt: admin.firestore.FieldValue.serverTimestamp(),
-            lastAuthAt: admin.firestore.FieldValue.serverTimestamp(),
-            ...(deviceType === 'desktop_app'
-              ? { lastDesktopAuthAt: admin.firestore.FieldValue.serverTimestamp() }
-              : {}),
-          },
-          { merge: true },
-        );
+    try {
+      await userRef.set(
+        {
+          lastCliAuthAt: admin.firestore.FieldValue.serverTimestamp(),
+          lastAuthAt: admin.firestore.FieldValue.serverTimestamp(),
+          ...(deviceType === 'desktop_app'
+            ? { lastDesktopAuthAt: admin.firestore.FieldValue.serverTimestamp() }
+            : {}),
+        },
+        { merge: true },
+      );
 
-        const deviceDoc = await deviceRef.get();
-        if (deviceDoc.exists && deviceDoc.data()?.active === false) {
-          return NextResponse.json({ error: 'Device is revoked' }, { status: 403 });
-        }
-
-        await deviceRef.set(
-          {
-            name: deviceName,
-            os: deviceOs,
-            platform,
-            deviceType,
-            ...(appVersion ? { appVersion } : {}),
-            active: true,
-            lastUsed: admin.firestore.FieldValue.serverTimestamp(),
-          },
-          { merge: true },
-        );
-      } catch (dbError) {
-        const isNotFound = isFirestoreNotFoundError(dbError);
-        if (isNotFound) {
-          deviceRegistryAvailable = false;
-        }
-
-        warning = isNotFound
-          ? 'Device registry temporarily unavailable (Firestore NOT_FOUND); login remains active.'
-          : 'Device registry update failed; login remains active.';
-
-        if (!isNotFound) {
-          console.warn('CLI keys route device registry warning:', dbError);
-        }
+      const deviceDoc = await deviceRef.get();
+      if (deviceDoc.exists && deviceDoc.data()?.active === false) {
+        return NextResponse.json({ error: 'Device is revoked' }, { status: 403 });
       }
-    } else {
-      warning = 'Device registry temporarily unavailable; login remains active.';
+
+      await deviceRef.set(
+        {
+          name: deviceName,
+          os: deviceOs,
+          platform,
+          deviceType,
+          ...(appVersion ? { appVersion } : {}),
+          active: true,
+          lastUsed: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
+    } catch (dbError) {
+      const isNotFound = isFirestoreNotFoundError(dbError);
+
+      warning = isNotFound
+        ? 'Device registry unavailable (Firestore NOT_FOUND). Login remains active, but usage/device data cannot be persisted.'
+        : 'Device registry update failed; login remains active.';
+
+      if (!isNotFound) {
+        console.warn('CLI keys route device registry warning:', dbError);
+      }
     }
     
     return NextResponse.json(
