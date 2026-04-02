@@ -123,6 +123,23 @@ type DesktopAgentChatPayload = {
   thinkingHints?: string[]
 }
 
+type DesktopHttpHeader = {
+  name: string
+  value: string
+}
+
+type DesktopHttpTransportResponse = {
+  status: number
+  ok: boolean
+  body: string
+}
+
+type JsonTransportResult = {
+  status: number
+  ok: boolean
+  payload: unknown
+}
+
 function asString(value: unknown): string | null {
   return typeof value === 'string' && value.trim() ? value : null
 }
@@ -137,6 +154,66 @@ function readJsonSafely(response: Response): Promise<unknown> {
   return response
     .json()
     .catch(() => null)
+}
+
+function normalizeHeaders(headers?: HeadersInit): DesktopHttpHeader[] {
+  if (!headers) return []
+
+  if (headers instanceof Headers) {
+    return Array.from(headers.entries()).map(([name, value]) => ({ name, value }))
+  }
+
+  if (Array.isArray(headers)) {
+    return headers.map(([name, value]) => ({
+      name,
+      value: String(value),
+    }))
+  }
+
+  return Object.entries(headers).map(([name, value]) => ({
+    name,
+    value: String(value),
+  }))
+}
+
+async function performJsonRequest(
+  url: string,
+  init: RequestInit,
+  timeoutMs = 20000,
+): Promise<JsonTransportResult> {
+  if (hasTauriRuntime()) {
+    const result = await invoke<DesktopHttpTransportResponse>('desktop_http_request', {
+      url,
+      method: init.method || 'GET',
+      headers: normalizeHeaders(init.headers),
+      body: typeof init.body === 'string' ? init.body : null,
+      timeoutMs,
+    })
+
+    let payload: unknown = null
+    if (result.body.trim()) {
+      try {
+        payload = JSON.parse(result.body)
+      } catch {
+        payload = null
+      }
+    }
+
+    return {
+      status: result.status,
+      ok: result.ok,
+      payload,
+    }
+  }
+
+  const response = await fetch(url, init)
+  const payload = await readJsonSafely(response)
+
+  return {
+    status: response.status,
+    ok: response.ok,
+    payload,
+  }
 }
 
 function readApiError(payload: unknown, fallback: string): string {
@@ -291,22 +368,31 @@ export async function fetchDesktopKeys(
     platform: context.platform,
   })
 
-  const response = await fetch(
-    `${normalizeBaseUrl(baseUrl)}/api/cli/keys?${params.toString()}`,
-    {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${trimmedToken}`,
+  let result: JsonTransportResult
+  try {
+    result = await performJsonRequest(
+      `${normalizeBaseUrl(baseUrl)}/api/cli/keys?${params.toString()}`,
+      {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${trimmedToken}`,
+        },
       },
-    },
-  )
-
-  const payload = await readJsonSafely(response)
-  if (!response.ok) {
+    )
+  } catch (error) {
     return {
       ok: false,
-      status: response.status,
-      error: readApiError(payload, `Key sync failed with status ${response.status}.`),
+      status: 0,
+      error: `Network error while syncing keys: ${String(error)}`,
+    }
+  }
+
+  const payload = result.payload
+  if (!result.ok) {
+    return {
+      ok: false,
+      status: result.status,
+      error: readApiError(payload, `Key sync failed with status ${result.status}.`),
     }
   }
 
@@ -356,30 +442,41 @@ export async function postDesktopTelemetry(
   const context = normalizeDeviceContext(device)
   const safeCounters = defaultTelemetryCounters(counters)
 
-  const response = await fetch(`${normalizeBaseUrl(baseUrl)}/api/cli/telemetry`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${trimmedToken}`,
-    },
-    body: JSON.stringify({
-      deviceId: context.deviceId,
-      deviceName: context.deviceName,
-      os: context.os,
-      deviceType: 'desktop_app',
-      appVersion: context.appVersion,
-      platform: context.platform,
-      commandsExecuted: safeCounters.commandsExecuted,
-      filesEdited: safeCounters.filesEdited,
-      activeSwarms: safeCounters.activeSwarms,
-    }),
-  })
-
-  const payload = await readJsonSafely(response)
-  if (!response.ok) {
+  let result: JsonTransportResult
+  try {
+    result = await performJsonRequest(
+      `${normalizeBaseUrl(baseUrl)}/api/cli/telemetry`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${trimmedToken}`,
+        },
+        body: JSON.stringify({
+          deviceId: context.deviceId,
+          deviceName: context.deviceName,
+          os: context.os,
+          deviceType: 'desktop_app',
+          appVersion: context.appVersion,
+          platform: context.platform,
+          commandsExecuted: safeCounters.commandsExecuted,
+          filesEdited: safeCounters.filesEdited,
+          activeSwarms: safeCounters.activeSwarms,
+        }),
+      },
+    )
+  } catch (error) {
     return {
       ok: false,
-      warning: readApiError(payload, `Telemetry failed with status ${response.status}.`),
+      warning: `Network error while posting telemetry: ${String(error)}`,
+    }
+  }
+
+  const payload = result.payload
+  if (!result.ok) {
+    return {
+      ok: false,
+      warning: readApiError(payload, `Telemetry failed with status ${result.status}.`),
     }
   }
 
@@ -411,9 +508,9 @@ export async function searchDesktopWeb(
     return { ok: false, status: 400, error: 'Search query must be at least 2 characters.' }
   }
 
-  let response: Response
+  let result: JsonTransportResult
   try {
-    response = await fetch(`${normalizeBaseUrl(baseUrl)}/api/desktop/search`, {
+    result = await performJsonRequest(`${normalizeBaseUrl(baseUrl)}/api/desktop/search`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -429,12 +526,12 @@ export async function searchDesktopWeb(
     }
   }
 
-  const payload = await readJsonSafely(response)
-  if (!response.ok) {
+  const payload = result.payload
+  if (!result.ok) {
     return {
       ok: false,
-      status: response.status,
-      error: readApiError(payload, `Search failed with status ${response.status}.`),
+      status: result.status,
+      error: readApiError(payload, `Search failed with status ${result.status}.`),
     }
   }
 
@@ -483,9 +580,9 @@ export async function runDesktopAgentChat(
     headers.Authorization = `Bearer ${token.trim()}`
   }
 
-  let response: Response
+  let result: JsonTransportResult
   try {
-    response = await fetch(`${normalizeBaseUrl(baseUrl)}/api/desktop/agent`, {
+    result = await performJsonRequest(`${normalizeBaseUrl(baseUrl)}/api/desktop/agent`, {
       method: 'POST',
       headers,
       body: JSON.stringify(payload),
@@ -498,12 +595,12 @@ export async function runDesktopAgentChat(
     }
   }
 
-  const body = await readJsonSafely(response)
-  if (!response.ok) {
+  const body = result.payload
+  if (!result.ok) {
     return {
       ok: false,
-      status: response.status,
-      error: readApiError(body, `Agent chat failed with status ${response.status}.`),
+      status: result.status,
+      error: readApiError(body, `Agent chat failed with status ${result.status}.`),
     }
   }
 

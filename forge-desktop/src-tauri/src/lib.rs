@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
@@ -15,6 +15,21 @@ pub struct AuthFlowState {
     status: Arc<Mutex<String>>,
     error: Arc<Mutex<Option<String>>>,
     expected_state: Arc<Mutex<Option<String>>>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DesktopHttpHeader {
+    name: String,
+    value: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DesktopHttpResponse {
+    status: u16,
+    ok: bool,
+    body: String,
 }
 
 impl Default for AuthFlowState {
@@ -124,6 +139,61 @@ fn token_file_path(app: &AppHandle) -> Result<PathBuf, String> {
 }
 
 #[tauri::command]
+fn desktop_http_request(
+    url: String,
+    method: Option<String>,
+    headers: Option<Vec<DesktopHttpHeader>>,
+    body: Option<String>,
+    timeout_ms: Option<u64>,
+) -> Result<DesktopHttpResponse, String> {
+    let parsed_url = Url::parse(url.trim()).map_err(|e| format!("Invalid request URL: {e}"))?;
+    let scheme = parsed_url.scheme().to_ascii_lowercase();
+    if scheme != "http" && scheme != "https" {
+        return Err("Only HTTP and HTTPS URLs are supported.".to_string());
+    }
+
+    let raw_method = method.unwrap_or_else(|| "GET".to_string());
+    let normalized_method = raw_method.trim().to_uppercase();
+    let request_method = reqwest::Method::from_bytes(normalized_method.as_bytes())
+        .map_err(|_| format!("Unsupported HTTP method: {normalized_method}"))?;
+
+    let timeout = Duration::from_millis(timeout_ms.unwrap_or(20_000).clamp(1_000, 120_000));
+    let client = reqwest::blocking::Client::builder()
+        .timeout(timeout)
+        .build()
+        .map_err(|e| format!("Failed to create HTTP client: {e}"))?;
+
+    let mut request_builder = client.request(request_method, parsed_url);
+
+    if let Some(header_list) = headers {
+        for header in header_list {
+            let name = header.name.trim();
+            if name.is_empty() {
+                continue;
+            }
+
+            request_builder = request_builder.header(name, header.value.trim());
+        }
+    }
+
+    if let Some(raw_body) = body {
+        request_builder = request_builder.body(raw_body);
+    }
+
+    let response = request_builder
+        .send()
+        .map_err(|e| format!("Request failed: {e}"))?;
+
+    let status = response.status().as_u16();
+    let ok = response.status().is_success();
+    let body = response
+        .text()
+        .unwrap_or_else(|_| String::new());
+
+    Ok(DesktopHttpResponse { status, ok, body })
+}
+
+#[tauri::command]
 fn bootstrap() -> BootstrapPayload {
     BootstrapPayload {
         app_name: "Forge Desktop".to_string(),
@@ -217,9 +287,17 @@ fn begin_auth_flow(
         let _ = listener.set_nonblocking(true);
         let started_at = Instant::now();
         let timeout = Duration::from_secs(300);
+        let post_success_grace = Duration::from_secs(30);
+        let mut success_observed_at: Option<Instant> = None;
 
         loop {
-            if started_at.elapsed() > timeout {
+            if let Some(success_at) = success_observed_at {
+                if success_at.elapsed() > post_success_grace {
+                    break;
+                }
+            }
+
+            if success_observed_at.is_none() && started_at.elapsed() > timeout {
                 if let Ok(mut status_guard) = status_state.lock() {
                     *status_guard = "error".to_string();
                 }
@@ -249,13 +327,21 @@ fn begin_auth_flow(
                         .and_then(|line| line.split_whitespace().nth(1));
 
                     let Some(request_path) = path else {
-                        let _ = write_callback_pending_response(&mut stream);
+                        if success_observed_at.is_some() {
+                            let _ = write_callback_success_response(&mut stream);
+                        } else {
+                            let _ = write_callback_pending_response(&mut stream);
+                        }
                         continue;
                     };
 
                     let parsed = Url::parse(&format!("http://localhost{request_path}"));
                     let Ok(url) = parsed else {
-                        let _ = write_callback_pending_response(&mut stream);
+                        if success_observed_at.is_some() {
+                            let _ = write_callback_success_response(&mut stream);
+                        } else {
+                            let _ = write_callback_pending_response(&mut stream);
+                        }
                         continue;
                     };
 
@@ -289,7 +375,9 @@ fn begin_auth_flow(
                         }
 
                         if let Ok(mut token_guard) = token_state.lock() {
-                            *token_guard = Some(received_token);
+                            if token_guard.is_none() {
+                                *token_guard = Some(received_token);
+                            }
                         }
                         if let Ok(mut status_guard) = status_state.lock() {
                             *status_guard = "success".to_string();
@@ -302,10 +390,15 @@ fn begin_auth_flow(
                         }
 
                         let _ = write_callback_success_response(&mut stream);
-                        break;
+                        success_observed_at = Some(Instant::now());
+                        continue;
                     }
 
-                    let _ = write_callback_pending_response(&mut stream);
+                    if success_observed_at.is_some() {
+                        let _ = write_callback_success_response(&mut stream);
+                    } else {
+                        let _ = write_callback_pending_response(&mut stream);
+                    }
                 }
                 Err(ref error) if error.kind() == std::io::ErrorKind::WouldBlock => {
                     thread::sleep(Duration::from_millis(120));
@@ -548,6 +641,7 @@ pub fn run() {
         .manage(AuthFlowState::default())
         .invoke_handler(tauri::generate_handler![
             bootstrap,
+            desktop_http_request,
             begin_auth_flow,
             auth_status,
             consume_auth_token,

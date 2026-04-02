@@ -404,6 +404,7 @@ export default function App() {
   const [copyStatus, setCopyStatus] = useState('')
 
   const messageScrollRef = useRef<HTMLDivElement | null>(null)
+  const authPollingStartedAtRef = useRef<number | null>(null)
   const forgeWebBase = useMemo(() => getForgeWebBaseUrl(), [])
 
   const sortedSessions = useMemo(() => {
@@ -538,6 +539,7 @@ export default function App() {
       persistDesktopDeviceId(flow.deviceId)
       setDeviceId(flow.deviceId)
       setIsPollingAuth(true)
+      authPollingStartedAtRef.current = Date.now()
 
       const opened = await openExternalUrl(flow.loginUrl)
       if (opened) {
@@ -547,6 +549,7 @@ export default function App() {
       }
     } catch (error) {
       setIsPollingAuth(false)
+      authPollingStartedAtRef.current = null
       setStatusText(`Unable to start sign-in flow: ${String(error)}`)
     }
   }, [forgeWebBase, openExternalUrl])
@@ -1008,6 +1011,14 @@ export default function App() {
 
     const intervalId = window.setInterval(() => {
       void (async () => {
+        const pollStartedAt = authPollingStartedAtRef.current
+        if (pollStartedAt && Date.now() - pollStartedAt > 5 * 60 * 1000) {
+          setIsPollingAuth(false)
+          authPollingStartedAtRef.current = null
+          setStatusText('Sign-in callback timed out. Start sign-in again from Account.')
+          return
+        }
+
         const status = await getAuthStatus()
 
         if (status.status === 'success' && status.hasToken) {
@@ -1022,6 +1033,7 @@ export default function App() {
 
           setHasSavedSession(true)
           setIsPollingAuth(false)
+          authPollingStartedAtRef.current = null
           setStatusText('Authenticated. Syncing keys and device state...')
           await syncSessionWithForge(token, bootstrap, callbackDeviceId)
           return
@@ -1029,10 +1041,12 @@ export default function App() {
 
         if (status.status === 'error') {
           setIsPollingAuth(false)
+          authPollingStartedAtRef.current = null
           setStatusText(status.error || 'Desktop callback failed. Please retry sign-in.')
         }
       })().catch((error) => {
         setIsPollingAuth(false)
+        authPollingStartedAtRef.current = null
         setStatusText(`Auth polling failed: ${String(error)}`)
       })
     }, 1200)
@@ -1288,6 +1302,17 @@ export default function App() {
             <p className="muted">
               Sign in enables protected APIs, key sync, and authenticated web search.
             </p>
+            <p className="muted">API endpoint: {forgeWebBase}</p>
+            {remoteKeySummary && (
+              <p className="muted">
+                Key sync status: Gemini {remoteKeySummary.geminiReady ? 'ready' : 'missing'}; GitHub {remoteKeySummary.githubReady ? 'ready' : 'missing'}.
+              </p>
+            )}
+            {sessionToken && !remoteKeySummary && (
+              <p className="muted">
+                Session token is stored, but key sync has not succeeded yet.
+              </p>
+            )}
 
             <div className="auth-link-row">
               <input
