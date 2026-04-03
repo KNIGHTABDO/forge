@@ -293,6 +293,16 @@ function getLastUserPrompt(messages: ChatMessage[]): string {
   return latestUser?.content?.trim() || ''
 }
 
+function isSafeExternalUrl(href: string): boolean {
+  const normalized = href.trim().toLowerCase()
+  return (
+    normalized.startsWith('http://') ||
+    normalized.startsWith('https://') ||
+    normalized.startsWith('mailto:') ||
+    normalized.startsWith('tel:')
+  )
+}
+
 function loadStoredSessions(): ChatSession[] {
   try {
     const raw = localStorage.getItem(SESSION_STORAGE_KEY)
@@ -1898,6 +1908,12 @@ export default function App() {
                               rel="noopener noreferrer"
                               onClick={(event) => {
                                 if (!href) {
+                                  return
+                                }
+
+                                if (!isSafeExternalUrl(href)) {
+                                  event.preventDefault()
+                                  setStatusText('Blocked unsafe link scheme from agent response.')
                                   return
                                 }
 

@@ -445,6 +445,11 @@
   color: var(--text);
 }
 
+.secondary-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
 .secondary-btn:hover {
   border-color: var(--text-muted);
 }
