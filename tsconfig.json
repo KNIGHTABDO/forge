@@ -37,7 +37,9 @@
   ],
   "exclude": [
     "node_modules",
-    "forge-claude"
+    "forge-claude",
+    "forge-desktop",
+    "forge-code"
   ]
 
 }
