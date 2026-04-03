@@ -54,6 +54,7 @@ CLI is executed in headless mode with:
 
 - Desktop agent route is CLI-only. If Gemini CLI fails, the request fails with an explicit error.
 - Keep `next.config.ts` tracing rules that include `node_modules/@google/gemini-cli/**/*` for desktop API routes so Vercel packages all CLI chunk files.
+- Backend Gemini CLI runs with a deny-all tool policy, so filesystem/shell operations are resolved by desktop-side tools and passed as context.
 - Ensure your deployment environment allows child process execution for the selected runtime profile.
 - Keep logs structured and never print full environment variables or raw key values.
 

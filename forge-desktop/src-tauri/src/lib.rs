@@ -138,8 +138,7 @@ fn token_file_path(app: &AppHandle) -> Result<PathBuf, String> {
     Ok(dir)
 }
 
-#[tauri::command]
-fn desktop_http_request(
+fn desktop_http_request_sync(
     url: String,
     method: Option<String>,
     headers: Option<Vec<DesktopHttpHeader>>,
@@ -191,6 +190,21 @@ fn desktop_http_request(
         .unwrap_or_else(|_| String::new());
 
     Ok(DesktopHttpResponse { status, ok, body })
+}
+
+#[tauri::command]
+async fn desktop_http_request(
+    url: String,
+    method: Option<String>,
+    headers: Option<Vec<DesktopHttpHeader>>,
+    body: Option<String>,
+    timeout_ms: Option<u64>,
+) -> Result<DesktopHttpResponse, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        desktop_http_request_sync(url, method, headers, body, timeout_ms)
+    })
+    .await
+    .map_err(|e| format!("HTTP worker join error: {e}"))?
 }
 
 #[tauri::command]

@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 export type GeminiCliToolEvent = {
@@ -161,6 +161,25 @@ function createGeminiCliRuntimeEnv(apiKey: string | undefined, fallbackCwd: stri
     TEMP: runtimeDir,
     TMP: runtimeDir,
   };
+}
+
+function ensureNoToolsPolicyFile(fallbackCwd: string): string {
+  const runtimeDir = resolveRuntimeDirectory(fallbackCwd);
+  const policyPath = path.join(runtimeDir, 'gemini-cli-no-tools-policy.toml');
+
+  if (!existsSync(policyPath)) {
+    const policy = [
+      '[[rule]]',
+      'toolName = "*"',
+      'decision = "deny"',
+      'priority = 999',
+      '',
+    ].join('\n');
+
+    writeFileSync(policyPath, policy, { encoding: 'utf8' });
+  }
+
+  return policyPath;
 }
 
 function extractMessageText(record: JsonRecord): string {
@@ -397,6 +416,9 @@ export async function runGeminiCliHeadless(options: GeminiCliRunOptions): Promis
 
   const { command, baseArgs, source } = commandSpec;
 
+  const cwd = options.workingDirectory?.trim() || process.cwd();
+  const noToolsPolicyPath = ensureNoToolsPolicyFile(cwd);
+
   const args = [
     ...baseArgs,
     '-p',
@@ -406,13 +428,13 @@ export async function runGeminiCliHeadless(options: GeminiCliRunOptions): Promis
     '--no-sandbox',
     '--approval-mode',
     'plan',
+    '--policy',
+    noToolsPolicyPath,
   ];
 
   if (options.model && options.model.trim()) {
     args.push('-m', options.model.trim());
   }
-
-  const cwd = options.workingDirectory?.trim() || process.cwd();
 
   return new Promise((resolve) => {
     const assistantParts: string[] = [];

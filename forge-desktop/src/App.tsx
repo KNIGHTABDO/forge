@@ -857,6 +857,9 @@ export default function App() {
       setRunningSessionId(sessionId)
       setStatusText('Agent is working...')
 
+      // Let the UI paint the pending state before heavier context collection starts.
+      await new Promise<void>((resolve) => window.setTimeout(resolve, 0))
+
       const toolEvents: ToolEvent[] = []
       const toolResults: DesktopAgentToolResult[] = []
       const thinking: string[] = [
@@ -874,10 +877,47 @@ export default function App() {
         toolEvents.push({ name, status, detail })
       }
 
+      toolResults.push({
+        name: 'desktop_workspace_context',
+        output: trimToolOutput(
+          [
+            `Workspace path: ${workspacePath || '[not selected]'}`,
+            'Runtime contract: local workspace data is provided through desktop tool outputs only.',
+            'Do not assume direct backend filesystem access to the user path.',
+          ].join('\n'),
+          1400,
+        ),
+      })
+
       try {
+        const normalizedPrompt = prompt.toLowerCase()
+        const explicitIndexCommand = /^\s*\/index\b/i.test(prompt)
+
+        const lastAssistantMessage = [...activeSession.messages]
+          .filter((message) => message.role === 'assistant')
+          .slice(-1)[0]?.content
+          .toLowerCase() || ''
+
+        const isSimpleConfirmation =
+          /^(yes|yes please|sure|go ahead|ok|okay|do it|yep|yeah)\b/.test(
+            normalizedPrompt,
+          )
+
+        const lastAssistantAskedForWorkspaceScan =
+          /(list|show|explore|scan).*(files|workspace|directory|project|readme)/i.test(
+            lastAssistantMessage,
+          )
+
+        const wantsProjectOverview =
+          /(what\s+is\s+this|what\s+is\s+it\s+about|tell\s+me\s+about\s+(this|it)|project\s+overview|project\s+summary|repo\s+overview|read\s+files\s+from\s+it)/i.test(
+            prompt,
+          )
+
         const wantsIndex =
-          /^\s*\/index\b/i.test(prompt) ||
-          /(list|show).*(files|workspace|project|tree|folders|directories)/i.test(prompt)
+          explicitIndexCommand ||
+          /(list|show).*(files|workspace|project|tree|folders|directories)/i.test(prompt) ||
+          wantsProjectOverview ||
+          (isSimpleConfirmation && lastAssistantAskedForWorkspaceScan)
 
         const wantsDirs =
           /^\s*\/dirs\b/i.test(prompt) ||
@@ -894,11 +934,14 @@ export default function App() {
             pushTool('list_workspace_files', 'running', workspacePath)
 
             try {
-              const files = await listWorkspaceFiles(workspacePath, 4)
+              const indexingDepth = explicitIndexCommand || wantsDirs ? 4 : 2
+              const files = await listWorkspaceFiles(workspacePath, indexingDepth)
               indexedFiles = files
-              const displayed = wantsDirs
-                ? files.filter((entry) => entry.endsWith('/'))
-                : files
+              const displayed = (
+                wantsDirs
+                  ? files.filter((entry) => entry.endsWith('/'))
+                  : files
+              ).slice(0, 500)
 
               toolResults.push({
                 name: 'list_workspace_files',
@@ -920,9 +963,11 @@ export default function App() {
         const readTarget = extractReadTarget(prompt)
         const shouldAutoReadReadme =
           !readTarget &&
-          /\breadme\b|project\s+overview|repo\s+overview|project\s+summary|\bread\s+it\b/i.test(
-            prompt,
-          )
+          (wantsProjectOverview ||
+            (isSimpleConfirmation && lastAssistantAskedForWorkspaceScan) ||
+            /\breadme\b|project\s+overview|repo\s+overview|project\s+summary|\bread\s+it\b/i.test(
+              prompt,
+            ))
 
         if (readTarget) {
           const resolvedPath = resolveWorkspaceFilePath(workspacePath, readTarget)
@@ -1055,7 +1100,7 @@ export default function App() {
           workspaceLabel: getWorkspaceLabel(workspacePath),
           workspaceFiles: activeSession.indexedFiles.slice(0, 120),
           modelPreference: selectedModel || undefined,
-          providerPreference: 'gemini',
+          providerPreference: 'gemini-cli',
           sessionId,
         })
         setLastAgentRequestId(chatResult.requestId || '')
