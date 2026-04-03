@@ -569,6 +569,67 @@
   font-family: var(--font-body);
 }
 
+.auth-diagnostics {
+  margin-top: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 11px;
+  background: color-mix(in srgb, var(--panel) 86%, transparent);
+}
+
+.auth-diagnostics h3 {
+  margin: 0;
+  font-family: var(--font-label);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.auth-diagnostics dl {
+  margin: 10px 0 0;
+  display: grid;
+  gap: 8px;
+}
+
+.auth-diagnostics dl div {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+}
+
+.auth-diagnostics dt {
+  margin: 0;
+  font-family: var(--font-label);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.auth-diagnostics dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.8rem;
+  color: var(--text);
+}
+
+.auth-guidance-list {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 5px;
+  font-size: 0.77rem;
+  color: var(--text-muted);
+}
+
+.auth-diagnostics-actions {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+}
+
 .copy-status {
   margin: 8px 0 0;
   color: var(--text-muted);

@@ -1,8 +1,15 @@
 import { NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import * as admin from 'firebase-admin';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
+import {
+  checkGeminiCliAvailability,
+  runGeminiCliHeadless,
+  type GeminiCliToolEvent,
+} from '@/lib/gemini-cli';
 import { mergeRuntimeAnalytics } from '@/lib/runtime-telemetry';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 type ChatMessage = {
   role: 'user' | 'assistant';
@@ -21,6 +28,34 @@ type AgentUsageMetrics = {
   toolCalls: number;
   failedTurn: boolean;
 };
+
+function getRequestId(request: Request): string {
+  const provided =
+    request.headers.get('x-correlation-id') ||
+    request.headers.get('X-Correlation-Id') ||
+    request.headers.get('x-request-id') ||
+    request.headers.get('X-Request-Id');
+
+  const normalized = (provided || '').trim();
+  return normalized || crypto.randomUUID();
+}
+
+function getBearerToken(request: Request): string | null {
+  const authHeader =
+    request.headers.get('authorization') || request.headers.get('Authorization');
+
+  if (!authHeader) {
+    return null;
+  }
+
+  const match = authHeader.match(/^Bearer\s+(.+)$/i);
+  if (!match) {
+    return null;
+  }
+
+  const token = match[1].trim();
+  return token || null;
+}
 
 function asTrimmedString(value: unknown, maxLength = 1200): string {
   if (typeof value !== 'string') {
@@ -183,15 +218,6 @@ async function recordDesktopAgentUsage(uid: string | null, metrics: AgentUsageMe
   }
 }
 
-function buildFallbackReply(message: string, toolResults: ToolResult[]): string {
-  const toolsUsed = toolResults.map((tool) => tool.name).join(', ');
-  if (toolsUsed) {
-    return `I processed your request: "${message}" and executed these tools: ${toolsUsed}. Model output was unavailable on this turn.`;
-  }
-
-  return `I received your request: "${message}". Model output was unavailable on this turn.`;
-}
-
 function buildThinking(toolResults: ToolResult[], hints: string[]): string[] {
   const toolInsights = toolResults.map((tool) => `Tool ${tool.name} returned ${tool.output.length} chars of context.`);
 
@@ -202,16 +228,53 @@ function buildThinking(toolResults: ToolResult[], hints: string[]): string[] {
   ].slice(0, 8);
 }
 
+function mergeThinking(baseThinking: string[], modelThinking: string[]): string[] {
+  const seen = new Set<string>();
+  const merged: string[] = [];
+
+  for (const item of [...baseThinking, ...modelThinking]) {
+    const normalized = item.trim();
+    if (!normalized || seen.has(normalized)) {
+      continue;
+    }
+
+    seen.add(normalized);
+    merged.push(normalized);
+
+    if (merged.length >= 16) {
+      break;
+    }
+  }
+
+  return merged;
+}
+
 export async function POST(request: Request) {
-  const authHeader = request.headers.get('Authorization');
-  const token = authHeader?.startsWith('Bearer ') ? authHeader.split('Bearer ')[1] : null;
+  const requestId = getRequestId(request);
+  const token = getBearerToken(request);
   let verifiedUid: string | null = null;
 
   try {
+    const contentType = request.headers.get('content-type') || '';
+    if (!/application\/json/i.test(contentType)) {
+      return NextResponse.json(
+        {
+          error: 'Expected application/json request body.',
+          errorCode: 'INVALID_CONTENT_TYPE',
+          requestId,
+        },
+        { status: 415 },
+      );
+    }
+
     if (process.env.NODE_ENV === 'production') {
       if (!token || !adminAuth) {
         return NextResponse.json(
-          { error: 'Missing or invalid authorization context for desktop agent.' },
+          {
+            error: 'Missing or invalid authorization context for desktop agent.',
+            errorCode: 'AUTH_REQUIRED',
+            requestId,
+          },
           { status: 401 },
         );
       }
@@ -220,7 +283,10 @@ export async function POST(request: Request) {
         const decoded = await adminAuth.verifyIdToken(token);
         verifiedUid = decoded.uid;
       } catch {
-        return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 });
+        return NextResponse.json(
+          { error: 'Invalid or expired token', errorCode: 'AUTH_INVALID', requestId },
+          { status: 401 },
+        );
       }
     } else if (token && adminAuth) {
       try {
@@ -237,12 +303,25 @@ export async function POST(request: Request) {
     try {
       body = (await request.json()) as Record<string, unknown>;
     } catch {
-      return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Invalid JSON payload', errorCode: 'INVALID_JSON', requestId },
+        { status: 400 },
+      );
+    }
+
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json(
+        { error: 'JSON body must be an object.', errorCode: 'INVALID_BODY', requestId },
+        { status: 400 },
+      );
     }
 
     const message = asTrimmedString(body.message, 5000);
     if (!message) {
-      return NextResponse.json({ error: 'Message is required.' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Message is required.', errorCode: 'MESSAGE_REQUIRED', requestId },
+        { status: 400 },
+      );
     }
 
     const history = normalizeHistory(body.history);
@@ -253,12 +332,10 @@ export async function POST(request: Request) {
     const workspaceFiles = normalizeWorkspaceFiles(body.workspaceFiles);
     const providerPreference = asTrimmedString(body.providerPreference, 40) || 'gemini';
     const modelPreference = asTrimmedString(body.modelPreference, 80);
-    const payloadGeminiApiKey = asTrimmedString(body.geminiApiKey, 400);
 
-    const fallbackModelName = process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite-preview';
-    const modelName = modelPreference || fallbackModelName;
+    const modelName = modelPreference || process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite-preview';
 
-    const apiKey = payloadGeminiApiKey || process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       void recordDesktopAgentUsage(verifiedUid, {
         modelName,
@@ -270,11 +347,34 @@ export async function POST(request: Request) {
 
       return NextResponse.json({
         error:
-          'No Gemini API key is configured for this desktop session. Sync a key or configure GEMINI_API_KEY on the server.',
+          'No Gemini API key is configured on the server for desktop agent execution.',
+        errorCode: 'GEMINI_KEY_MISSING',
+        requestId,
       }, { status: 503 });
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
+    const cliAvailability = await checkGeminiCliAvailability(5000);
+    if (!cliAvailability.ready) {
+      void recordDesktopAgentUsage(verifiedUid, {
+        modelName,
+        providerName: 'gemini-cli',
+        workspacePath,
+        toolCalls: toolResults.length,
+        failedTurn: true,
+      });
+
+      return NextResponse.json(
+        {
+          error: 'Gemini CLI is not available on backend runtime.',
+          errorCode: 'GEMINI_CLI_UNAVAILABLE',
+          details: cliAvailability.details || 'CLI availability check failed.',
+          ...(cliAvailability.commandSource ? { commandSource: cliAvailability.commandSource } : {}),
+          ...(cliAvailability.command ? { command: cliAvailability.command } : {}),
+          requestId,
+        },
+        { status: 503 },
+      );
+    }
 
     const historyBlock = history
       .map((entry) => `${entry.role.toUpperCase()}: ${entry.content}`)
@@ -318,40 +418,70 @@ export async function POST(request: Request) {
       'Respond to the latest user request now.',
     ].join('\n');
 
-    let reply = '';
-    let resolvedModelName = modelName;
+    const cliResult = await runGeminiCliHeadless({
+      prompt,
+      apiKey,
+      model: modelName,
+      timeoutMs: 120000,
+    });
 
-    try {
-      const model = genAI.getGenerativeModel({ model: modelName });
-      const result = await model.generateContent(prompt);
-      reply = result.response.text().trim();
-    } catch {
-      if (modelName !== fallbackModelName) {
-        const fallbackModel = genAI.getGenerativeModel({ model: fallbackModelName });
-        const result = await fallbackModel.generateContent(prompt);
-        reply = result.response.text().trim();
-        resolvedModelName = fallbackModelName;
-      } else {
-        throw new Error(`Unable to generate model output for ${modelName}`);
-      }
+    const modelToolEvents: GeminiCliToolEvent[] = cliResult.tools;
+    const modelThinking: string[] = cliResult.thinking;
+    const reply = cliResult.reply.trim();
+
+    if (!cliResult.ok || !reply) {
+      const details =
+        cliResult.error ||
+        'Gemini CLI failed to produce a usable assistant response.';
+
+      void recordDesktopAgentUsage(verifiedUid, {
+        modelName,
+        providerName: 'gemini-cli',
+        workspacePath,
+        toolCalls: toolResults.length + modelToolEvents.length,
+        failedTurn: true,
+      });
+
+      return NextResponse.json(
+        {
+          error: 'Gemini CLI execution failed',
+          errorCode: 'GEMINI_CLI_EXECUTION_FAILED',
+          details,
+          toolEvents: modelToolEvents,
+          engine: 'gemini-cli',
+          ...(cliResult.commandSource ? { commandSource: cliResult.commandSource } : {}),
+          ...(cliResult.command ? { command: cliResult.command } : {}),
+          requestId,
+        },
+        { status: 502 },
+      );
     }
+
+    const resolvedModelName = cliResult.model || modelName;
+
+    const mergedThinking = mergeThinking(buildThinking(toolResults, thinkingHints), modelThinking);
+    const effectiveToolCalls = toolResults.length + modelToolEvents.length;
 
     void recordDesktopAgentUsage(verifiedUid, {
       modelName: resolvedModelName,
-      providerName: providerPreference,
+      providerName: 'gemini-cli',
       workspacePath,
-      toolCalls: toolResults.length,
+      toolCalls: effectiveToolCalls,
       failedTurn: false,
     });
 
     return NextResponse.json({
-      reply: reply || buildFallbackReply(message, toolResults),
-      thinking: buildThinking(toolResults, thinkingHints),
+      reply,
+      thinking: mergedThinking,
+      toolEvents: modelToolEvents,
+      engine: 'gemini-cli',
+      ...(cliResult.commandSource ? { commandSource: cliResult.commandSource } : {}),
+      requestId,
     });
   } catch (error) {
     void recordDesktopAgentUsage(verifiedUid, {
       modelName: process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite-preview',
-      providerName: 'gemini',
+      providerName: 'gemini-cli',
       workspacePath: 'Unknown workspace',
       toolCalls: 0,
       failedTurn: true,
@@ -360,7 +490,9 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error: 'Failed to run desktop agent chat',
+        errorCode: 'UNHANDLED_DESKTOP_AGENT_ERROR',
         details: String(error),
+        requestId,
       },
       { status: 500 },
     );

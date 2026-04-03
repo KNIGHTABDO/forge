@@ -41,17 +41,49 @@ export type FetchDesktopKeysResult =
       ok: true
       keys: CliKeys
       warning: string | null
+      requestId?: string
     }
   | {
       ok: false
       status: number
       error: string
+      errorCode?: string
+      toolEvents?: DesktopModelToolEvent[]
+      engine?: string
+      requestId?: string
     }
 
 export type TelemetryResult = {
   ok: boolean
   warning: string | null
 }
+
+export type DesktopHealthSnapshot = {
+  status: 'ready' | 'degraded'
+  authVerified: boolean
+  geminiKeyReady: boolean
+  geminiModel: string
+  geminiCliReady: boolean
+  cliCommandSource?: string
+  cliCommand?: string
+  runtimeNodeVersion: string
+  runtimePlatform: string
+  guidance: string[]
+}
+
+export type DesktopHealthResult =
+  | {
+      ok: true
+      snapshot: DesktopHealthSnapshot
+      requestId?: string
+    }
+  | {
+      ok: false
+      status: number
+      error: string
+      errorCode?: string
+      requestId?: string
+    }
 
 type TelemetryCounters = {
   commandsExecuted: number
@@ -113,16 +145,30 @@ export type DesktopAgentToolResult = {
   output: string
 }
 
+export type DesktopModelToolEvent = {
+  name: string
+  status: 'running' | 'done' | 'error'
+  detail: string
+}
+
 export type DesktopAgentChatResult =
   | {
       ok: true
       reply: string
       thinking: string[]
+      toolEvents: DesktopModelToolEvent[]
+      engine?: string
+      warning?: string
+      requestId?: string
     }
   | {
       ok: false
       status: number
       error: string
+      errorCode?: string
+      toolEvents?: DesktopModelToolEvent[]
+      engine?: string
+      requestId?: string
     }
 
 type DesktopAgentChatPayload = {
@@ -134,7 +180,6 @@ type DesktopAgentChatPayload = {
   workspaceLabel?: string
   workspaceFiles?: string[]
   modelPreference?: string
-  geminiApiKey?: string
   providerPreference?: string
   sessionId?: string
 }
@@ -164,6 +209,17 @@ function asNullableString(value: unknown): string | null {
   if (typeof value !== 'string') return null
   const trimmed = value.trim()
   return trimmed || null
+}
+
+function createCorrelationId(): string {
+  if (
+    typeof globalThis.crypto !== 'undefined' &&
+    typeof globalThis.crypto.randomUUID === 'function'
+  ) {
+    return `desktop-${globalThis.crypto.randomUUID()}`
+  }
+
+  return `desktop-${Date.now()}-${Math.floor(Math.random() * 1_000_000)}`
 }
 
 function readJsonSafely(response: Response): Promise<unknown> {
@@ -400,6 +456,7 @@ export async function fetchDesktopKeys(
   }
 
   const context = normalizeDeviceContext(device)
+  const correlationId = createCorrelationId()
   const params = new URLSearchParams({
     deviceId: context.deviceId,
     deviceName: context.deviceName,
@@ -417,6 +474,8 @@ export async function fetchDesktopKeys(
         method: 'GET',
         headers: {
           Authorization: `Bearer ${trimmedToken}`,
+          'X-Correlation-Id': correlationId,
+          'X-Device-Id': context.deviceId,
         },
       },
     )
@@ -425,6 +484,7 @@ export async function fetchDesktopKeys(
       ok: false,
       status: 0,
       error: `Network error while syncing keys: ${String(error)}`,
+      requestId: correlationId,
     }
   }
 
@@ -434,6 +494,8 @@ export async function fetchDesktopKeys(
       ok: false,
       status: result.status,
       error: readApiError(payload, `Key sync failed with status ${result.status}.`),
+      requestId:
+        asString((payload as { requestId?: unknown } | null)?.requestId) || correlationId,
     }
   }
 
@@ -442,6 +504,7 @@ export async function fetchDesktopKeys(
       ok: false,
       status: 500,
       error: 'Invalid key payload returned by Forge API.',
+      requestId: correlationId,
     }
   }
 
@@ -451,6 +514,7 @@ export async function fetchDesktopKeys(
       ok: false,
       status: 500,
       error: 'Key payload is missing required fields.',
+      requestId: correlationId,
     }
   }
 
@@ -466,6 +530,7 @@ export async function fetchDesktopKeys(
     ok: true,
     keys,
     warning: asString(body.warning),
+    requestId: asString((payload as { requestId?: unknown }).requestId) || correlationId,
   }
 }
 
@@ -617,13 +682,101 @@ export async function searchDesktopWeb(
   return { ok: true, results }
 }
 
+export async function fetchDesktopHealth(
+  token: string,
+  baseUrl: string,
+): Promise<DesktopHealthResult> {
+  const trimmedToken = token.trim()
+  if (!trimmedToken) {
+    return { ok: false, status: 401, error: 'Missing session token.' }
+  }
+
+  const correlationId = createCorrelationId()
+  let result: JsonTransportResult
+
+  try {
+    result = await performJsonRequest(`${normalizeBaseUrl(baseUrl)}/api/desktop/health`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${trimmedToken}`,
+        'X-Correlation-Id': correlationId,
+      },
+    })
+  } catch (error) {
+    return {
+      ok: false,
+      status: 0,
+      error: `Network error while checking desktop health: ${String(error)}`,
+      requestId: correlationId,
+    }
+  }
+
+  const payload = result.payload
+  if (!result.ok) {
+    return {
+      ok: false,
+      status: result.status,
+      error: readApiError(payload, `Desktop health check failed with status ${result.status}.`),
+      errorCode: asString((payload as { errorCode?: unknown } | null)?.errorCode) || undefined,
+      requestId:
+        asString((payload as { requestId?: unknown } | null)?.requestId) || correlationId,
+    }
+  }
+
+  if (!payload || typeof payload !== 'object') {
+    return {
+      ok: false,
+      status: 500,
+      error: 'Desktop health endpoint returned an invalid payload.',
+      requestId: correlationId,
+    }
+  }
+
+  const body = payload as {
+    status?: unknown
+    auth?: unknown
+    gemini?: unknown
+    runtime?: unknown
+    guidance?: unknown
+    requestId?: unknown
+  }
+
+  const auth = body.auth && typeof body.auth === 'object' ? (body.auth as Record<string, unknown>) : {}
+  const gemini = body.gemini && typeof body.gemini === 'object' ? (body.gemini as Record<string, unknown>) : {}
+  const runtime = body.runtime && typeof body.runtime === 'object' ? (body.runtime as Record<string, unknown>) : {}
+  const guidance = Array.isArray(body.guidance)
+    ? body.guidance.filter((entry): entry is string => typeof entry === 'string')
+    : []
+
+  const snapshot: DesktopHealthSnapshot = {
+    status: body.status === 'ready' ? 'ready' : 'degraded',
+    authVerified: auth.verified === true,
+    geminiKeyReady: gemini.keyReady === true,
+    geminiModel: asString(gemini.model) || 'unknown',
+    geminiCliReady: gemini.cliReady === true,
+    cliCommandSource: asString(gemini.commandSource) || undefined,
+    cliCommand: asString(gemini.command) || undefined,
+    runtimeNodeVersion: asString(runtime.nodeVersion) || 'unknown',
+    runtimePlatform: asString(runtime.platform) || 'unknown',
+    guidance,
+  }
+
+  return {
+    ok: true,
+    snapshot,
+    requestId: asString(body.requestId) || correlationId,
+  }
+}
+
 export async function runDesktopAgentChat(
   token: string | null,
   baseUrl: string,
   payload: DesktopAgentChatPayload,
 ): Promise<DesktopAgentChatResult> {
+  const correlationId = createCorrelationId()
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    'X-Correlation-Id': correlationId,
   }
 
   if (token && token.trim()) {
@@ -642,15 +795,59 @@ export async function runDesktopAgentChat(
       ok: false,
       status: 0,
       error: `Network error while contacting agent API: ${String(error)}`,
+      requestId: correlationId,
     }
   }
 
   const body = result.payload
+  const parseModelToolEvents = (value: unknown): DesktopModelToolEvent[] => {
+    if (!Array.isArray(value)) {
+      return []
+    }
+
+    return value
+      .map((entry) => {
+        if (!entry || typeof entry !== 'object') {
+          return null
+        }
+
+        const record = entry as Record<string, unknown>
+        const name = asString(record.name)
+        const detail = asString(record.detail)
+        const statusCandidate = asString(record.status)
+        const status: DesktopModelToolEvent['status'] =
+          statusCandidate === 'running' ||
+          statusCandidate === 'done' ||
+          statusCandidate === 'error'
+            ? statusCandidate
+            : 'done'
+
+        if (!name || !detail) {
+          return null
+        }
+
+        return {
+          name,
+          status,
+          detail,
+        } satisfies DesktopModelToolEvent
+      })
+      .filter((entry): entry is DesktopModelToolEvent => Boolean(entry))
+  }
+
   if (!result.ok) {
+    const toolEvents = parseModelToolEvents((body as { toolEvents?: unknown } | null)?.toolEvents)
+    const engine = asString((body as { engine?: unknown } | null)?.engine) || undefined
+
     return {
       ok: false,
       status: result.status,
       error: readApiError(body, `Agent chat failed with status ${result.status}.`),
+      errorCode: asString((body as { errorCode?: unknown } | null)?.errorCode) || undefined,
+      ...(toolEvents.length > 0 ? { toolEvents } : {}),
+      ...(engine ? { engine } : {}),
+      requestId:
+        asString((body as { requestId?: unknown } | null)?.requestId) || correlationId,
     }
   }
 
@@ -659,6 +856,7 @@ export async function runDesktopAgentChat(
       ok: false,
       status: 500,
       error: 'Agent chat returned an invalid response payload.',
+      requestId: correlationId,
     }
   }
 
@@ -668,12 +866,21 @@ export async function runDesktopAgentChat(
     ? thinkingArray.filter((entry): entry is string => typeof entry === 'string')
     : []
 
+  const toolEvents = parseModelToolEvents((body as { toolEvents?: unknown }).toolEvents)
+
+  const engine = asString((body as { engine?: unknown }).engine) || undefined
+  const warning = asString((body as { warning?: unknown }).warning) || undefined
+
   return {
     ok: true,
     reply:
       rawReply ||
       'I was not able to generate a response from the model for this turn. Please try again.',
     thinking,
+    toolEvents,
+    ...(engine ? { engine } : {}),
+    ...(warning ? { warning } : {}),
+    requestId: asString((body as { requestId?: unknown }).requestId) || correlationId,
   }
 }
 

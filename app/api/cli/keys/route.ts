@@ -12,6 +12,34 @@ type CliKeys = {
 
 type DeviceType = 'cli' | 'desktop_app' | 'web';
 
+function getRequestId(request: Request): string {
+  const provided =
+    request.headers.get('x-correlation-id') ||
+    request.headers.get('X-Correlation-Id') ||
+    request.headers.get('x-request-id') ||
+    request.headers.get('X-Request-Id');
+
+  const normalized = (provided || '').trim();
+  return normalized || crypto.randomUUID();
+}
+
+function getBearerToken(request: Request): string | null {
+  const authHeader =
+    request.headers.get('authorization') || request.headers.get('Authorization');
+
+  if (!authHeader) {
+    return null;
+  }
+
+  const match = authHeader.match(/^Bearer\s+(.+)$/i);
+  if (!match) {
+    return null;
+  }
+
+  const token = match[1].trim();
+  return token || null;
+}
+
 function isFirestoreNotFoundError(error: unknown): boolean {
   if (!error || typeof error !== 'object') {
     return false;
@@ -88,17 +116,21 @@ function decodeUidFromJwtWithoutVerification(token: string | null): string | nul
 }
 
 export async function GET(req: Request) {
+  const requestId = getRequestId(req);
   try {
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Missing or invalid Authorization header' }, { status: 401 });
+    const idToken = getBearerToken(req);
+    if (!idToken) {
+      return NextResponse.json(
+        { error: 'Missing or invalid Authorization header', requestId },
+        { status: 401 },
+      );
     }
 
     const { searchParams } = new URL(req.url);
     const deviceId = searchParams.get('deviceId');
 
     if (!deviceId) {
-      return NextResponse.json({ error: 'Missing deviceId parameter' }, { status: 400 });
+      return NextResponse.json({ error: 'Missing deviceId parameter', requestId }, { status: 400 });
     }
 
     const deviceName = normalizeDeviceField(searchParams.get('deviceName'), 'Forge CLI Device');
@@ -108,8 +140,6 @@ export async function GET(req: Request) {
     const platform = normalizeOptionalField(searchParams.get('platform'), 40) || deviceOs;
     const keys = getKeysFromEnv();
 
-    const idToken = authHeader.split('Bearer ')[1];
-
     let uid: string | null = null;
     if (adminAuth) {
       try {
@@ -117,7 +147,7 @@ export async function GET(req: Request) {
         uid = decodedToken.uid;
       } catch (e) {
         if (process.env.NODE_ENV === 'production') {
-          return NextResponse.json({ error: 'Invalid or expired token', details: String(e) }, { status: 401 });
+          return NextResponse.json({ error: 'Invalid or expired token', requestId }, { status: 401 });
         }
 
         uid = decodeUidFromJwtWithoutVerification(idToken);
@@ -125,7 +155,7 @@ export async function GET(req: Request) {
     } else {
       if (process.env.NODE_ENV === 'production') {
         return NextResponse.json(
-          { error: 'Firebase Admin is not configured in production' },
+          { error: 'Firebase Admin is not configured in production', requestId },
           { status: 503 },
         );
       }
@@ -134,7 +164,7 @@ export async function GET(req: Request) {
     }
 
     if (!uid) {
-      return NextResponse.json({ error: 'Unable to resolve user identity from token' }, { status: 401 });
+      return NextResponse.json({ error: 'Unable to resolve user identity from token', requestId }, { status: 401 });
     }
 
     upsertRuntimeDevice(uid, {
@@ -152,6 +182,7 @@ export async function GET(req: Request) {
         {
           keys,
           warning: 'Firebase Admin unavailable; using runtime fallback for device/session visibility.',
+          requestId,
         },
         { status: 200 },
       );
@@ -177,7 +208,7 @@ export async function GET(req: Request) {
 
       const deviceDoc = await deviceRef.get();
       if (deviceDoc.exists && deviceDoc.data()?.active === false) {
-        return NextResponse.json({ error: 'Device is revoked' }, { status: 403 });
+        return NextResponse.json({ error: 'Device is revoked', requestId }, { status: 403 });
       }
 
       await deviceRef.set(
@@ -200,16 +231,22 @@ export async function GET(req: Request) {
         : 'Device registry update failed; login remains active.';
 
       if (!isNotFound) {
-        console.warn('CLI keys route device registry warning:', dbError);
+        console.warn('CLI keys route device registry warning', {
+          requestId,
+          error: String(dbError),
+        });
       }
     }
     
     return NextResponse.json(
-      warning ? { keys, warning } : { keys },
+      warning ? { keys, warning, requestId } : { keys, requestId },
       { status: 200 },
     );
   } catch (error) {
-    console.error('Error fetching CLI keys:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('Error fetching CLI keys', {
+      requestId,
+      error: String(error),
+    });
+    return NextResponse.json({ error: 'Internal Server Error', requestId }, { status: 500 });
   }
 }

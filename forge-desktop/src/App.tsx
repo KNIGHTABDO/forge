@@ -6,6 +6,7 @@ import {
   beginAuthFlow,
   clearSessionToken,
   consumeAuthToken,
+  fetchDesktopHealth,
   fetchDesktopKeys,
   getAuthStatus,
   getBootstrapPayload,
@@ -23,6 +24,7 @@ import {
   type DesktopAgentMessage,
   type DesktopAgentToolResult,
   type DesktopDeviceContext,
+  type DesktopHealthSnapshot,
 } from './lib/tauri'
 
 type ThemeMode = 'light' | 'dark'
@@ -68,6 +70,10 @@ const THEME_STORAGE_KEY = 'forge-desktop-theme'
 const SESSION_STORAGE_KEY = 'forge-desktop-chat-sessions-v3'
 const ACTIVE_SESSION_STORAGE_KEY = 'forge-desktop-active-session-v3'
 const DEFAULT_SESSION_TITLE = 'New Session'
+const MAX_SESSIONS = 80
+const MAX_MESSAGES_PER_SESSION = 180
+const MAX_INDEXED_FILES_PER_SESSION = 2000
+const MAX_DRAFT_CHARS = 8000
 
 function makeId(prefix: string): string {
   if (
@@ -150,6 +156,22 @@ function createSession(workspacePath: string, title = DEFAULT_SESSION_TITLE): Ch
   }
 }
 
+function clampSessionForStorage(session: ChatSession): ChatSession {
+  return {
+    ...session,
+    messages: session.messages.slice(-MAX_MESSAGES_PER_SESSION),
+    indexedFiles: session.indexedFiles.slice(0, MAX_INDEXED_FILES_PER_SESSION),
+    draft: session.draft.slice(0, MAX_DRAFT_CHARS),
+  }
+}
+
+function sanitizeSessionCollectionForStorage(sessions: ChatSession[]): ChatSession[] {
+  return [...sessions]
+    .sort((a, b) => b.updatedAt - a.updatedAt)
+    .slice(0, MAX_SESSIONS)
+    .map(clampSessionForStorage)
+}
+
 function isAbsolutePath(path: string): boolean {
   return /^(?:[A-Za-z]:[\\/]|\\\\|\/)/.test(path)
 }
@@ -227,53 +249,6 @@ function trimToolOutput(value: string, maxChars = 5000): string {
   }
 
   return `${normalized.slice(0, maxChars)}\n\n[...truncated...]`
-}
-
-function buildLocalFallbackReply(
-  prompt: string,
-  workspacePath: string,
-  toolResults: DesktopAgentToolResult[],
-  toolEvents: ToolEvent[],
-  errorText: string,
-): string {
-  const lines: string[] = [
-    `I could not reach the cloud model (${errorText}).`,
-    '',
-    'I still executed local tool logic and preserved this session.',
-    '',
-    '### Request',
-    prompt,
-    '',
-    '### Workspace',
-    workspacePath || 'No workspace selected',
-    '',
-  ]
-
-  if (toolEvents.length > 0) {
-    lines.push('### Tool Calls')
-    lines.push(
-      ...toolEvents.map(
-        (tool, index) =>
-          `${index + 1}. ${tool.name} (${tool.status}) - ${tool.detail}`,
-      ),
-    )
-    lines.push('')
-  }
-
-  if (toolResults.length > 0) {
-    lines.push('### Local Outputs')
-    for (const tool of toolResults) {
-      lines.push(`#### ${tool.name}`)
-      lines.push('~~~text')
-      lines.push(trimToolOutput(tool.output, 1800))
-      lines.push('~~~')
-      lines.push('')
-    }
-  } else {
-    lines.push('No local tool output was produced for this request.')
-  }
-
-  return lines.join('\n')
 }
 
 function loadStoredSessions(): ChatSession[] {
@@ -358,7 +333,7 @@ function loadStoredSessions(): ChatSession[] {
             acc.push(normalizedMessage)
             return acc
           }, [])
-          .slice(-140)
+          .slice(-MAX_MESSAGES_PER_SESSION)
 
         if (
           messages.length === 1 &&
@@ -381,7 +356,7 @@ function loadStoredSessions(): ChatSession[] {
           indexedFiles: Array.isArray(item.indexedFiles)
             ? item.indexedFiles
                 .filter((entry): entry is string => typeof entry === 'string')
-                .slice(0, 1500)
+                .slice(0, MAX_INDEXED_FILES_PER_SESSION)
             : [],
           searchEnabled: item.searchEnabled !== false,
           createdAt: typeof item.createdAt === 'number' ? item.createdAt : Date.now(),
@@ -408,6 +383,12 @@ export default function App() {
   const [sessionToken, setSessionToken] = useState<string | null>(null)
   const [remoteKeySummary, setRemoteKeySummary] = useState<RemoteKeySummary | null>(null)
   const [remoteKeys, setRemoteKeys] = useState<CliKeys | null>(null)
+  const [lastKeySyncRequestId, setLastKeySyncRequestId] = useState<string>('')
+  const [lastHealthRequestId, setLastHealthRequestId] = useState<string>('')
+  const [lastAgentRequestId, setLastAgentRequestId] = useState<string>('')
+  const [lastAgentEngine, setLastAgentEngine] = useState<string>('')
+  const [desktopHealth, setDesktopHealth] = useState<DesktopHealthSnapshot | null>(null)
+  const [isCheckingHealth, setIsCheckingHealth] = useState(false)
   const [selectedModel, setSelectedModel] = useState('')
 
   const [bootstrap, setBootstrap] = useState<BootstrapPayload>({
@@ -471,12 +452,18 @@ export default function App() {
     (sessionId: string, updater: (session: ChatSession) => ChatSession) => {
       setSessions((previous) =>
         previous.map((session) =>
-          session.id === sessionId ? updater(session) : session,
+          session.id === sessionId ? clampSessionForStorage(updater(session)) : session,
         ),
       )
     },
     [],
   )
+
+  const prependSession = useCallback((session: ChatSession) => {
+    setSessions((previous) =>
+      sanitizeSessionCollectionForStorage([clampSessionForStorage(session), ...previous]),
+    )
+  }, [])
 
   const chooseWorkspaceFolder = useCallback(async (): Promise<string | null> => {
     setIsPickingFolder(true)
@@ -495,6 +482,50 @@ export default function App() {
 
     return warning
   }, [])
+
+  const refreshDesktopHealth = useCallback(
+    async (tokenOverride?: string): Promise<void> => {
+      const effectiveToken = (tokenOverride ?? sessionToken ?? '').trim()
+      if (!effectiveToken) {
+        setDesktopHealth(null)
+        setLastHealthRequestId('')
+        return
+      }
+
+      setIsCheckingHealth(true)
+      try {
+        const healthResult = await fetchDesktopHealth(effectiveToken, forgeWebBase)
+        setLastHealthRequestId(healthResult.requestId || '')
+
+        if (!healthResult.ok) {
+          setDesktopHealth(null)
+          setStatusText(
+            healthResult.requestId
+              ? `Desktop health check failed: ${healthResult.error} (request ${healthResult.requestId})`
+              : `Desktop health check failed: ${healthResult.error}`,
+          )
+          return
+        }
+
+        setDesktopHealth(healthResult.snapshot)
+
+        if (healthResult.snapshot.status === 'degraded') {
+          const firstGuidance = healthResult.snapshot.guidance[0] || 'Backend runtime is not fully ready.'
+          setStatusText(
+            `Authenticated, but backend runtime is degraded. ${firstGuidance}${
+              healthResult.requestId ? ` (request ${healthResult.requestId})` : ''
+            }`,
+          )
+        }
+      } catch (error) {
+        setDesktopHealth(null)
+        setStatusText(`Desktop health check error: ${String(error)}`)
+      } finally {
+        setIsCheckingHealth(false)
+      }
+    },
+    [forgeWebBase, sessionToken],
+  )
 
   const sendUsageTelemetry = useCallback(
     async (delta: {
@@ -568,6 +599,7 @@ export default function App() {
 
       try {
         const keyResult = await fetchDesktopKeys(token, forgeWebBase, context)
+        setLastKeySyncRequestId(keyResult.requestId || '')
 
         if (!keyResult.ok) {
           if (keyResult.status === 401 || keyResult.status === 403) {
@@ -576,12 +608,20 @@ export default function App() {
             setHasSavedSession(false)
             setRemoteKeySummary(null)
             setRemoteKeys(null)
+            setDesktopHealth(null)
+            setLastHealthRequestId('')
             setStatusText('Session expired or revoked. Please sign in again.')
             return
           }
 
           setRemoteKeys(null)
-          setStatusText(`Session saved, but key sync failed: ${keyResult.error}`)
+          setDesktopHealth(null)
+          setLastHealthRequestId('')
+          setStatusText(
+            keyResult.requestId
+              ? `Session saved, but key sync failed: ${keyResult.error} (request ${keyResult.requestId})`
+              : `Session saved, but key sync failed: ${keyResult.error}`,
+          )
           return
         }
 
@@ -600,9 +640,15 @@ export default function App() {
                 : 'Authenticated, but no model keys are configured on the server yet.'
 
         if (keyResult.warning) {
-          setStatusText(`${keyReadinessMessage} Warning: ${normalizeServerWarning(keyResult.warning)}`)
+          setStatusText(
+            `${keyReadinessMessage} Warning: ${normalizeServerWarning(keyResult.warning)}${
+              keyResult.requestId ? ` (request ${keyResult.requestId})` : ''
+            }`,
+          )
         } else {
-          setStatusText(keyReadinessMessage)
+          setStatusText(
+            `${keyReadinessMessage}${keyResult.requestId ? ` (request ${keyResult.requestId})` : ''}`,
+          )
         }
 
         const telemetryResult = await postDesktopTelemetry(token, forgeWebBase, context, {
@@ -624,13 +670,16 @@ export default function App() {
           )
           setStatusText((previous) => `${previous} Telemetry: ${normalizedWarning}`)
         }
+
+        await refreshDesktopHealth(token)
       } catch (error) {
+        setDesktopHealth(null)
         setStatusText(`Session sync failed: ${String(error)}`)
       } finally {
         setIsSyncingSession(false)
       }
     },
-    [forgeWebBase, normalizeServerWarning],
+    [forgeWebBase, normalizeServerWarning, refreshDesktopHealth],
   )
 
   const startSignIn = useCallback(async () => {
@@ -680,6 +729,8 @@ export default function App() {
     setHasSavedSession(false)
     setRemoteKeySummary(null)
     setRemoteKeys(null)
+    setDesktopHealth(null)
+    setLastHealthRequestId('')
     setStatusText('Stored desktop session cleared.')
   }, [])
 
@@ -691,13 +742,13 @@ export default function App() {
     }
 
     const session = createSession(selectedFolder)
-    setSessions((previous) => [session, ...previous])
+    prependSession(session)
     setActiveSessionId(session.id)
     setSidebarOpen(true)
     setStartupStep('chat')
     setStatusText(`Workspace selected: ${selectedFolder}`)
     void sendUsageTelemetry({ sessionsStarted: 1, lastWorkspacePath: selectedFolder })
-  }, [chooseWorkspaceFolder, sendUsageTelemetry])
+  }, [chooseWorkspaceFolder, prependSession, sendUsageTelemetry])
 
   const continueWithSession = useCallback((sessionId: string) => {
     setActiveSessionId(sessionId)
@@ -722,7 +773,7 @@ export default function App() {
       }
 
       const session = createSession(selectedFolder)
-      setSessions((previous) => [session, ...previous])
+      prependSession(session)
       setActiveSessionId(session.id)
       setStartupStep('chat')
       setStatusText(`New empty session created for ${selectedFolder}`)
@@ -731,12 +782,12 @@ export default function App() {
     }
 
     const session = createSession(baseWorkspace)
-    setSessions((previous) => [session, ...previous])
+    prependSession(session)
     setActiveSessionId(session.id)
     setStartupStep('chat')
     setStatusText(`New empty session created in ${baseWorkspace}`)
     void sendUsageTelemetry({ sessionsStarted: 1, lastWorkspacePath: baseWorkspace })
-  }, [activeSession, chooseWorkspaceFolder, sendUsageTelemetry])
+  }, [activeSession, chooseWorkspaceFolder, prependSession, sendUsageTelemetry])
 
   const closeSession = useCallback(
     (sessionId: string) => {
@@ -1011,10 +1062,27 @@ export default function App() {
           workspaceLabel: getWorkspaceLabel(workspacePath),
           workspaceFiles: activeSession.indexedFiles.slice(0, 120),
           modelPreference: selectedModel || undefined,
-          geminiApiKey: remoteKeys?.GEMINI_API_KEY || undefined,
           providerPreference: 'gemini',
           sessionId,
         })
+        setLastAgentRequestId(chatResult.requestId || '')
+        setLastAgentEngine(chatResult.engine || '')
+
+        if (chatResult.ok && chatResult.toolEvents.length > 0) {
+          for (const modelTool of chatResult.toolEvents) {
+            pushTool(`model:${modelTool.name}`, modelTool.status, modelTool.detail)
+          }
+        }
+
+        if (!chatResult.ok && chatResult.toolEvents && chatResult.toolEvents.length > 0) {
+          for (const modelTool of chatResult.toolEvents) {
+            pushTool(`model:${modelTool.name}`, modelTool.status, modelTool.detail)
+          }
+        }
+
+        if (chatResult.ok && chatResult.warning) {
+          thinking.push(`Model runtime warning: ${chatResult.warning}`)
+        }
 
         if (!chatResult.ok && (chatResult.status === 401 || chatResult.status === 403)) {
           await clearSessionToken()
@@ -1022,17 +1090,17 @@ export default function App() {
           setHasSavedSession(false)
           setRemoteKeySummary(null)
           setRemoteKeys(null)
+          setDesktopHealth(null)
+          setLastHealthRequestId('')
         }
 
         const assistantContent = chatResult.ok
           ? chatResult.reply
-          : buildLocalFallbackReply(
-              prompt,
-              workspacePath,
-              toolResults,
-              toolEvents,
-              chatResult.error,
-            )
+          : `Gemini CLI execution failed.${
+              chatResult.errorCode ? ` [${chatResult.errorCode}]` : ''
+            } ${chatResult.error}${
+              chatResult.requestId ? ` (request ${chatResult.requestId})` : ''
+            }`
 
         const assistantMessage: ChatMessage = {
           id: makeId('msg'),
@@ -1054,9 +1122,17 @@ export default function App() {
         }))
 
         if (chatResult.ok) {
-          setStatusText('Agent response complete.')
+          const engineSuffix = chatResult.engine ? ` via ${chatResult.engine}` : ''
+          const warningSuffix = chatResult.warning ? ` Warning: ${chatResult.warning}` : ''
+          setStatusText(
+            `Agent response complete${engineSuffix}.${chatResult.requestId ? ` (request ${chatResult.requestId})` : ''}${warningSuffix}`,
+          )
         } else {
-          setStatusText('Cloud model unavailable. Returned local tool-backed response.')
+          setStatusText(
+            `Gemini CLI execution failed.${chatResult.errorCode ? ` [${chatResult.errorCode}]` : ''}${
+              chatResult.requestId ? ` (request ${chatResult.requestId})` : ''
+            }`,
+          )
         }
       } catch (error) {
         const failureMessage: ChatMessage = {
@@ -1082,7 +1158,6 @@ export default function App() {
     [
       activeSession,
       forgeWebBase,
-      remoteKeys,
       runningSessionId,
       selectedModel,
       sessionToken,
@@ -1123,7 +1198,8 @@ export default function App() {
       return
     }
 
-    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(sessions))
+    const sanitizedSessions = sanitizeSessionCollectionForStorage(sessions)
+    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(sanitizedSessions))
   }, [sessions])
 
   useEffect(() => {
@@ -1471,13 +1547,16 @@ export default function App() {
             <p className="muted">
               Sign in enables protected APIs, key sync, and authenticated web search.
             </p>
+            <p className="muted">
+              No local Node or npm is required on this machine. Gemini CLI runs on Forge backend after sign-in.
+            </p>
             <p className="muted">API endpoint: {forgeWebBase}</p>
             {remoteKeySummary && (
               <p className="muted">
                 Key sync status: Gemini {remoteKeySummary.geminiReady ? 'ready' : 'missing'}; GitHub {remoteKeySummary.githubReady ? 'ready' : 'missing'}.
               </p>
             )}
-            <p className="muted">Active provider: Gemini API</p>
+            <p className="muted">Active provider: gemini-cli (server-side)</p>
             {!!remoteKeySummary && availableModels.length > 0 && (
               <label className="auth-model-row">
                 <span className="muted">Active model</span>
@@ -1498,6 +1577,95 @@ export default function App() {
                 Session token is stored, but key sync has not succeeded yet.
               </p>
             )}
+
+            <div className="auth-diagnostics">
+              <h3>Diagnostics</h3>
+              <dl>
+                <div>
+                  <dt>Device</dt>
+                  <dd>{deviceId}</dd>
+                </div>
+                <div>
+                  <dt>Session</dt>
+                  <dd>{sessionToken ? 'Authenticated' : 'Guest'}</dd>
+                </div>
+                <div>
+                  <dt>Key sync request</dt>
+                  <dd>{lastKeySyncRequestId || 'No key sync request yet'}</dd>
+                </div>
+                <div>
+                  <dt>Health request</dt>
+                  <dd>{lastHealthRequestId || 'No health request yet'}</dd>
+                </div>
+                <div>
+                  <dt>Agent request</dt>
+                  <dd>{lastAgentRequestId || 'No agent request yet'}</dd>
+                </div>
+                <div>
+                  <dt>Agent engine</dt>
+                  <dd>{lastAgentEngine || 'No engine activity yet'}</dd>
+                </div>
+                <div>
+                  <dt>Backend health</dt>
+                  <dd>{desktopHealth ? desktopHealth.status : 'Not checked'}</dd>
+                </div>
+                <div>
+                  <dt>CLI runtime</dt>
+                  <dd>
+                    {desktopHealth
+                      ? desktopHealth.geminiCliReady
+                        ? 'Ready'
+                        : 'Unavailable'
+                      : 'Unknown'}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Backend key</dt>
+                  <dd>
+                    {desktopHealth
+                      ? desktopHealth.geminiKeyReady
+                        ? 'Configured'
+                        : 'Missing'
+                      : 'Unknown'}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Backend model</dt>
+                  <dd>{desktopHealth?.geminiModel || 'Unknown'}</dd>
+                </div>
+                <div>
+                  <dt>CLI command source</dt>
+                  <dd>{desktopHealth?.cliCommandSource || 'Unknown'}</dd>
+                </div>
+                <div>
+                  <dt>Backend runtime</dt>
+                  <dd>
+                    {desktopHealth
+                      ? `${desktopHealth.runtimePlatform} / ${desktopHealth.runtimeNodeVersion}`
+                      : 'Unknown'}
+                  </dd>
+                </div>
+              </dl>
+
+              {desktopHealth && desktopHealth.guidance.length > 0 && (
+                <ul className="auth-guidance-list">
+                  {desktopHealth.guidance.map((entry, index) => (
+                    <li key={`${entry}-${index}`}>{entry}</li>
+                  ))}
+                </ul>
+              )}
+
+              <div className="auth-diagnostics-actions">
+                <button
+                  type="button"
+                  className="secondary-btn"
+                  onClick={() => void refreshDesktopHealth()}
+                  disabled={!sessionToken || isCheckingHealth}
+                >
+                  {isCheckingHealth ? 'Checking...' : 'Refresh Health'}
+                </button>
+              </div>
+            </div>
 
             <div className="auth-link-row">
               <input

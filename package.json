@@ -12,6 +12,7 @@
     "@ai-sdk/google": "^3.0.53",
     "@ai-sdk/openai-compatible": "^2.0.37",
     "@codesandbox/sandpack-react": "^2.20.0",
+    "@google/gemini-cli": "^0.36.0",
     "@google/generative-ai": "^0.21.0",
     "@octokit/rest": "^21.0.2",
     "ai": "^6.0.134",

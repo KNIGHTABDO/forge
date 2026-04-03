@@ -10,6 +10,8 @@ Windows-first native Forge app scaffold built with Tauri + React.
 - Typed command bridge (`bootstrap`) for native runtime data
 - Native auth callback listener (`begin_auth_flow`) for desktop login handoff
 - Local desktop token persistence commands (`save_session_token`, `load_session_token`)
+- Correlation-id tracing for key sync and desktop agent calls
+- Diagnostics panel in auth modal (device/session/request ids/engine)
 
 ## Local development
 
@@ -37,6 +39,25 @@ Optional environment variable:
 - `NEXT_PUBLIC_BASE_URL` (loaded from root env via Vite envDir)
 
 If neither is set, desktop falls back to `https://forge-app-peach.vercel.app`.
+
+## Backend runtime expectations
+
+Desktop chat requests are executed by Forge backend (`/api/desktop/agent`),
+which now runs Gemini CLI headless mode as the only execution engine.
+
+Desktop end users do not need local Node.js or npm installed. The packaged EXE
+only needs network access to Forge backend after sign-in.
+
+Required backend env vars:
+
+- `GEMINI_API_KEY` (required)
+- `GEMINI_MODEL` (optional)
+- `GEMINI_CLI_COMMAND` (optional explicit binary command)
+
+See `docs/desktop-gemini-cli-backend.md` for deployment details.
+
+The diagnostics modal also checks `/api/desktop/health` to verify backend CLI
+availability and key/model readiness.
 
 ## Build
 
