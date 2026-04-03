@@ -3,6 +3,9 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   // Disable noisy fetch logs (specifically those 404s checking GitHub file existence)
   logging: false,
+  experimental: {
+    viewTransition: true,
+  },
   async headers() {
     return [
       {

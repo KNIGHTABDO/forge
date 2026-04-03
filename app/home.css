@@ -1628,3 +1628,121 @@ html[data-theme="dark"] .cta-button:hover {
   justify-content: center;
   gap: 16px;
 }
+
+/* ============================================================
+   2026 VISUAL REFRESH LAYER
+   ============================================================ */
+.page {
+  background:
+    radial-gradient(900px 500px at 0% 10%, rgba(185, 118, 48, 0.08), transparent 62%),
+    radial-gradient(700px 460px at 100% 20%, rgba(77, 132, 196, 0.08), transparent 58%),
+    var(--bg);
+}
+
+html[data-theme="dark"] .page {
+  background:
+    radial-gradient(900px 500px at 0% 10%, rgba(225, 165, 105, 0.09), transparent 62%),
+    radial-gradient(700px 460px at 100% 20%, rgba(122, 173, 235, 0.1), transparent 58%),
+    var(--bg);
+}
+
+.nav {
+  box-shadow: 0 8px 28px rgba(17, 13, 8, 0.08);
+}
+
+html[data-theme="dark"] .nav {
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.36);
+}
+
+.hero-visual {
+  position: relative;
+}
+
+.hero-visual::after {
+  content: '';
+  position: absolute;
+  inset: 30px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  pointer-events: none;
+  opacity: 0.45;
+}
+
+.hero-video {
+  border-radius: 16px;
+  box-shadow: 0 28px 80px rgba(20, 17, 12, 0.22);
+}
+
+html[data-theme="dark"] .hero-video {
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.5);
+}
+
+.step,
+.research-preview-card,
+.desktop-card,
+.cli-feature-card,
+.exhibit-card,
+.pricing-card,
+.contact-card {
+  backdrop-filter: blur(4px);
+}
+
+.step:hover,
+.research-preview-card:hover,
+.desktop-card:hover,
+.cli-feature-card:hover,
+.contact-card:hover {
+  box-shadow: 0 18px 32px rgba(15, 12, 9, 0.08);
+}
+
+html[data-theme="dark"] .step:hover,
+html[data-theme="dark"] .research-preview-card:hover,
+html[data-theme="dark"] .desktop-card:hover,
+html[data-theme="dark"] .cli-feature-card:hover,
+html[data-theme="dark"] .contact-card:hover {
+  box-shadow: 0 18px 32px rgba(0, 0, 0, 0.24);
+}
+
+.exhibit-card {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg-alt) 85%, transparent);
+  transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
+}
+
+.exhibit-card:hover {
+  transform: translateY(-6px);
+  border-color: var(--border-strong);
+  box-shadow: 0 20px 42px rgba(22, 17, 12, 0.14);
+}
+
+html[data-theme="dark"] .exhibit-card:hover {
+  box-shadow: 0 20px 42px rgba(0, 0, 0, 0.34);
+}
+
+.cta {
+  position: relative;
+  overflow: hidden;
+}
+
+.cta::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 0%, rgba(255, 255, 255, 0.08) 48%, transparent 100%);
+  transform: translateX(-120%);
+  animation: cta-sheen 8s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes cta-sheen {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(120%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta::before {
+    animation: none;
+  }
+}

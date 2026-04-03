@@ -135,7 +135,7 @@ export default function ChangelogPage() {
   return (
     <div className="legal-page">
       <nav className="nav">
-        <Link href="/" className="nav-logo">FORGE</Link>
+        <Link href="/" className="nav-logo forge-wordmark">FORGE</Link>
         <div className="nav-links">
           <Link href="/#how" className="nav-link">How it works</Link>
           <Link href="/#gallery" className="nav-link">Gallery</Link>

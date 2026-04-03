@@ -15,8 +15,12 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
 
     let nextState = state;
     const isFinished = state.phase === 'complete' || state.phase === 'stopped' || state.phase === 'error';
+    // Do not advance or persist while waiting for plan approval.
+    // In serverless environments, concurrent status polls can otherwise rewrite stale
+    // pre-approval snapshots over a just-approved plan.
+    const canAdvance = state.planApproved;
 
-    if (shouldAdvance && !isFinished) {
+    if (shouldAdvance && !isFinished && canAdvance) {
       const last = new Date(state.lastAdvancedAt || state.updatedAt).getTime();
       const elapsedMs = Number.isFinite(last) ? Math.max(0, Date.now() - last) : 0;
       if (!isFinished) {

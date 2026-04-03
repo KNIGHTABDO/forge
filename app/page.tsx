@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { addTransitionType, startTransition, useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -178,13 +178,20 @@ export default function Home() {
   // Always render light video URL initially to avoid hydration mismatch
   const videoUrl = LIGHT_VIDEO;
 
+  const navigateWithTransition = (href: string, direction: 'nav-forward' | 'nav-back' = 'nav-forward') => {
+    startTransition(() => {
+      addTransitionType(direction);
+      router.push(href);
+    });
+  };
+
   const startNewSession = () => {
     localStorage.removeItem('forge-session-id');
-    router.push('/build');
+    navigateWithTransition('/build', 'nav-forward');
   };
 
   const startDeepResearch = () => {
-    router.push('/research/new');
+    navigateWithTransition('/research/new', 'nav-forward');
   };
 
   useEffect(() => {
@@ -239,7 +246,7 @@ export default function Home() {
     <div className="page">
       {/* Navigation */}
       <nav className="nav">
-        <Link href="/" className="nav-logo">FORGE</Link>
+        <Link href="/" className="nav-logo forge-wordmark">FORGE</Link>
         <div className="nav-links">
           <a href="#how" className="nav-link">How it works</a>
           <a href="#gallery" className="nav-link">Gallery</a>

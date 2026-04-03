@@ -1,7 +1,7 @@
-import { getToolHTML, getToolMeta } from '@/lib/github';
+import { getToolFiles, getToolHTML, getToolMeta } from '@/lib/github';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import './tool.css';
+import ToolViewerClient from '@/components/ToolViewerClient';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -18,43 +18,33 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ToolPage({ params }: Props) {
   const { slug } = await params;
-  const [html, meta] = await Promise.all([getToolHTML(slug), getToolMeta(slug)]);
+  const [files, meta] = await Promise.all([getToolFiles(slug), getToolMeta(slug)]);
+
+  if (files && files.length > 0) {
+    return (
+      <ToolViewerClient
+        files={files}
+        withBanner={true}
+        slug={slug}
+        title={meta?.title || slug}
+      />
+    );
+  }
+
+  const html = await getToolHTML(slug);
 
   if (!html) {
     notFound();
   }
 
+  const legacyFiles = [{ path: '/public/index.html', content: html }];
+
   return (
-    <div className="tool-page">
-      <header className="tool-header">
-        <a href="/" className="tool-logo">FORGE</a>
-        <div className="tool-info">
-          <h1 className="tool-title">{meta?.title || slug}</h1>
-          {meta?.description && (
-            <p className="tool-desc">{meta.description}</p>
-          )}
-        </div>
-        <div className="tool-actions">
-          <a href="/" className="tool-btn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-              <polyline points="9 22 9 12 15 12 15 22"/>
-            </svg>
-            Home
-          </a>
-          <a href="/build" className="tool-btn tool-btn-primary">
-            Build Your Own
-          </a>
-        </div>
-      </header>
-      <main className="tool-frame-wrap">
-        <iframe
-          srcDoc={html}
-          className="tool-frame"
-          title={meta?.title || slug}
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads"
-        />
-      </main>
-    </div>
+    <ToolViewerClient
+      files={legacyFiles}
+      withBanner={true}
+      slug={slug}
+      title={meta?.title || slug}
+    />
   );
 }
