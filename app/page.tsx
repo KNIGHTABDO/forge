@@ -241,7 +241,7 @@ export default function Home() {
   const filteredTools = tools.filter(t => 
     (t.title || t.slug).toLowerCase().includes(search.toLowerCase())
   );
-  const desktopReleaseUrl = 'https://github.com/KNIGHTABDO/forge/releases/latest';
+  const desktopReleaseUrl = 'https://github.com/KNIGHTABDO/forge/releases/download/desktop-v0.1.0-4/Forge.Desktop_0.1.0_x64-setup.exe';
 
   return (
     <div className="page">
