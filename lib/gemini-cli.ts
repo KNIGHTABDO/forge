@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 
 export type GeminiCliToolEvent = {
@@ -87,6 +87,80 @@ function summarizeUnknown(value: unknown, maxChars = 320): string {
   }
 
   return '';
+}
+
+function summarizeStderr(stderr: string): string {
+  const trimmed = stderr.trim();
+  if (!trimmed) {
+    return '';
+  }
+
+  const lines = trimmed
+    .split(/\r?\n/)
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+
+  if (lines.length === 0) {
+    return '';
+  }
+
+  const focused = lines.find((line) =>
+    /\[API Error:|quota|exceeded|invalid api key|permission denied|401|403|429/i.test(line),
+  );
+
+  if (focused) {
+    return truncate(focused, 520);
+  }
+
+  return truncate(lines.slice(0, 4).join(' '), 520);
+}
+
+function resolveRuntimeDirectory(fallbackCwd: string): string {
+  const configured = asNonEmptyString(process.env.GEMINI_CLI_RUNTIME_DIR);
+  if (configured) {
+    return configured;
+  }
+
+  if (process.platform === 'win32') {
+    return process.env.TEMP || process.env.TMP || fallbackCwd;
+  }
+
+  return '/tmp';
+}
+
+function createGeminiCliRuntimeEnv(apiKey: string | undefined, fallbackCwd: string): NodeJS.ProcessEnv {
+  const runtimeDir = resolveRuntimeDirectory(fallbackCwd);
+  const runtimeHome = path.join(runtimeDir, 'gemini-home');
+  const xdgConfig = path.join(runtimeHome, '.config');
+  const xdgCache = path.join(runtimeHome, '.cache');
+  const xdgData = path.join(runtimeHome, '.local', 'share');
+  const cloudSdkConfig = path.join(xdgConfig, 'gcloud');
+
+  for (const dir of [runtimeDir, runtimeHome, xdgConfig, xdgCache, xdgData, cloudSdkConfig]) {
+    try {
+      mkdirSync(dir, { recursive: true });
+    } catch {
+      // Ignore directory creation errors; child process error output is surfaced to callers.
+    }
+  }
+
+  return {
+    ...process.env,
+    ...(apiKey ? { GEMINI_API_KEY: apiKey } : {}),
+    NO_COLOR: '1',
+    CI: process.env.CI || 'true',
+    GEMINI_FORCE_FILE_STORAGE: 'true',
+    GEMINI_FORCE_ENCRYPTED_FILE_STORAGE: 'true',
+    HOME: runtimeHome,
+    USERPROFILE: runtimeHome,
+    XDG_CONFIG_HOME: xdgConfig,
+    XDG_CACHE_HOME: xdgCache,
+    XDG_DATA_HOME: xdgData,
+    CLOUDSDK_CONFIG: cloudSdkConfig,
+    TMPDIR: runtimeDir,
+    TEMP: runtimeDir,
+    TMP: runtimeDir,
+  };
 }
 
 function extractMessageText(record: JsonRecord): string {
@@ -217,10 +291,7 @@ export async function checkGeminiCliAvailability(timeoutMs = 4000): Promise<Gemi
     try {
       child = spawn(commandSpec.command, [...commandSpec.baseArgs, '--version'], {
         cwd: process.cwd(),
-        env: {
-          ...process.env,
-          NO_COLOR: '1',
-        },
+        env: createGeminiCliRuntimeEnv(undefined, process.cwd()),
         stdio: ['ignore', 'pipe', 'pipe'],
         shell: false,
       });
@@ -332,6 +403,9 @@ export async function runGeminiCliHeadless(options: GeminiCliRunOptions): Promis
     prompt,
     '--output-format',
     'stream-json',
+    '--no-sandbox',
+    '--approval-mode',
+    'plan',
   ];
 
   if (options.model && options.model.trim()) {
@@ -472,6 +546,18 @@ export async function runGeminiCliHeadless(options: GeminiCliRunOptions): Promis
       }
 
       if (eventType === 'result') {
+        const status = (asNonEmptyString(record.status) || '').toLowerCase();
+        if (status === 'error' || status === 'failed') {
+          const resultError =
+            asNonEmptyString((record.error as JsonRecord | undefined)?.message) ||
+            summarizeUnknown(record.error) ||
+            asNonEmptyString(record.message) ||
+            'Gemini CLI returned an error result event.';
+
+          fatalError = resultError;
+          thinking.push(`CLI warning: ${truncate(resultError, 220)}`);
+        }
+
         const responseText =
           asNonEmptyString(record.response) ||
           asNonEmptyString((record.result as JsonRecord | undefined)?.response) ||
@@ -517,11 +603,7 @@ export async function runGeminiCliHeadless(options: GeminiCliRunOptions): Promis
     try {
       child = spawn(command, args, {
         cwd,
-        env: {
-          ...process.env,
-          GEMINI_API_KEY: apiKey,
-          NO_COLOR: '1',
-        },
+        env: createGeminiCliRuntimeEnv(apiKey, cwd),
         stdio: ['ignore', 'pipe', 'pipe'],
         shell: false,
       });
@@ -602,7 +684,7 @@ export async function runGeminiCliHeadless(options: GeminiCliRunOptions): Promis
       if (code !== 0) {
         const errorText =
           fatalError ||
-          asNonEmptyString(stderrBuffer) ||
+          summarizeStderr(stderrBuffer) ||
           `Gemini CLI exited with code ${String(code)}.`;
 
         finish({

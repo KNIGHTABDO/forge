@@ -56,3 +56,9 @@ CLI is executed in headless mode with:
 - Keep `next.config.ts` tracing rules that include `node_modules/@google/gemini-cli/**/*` for desktop API routes so Vercel packages all CLI chunk files.
 - Ensure your deployment environment allows child process execution for the selected runtime profile.
 - Keep logs structured and never print full environment variables or raw key values.
+
+## Troubleshooting Signals
+
+- `GEMINI_API_QUOTA_EXCEEDED`: the backend key is valid but out of quota/rate limit for the selected model.
+- `GEMINI_API_AUTH_FAILED`: invalid/revoked key or insufficient permission for selected model.
+- `GEMINI_CLI_TIMEOUT`: backend CLI process exceeded timeout window.

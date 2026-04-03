@@ -249,6 +249,30 @@ function mergeThinking(baseThinking: string[], modelThinking: string[]): string[
   return merged;
 }
 
+function deriveCliExecutionErrorCode(details: string): string {
+  const normalized = details.toLowerCase();
+
+  if (normalized.includes('quota') || normalized.includes('429')) {
+    return 'GEMINI_API_QUOTA_EXCEEDED';
+  }
+
+  if (
+    normalized.includes('invalid api key') ||
+    normalized.includes('unauthorized') ||
+    normalized.includes('permission denied') ||
+    normalized.includes('401') ||
+    normalized.includes('403')
+  ) {
+    return 'GEMINI_API_AUTH_FAILED';
+  }
+
+  if (normalized.includes('timed out')) {
+    return 'GEMINI_CLI_TIMEOUT';
+  }
+
+  return 'GEMINI_CLI_EXECUTION_FAILED';
+}
+
 export async function POST(request: Request) {
   const requestId = getRequestId(request);
   const token = getBearerToken(request);
@@ -433,6 +457,7 @@ export async function POST(request: Request) {
       const details =
         cliResult.error ||
         'Gemini CLI failed to produce a usable assistant response.';
+      const errorCode = deriveCliExecutionErrorCode(details);
 
       void recordDesktopAgentUsage(verifiedUid, {
         modelName,
@@ -445,7 +470,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error: 'Gemini CLI execution failed',
-          errorCode: 'GEMINI_CLI_EXECUTION_FAILED',
+          errorCode,
           details,
           toolEvents: modelToolEvents,
           engine: 'gemini-cli',

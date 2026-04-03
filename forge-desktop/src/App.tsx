@@ -417,12 +417,9 @@ export default function App() {
 
   const availableModels = useMemo(() => {
     if (!remoteKeySummary) return []
-    return Array.from(
-      new Set([
-        remoteKeySummary.geminiModel,
-        remoteKeySummary.githubModel,
-      ].filter((value) => value.trim().length > 0)),
-    )
+    return remoteKeySummary.geminiModel.trim()
+      ? [remoteKeySummary.geminiModel]
+      : []
   }, [remoteKeySummary])
 
   const activeSession = useMemo(() => {
@@ -631,13 +628,9 @@ export default function App() {
         setSelectedModel((previous) => previous.trim() || keySummary.geminiModel)
 
         const keyReadinessMessage =
-          keySummary.geminiReady && keySummary.githubReady
-            ? 'Authenticated and synced. Gemini and GitHub model keys are available.'
-            : keySummary.geminiReady
-              ? 'Authenticated and synced. Gemini key is available; GitHub token is missing.'
-              : keySummary.githubReady
-                ? 'Authenticated and synced. GitHub token is available; Gemini key is missing.'
-                : 'Authenticated, but no model keys are configured on the server yet.'
+          keySummary.geminiReady
+            ? 'Authenticated and synced. Gemini backend key is available.'
+            : 'Authenticated, but Gemini backend key is missing on the server.'
 
         if (keyResult.warning) {
           setStatusText(
@@ -1128,10 +1121,11 @@ export default function App() {
             `Agent response complete${engineSuffix}.${chatResult.requestId ? ` (request ${chatResult.requestId})` : ''}${warningSuffix}`,
           )
         } else {
+          const compactError = chatResult.error.replace(/\s+/g, ' ').trim()
           setStatusText(
             `Gemini CLI execution failed.${chatResult.errorCode ? ` [${chatResult.errorCode}]` : ''}${
               chatResult.requestId ? ` (request ${chatResult.requestId})` : ''
-            }`,
+            } ${compactError}`,
           )
         }
       } catch (error) {

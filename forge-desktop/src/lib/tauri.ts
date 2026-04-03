@@ -292,10 +292,18 @@ function readApiError(payload: unknown, fallback: string): string {
   if (payload && typeof payload === 'object') {
     const maybePayload = payload as { error?: unknown; details?: unknown }
     const errorMessage = asString(maybePayload.error)
-    if (errorMessage) return errorMessage
-
     const detailMessage = asString(maybePayload.details)
+
+    if (errorMessage && detailMessage) {
+      if (errorMessage.includes(detailMessage)) {
+        return errorMessage
+      }
+
+      return `${errorMessage}: ${detailMessage}`
+    }
+
     if (detailMessage) return detailMessage
+    if (errorMessage) return errorMessage
   }
 
   return fallback
