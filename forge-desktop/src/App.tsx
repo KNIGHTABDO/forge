@@ -30,6 +30,8 @@ import {
 type ThemeMode = 'light' | 'dark'
 type StartupStep = 'onboarding' | 'chat'
 type ChatRole = 'user' | 'assistant'
+type ChatDirection = 'ltr' | 'rtl'
+type AgentTurnMode = 'normal' | 'regenerate'
 
 type ToolEvent = {
   name: string
@@ -44,6 +46,19 @@ type ChatMessage = {
   createdAt: number
   thinking?: string[]
   tools?: ToolEvent[]
+}
+
+type SessionRevision = {
+  id: string
+  label: string
+  messages: ChatMessage[]
+  indexedFiles: string[]
+  createdAt: number
+}
+
+type SessionTimeline = {
+  past: SessionRevision[]
+  future: SessionRevision[]
 }
 
 type ChatSession = {
@@ -74,6 +89,8 @@ const MAX_SESSIONS = 80
 const MAX_MESSAGES_PER_SESSION = 180
 const MAX_INDEXED_FILES_PER_SESSION = 2000
 const MAX_DRAFT_CHARS = 8000
+const MAX_SESSION_REVISIONS = 90
+const ARABIC_TEXT_REGEX = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/
 
 function makeId(prefix: string): string {
   if (
@@ -251,6 +268,31 @@ function trimToolOutput(value: string, maxChars = 5000): string {
   return `${normalized.slice(0, maxChars)}\n\n[...truncated...]`
 }
 
+function cloneToolEvents(tools: ToolEvent[] | undefined): ToolEvent[] | undefined {
+  if (!tools || tools.length === 0) {
+    return undefined
+  }
+
+  return tools.map((tool) => ({ ...tool }))
+}
+
+function cloneMessages(messages: ChatMessage[]): ChatMessage[] {
+  return messages.map((message) => ({
+    ...message,
+    thinking: message.thinking ? [...message.thinking] : undefined,
+    tools: cloneToolEvents(message.tools),
+  }))
+}
+
+function detectTextDirection(value: string): ChatDirection {
+  return ARABIC_TEXT_REGEX.test(value) ? 'rtl' : 'ltr'
+}
+
+function getLastUserPrompt(messages: ChatMessage[]): string {
+  const latestUser = [...messages].reverse().find((message) => message.role === 'user')
+  return latestUser?.content?.trim() || ''
+}
+
 function loadStoredSessions(): ChatSession[] {
   try {
     const raw = localStorage.getItem(SESSION_STORAGE_KEY)
@@ -406,8 +448,11 @@ export default function App() {
   const [isPickingFolder, setIsPickingFolder] = useState(false)
   const [showAuthDialog, setShowAuthDialog] = useState(false)
   const [copyStatus, setCopyStatus] = useState('')
+  const [textDirectionMode, setTextDirectionMode] = useState<'auto' | 'ltr' | 'rtl'>('auto')
+  const [sessionTimelines, setSessionTimelines] = useState<Record<string, SessionTimeline>>({})
 
   const messageScrollRef = useRef<HTMLDivElement | null>(null)
+  const composerTextareaRef = useRef<HTMLTextAreaElement | null>(null)
   const authPollingStartedAtRef = useRef<number | null>(null)
   const forgeWebBase = useMemo(() => getForgeWebBaseUrl(), [])
 
@@ -431,6 +476,52 @@ export default function App() {
     activeSession && runningSessionId === activeSession.id,
   )
 
+  const activeTimeline = useMemo(() => {
+    if (!activeSession) {
+      return null
+    }
+
+    return sessionTimelines[activeSession.id] || null
+  }, [activeSession, sessionTimelines])
+
+  const canUndo = Boolean(activeTimeline && activeTimeline.past.length > 0)
+  const canRedo = Boolean(activeTimeline && activeTimeline.future.length > 0)
+
+  const draftDirection =
+    textDirectionMode === 'auto'
+      ? detectTextDirection(activeSession?.draft || '')
+      : textDirectionMode
+
+  const directionModeLabel =
+    textDirectionMode === 'auto'
+      ? 'Dir: Auto'
+      : textDirectionMode === 'rtl'
+        ? 'Dir: RTL'
+        : 'Dir: LTR'
+
+  const resolveDirectionForText = useCallback(
+    (text: string): ChatDirection => {
+      if (textDirectionMode === 'auto') {
+        return detectTextDirection(text)
+      }
+
+      return textDirectionMode
+    },
+    [textDirectionMode],
+  )
+
+  const latestAssistantMessageId = useMemo(() => {
+    if (!activeSession) {
+      return ''
+    }
+
+    const latestAssistant = [...activeSession.messages]
+      .reverse()
+      .find((message) => message.role === 'assistant')
+
+    return latestAssistant?.id || ''
+  }, [activeSession])
+
   const openExternalUrl = useCallback(async (url: string): Promise<boolean> => {
     try {
       await openUrl(url)
@@ -445,6 +536,14 @@ export default function App() {
     }
   }, [])
 
+  const cycleDirectionMode = useCallback(() => {
+    setTextDirectionMode((previous) => {
+      if (previous === 'auto') return 'rtl'
+      if (previous === 'rtl') return 'ltr'
+      return 'auto'
+    })
+  }, [])
+
   const updateSession = useCallback(
     (sessionId: string, updater: (session: ChatSession) => ChatSession) => {
       setSessions((previous) =>
@@ -455,6 +554,157 @@ export default function App() {
     },
     [],
   )
+
+  const pushSessionRevision = useCallback(
+    (
+      sessionId: string,
+      label: string,
+      messages: ChatMessage[],
+      indexedFiles: string[],
+    ) => {
+      setSessionTimelines((previous) => {
+        const existing = previous[sessionId] || { past: [], future: [] }
+        const revision: SessionRevision = {
+          id: makeId('rev'),
+          label,
+          messages: cloneMessages(messages),
+          indexedFiles: [...indexedFiles],
+          createdAt: Date.now(),
+        }
+
+        const past = [...existing.past, revision]
+        if (past.length > MAX_SESSION_REVISIONS) {
+          past.splice(0, past.length - MAX_SESSION_REVISIONS)
+        }
+
+        return {
+          ...previous,
+          [sessionId]: {
+            past,
+            future: [],
+          },
+        }
+      })
+    },
+    [],
+  )
+
+  const copyTextToClipboard = useCallback(async (value: string, successLabel: string) => {
+    try {
+      await navigator.clipboard.writeText(value)
+      setStatusText(successLabel)
+    } catch {
+      setStatusText('Copy failed. Clipboard access is unavailable right now.')
+    }
+  }, [])
+
+  const undoLastSessionChange = useCallback(() => {
+    if (!activeSession || isActiveSessionRunning) {
+      return
+    }
+
+    const timeline = sessionTimelines[activeSession.id]
+    if (!timeline || timeline.past.length === 0) {
+      setStatusText('Nothing to undo yet.')
+      return
+    }
+
+    const revision = timeline.past[timeline.past.length - 1]!
+
+    setSessionTimelines((previous) => {
+      const currentTimeline = previous[activeSession.id]
+      if (!currentTimeline || currentTimeline.past.length === 0) {
+        return previous
+      }
+
+      const currentMessages = cloneMessages(activeSession.messages)
+      const currentIndexedFiles = [...activeSession.indexedFiles]
+
+      const futureEntry: SessionRevision = {
+        id: makeId('redo'),
+        label: `Redo ${revision.label}`,
+        messages: currentMessages,
+        indexedFiles: currentIndexedFiles,
+        createdAt: Date.now(),
+      }
+
+      const nextFuture = [futureEntry, ...currentTimeline.future]
+      if (nextFuture.length > MAX_SESSION_REVISIONS) {
+        nextFuture.splice(MAX_SESSION_REVISIONS)
+      }
+
+      return {
+        ...previous,
+        [activeSession.id]: {
+          past: currentTimeline.past.slice(0, -1),
+          future: nextFuture,
+        },
+      }
+    })
+
+    updateSession(activeSession.id, (session) => ({
+      ...session,
+      messages: cloneMessages(revision.messages),
+      indexedFiles: [...revision.indexedFiles],
+      updatedAt: Date.now(),
+    }))
+
+    setStatusText(`Undo applied: ${revision.label}.`)
+  }, [activeSession, isActiveSessionRunning, sessionTimelines, updateSession])
+
+  const redoLastSessionChange = useCallback(() => {
+    if (!activeSession || isActiveSessionRunning) {
+      return
+    }
+
+    const timeline = sessionTimelines[activeSession.id]
+    if (!timeline || timeline.future.length === 0) {
+      setStatusText('Nothing to redo yet.')
+      return
+    }
+
+    const revision = timeline.future[0]!
+
+    setSessionTimelines((previous) => {
+      const currentTimeline = previous[activeSession.id]
+      if (!currentTimeline || currentTimeline.future.length === 0) {
+        return previous
+      }
+
+      const currentMessages = cloneMessages(activeSession.messages)
+      const currentIndexedFiles = [...activeSession.indexedFiles]
+
+      const pastEntry: SessionRevision = {
+        id: makeId('rev'),
+        label: `Undo ${revision.label}`,
+        messages: currentMessages,
+        indexedFiles: currentIndexedFiles,
+        createdAt: Date.now(),
+      }
+
+      const nextPast = [...currentTimeline.past, pastEntry]
+      if (nextPast.length > MAX_SESSION_REVISIONS) {
+        nextPast.splice(0, nextPast.length - MAX_SESSION_REVISIONS)
+      }
+
+      return {
+        ...previous,
+        [activeSession.id]: {
+          past: nextPast,
+          future: currentTimeline.future.slice(1),
+        },
+      }
+    })
+
+    updateSession(activeSession.id, (session) => ({
+      ...session,
+      messages: cloneMessages(revision.messages),
+      indexedFiles: [...revision.indexedFiles],
+      updatedAt: Date.now(),
+    }))
+
+    setStatusText(`Redo applied: ${revision.label}.`)
+  }, [activeSession, isActiveSessionRunning, sessionTimelines, updateSession])
 
   const prependSession = useCallback((session: ChatSession) => {
     setSessions((previous) =>
@@ -675,9 +925,11 @@ export default function App() {
     [forgeWebBase, normalizeServerWarning, refreshDesktopHealth],
   )
 
-  const startSignIn = useCallback(async () => {
+  const startSignIn = useCallback(async (options?: { openDialog?: boolean }) => {
     try {
-      setShowAuthDialog(true)
+      if (options?.openDialog) {
+        setShowAuthDialog(true)
+      }
       setCopyStatus('')
       setStatusText('Generating secure Forge sign-in link...')
 
@@ -692,6 +944,7 @@ export default function App() {
       if (opened) {
         setStatusText('Login page opened. Complete sign-in and return to desktop.')
       } else {
+        setShowAuthDialog(true)
         setStatusText('Login link ready. Browser did not open automatically, copy the link below.')
       }
     } catch (error) {
@@ -715,6 +968,57 @@ export default function App() {
       setCopyStatus('Copy failed. Select and copy the URL manually.')
     }
   }, [authUrl])
+
+  const copyDiagnosticsSnapshot = useCallback(() => {
+    const lines = [
+      `Device: ${deviceId}`,
+      `Session: ${sessionToken ? 'Authenticated' : 'Guest'}`,
+      `Key sync request: ${lastKeySyncRequestId || 'No key sync request yet'}`,
+      `Health request: ${lastHealthRequestId || 'No health request yet'}`,
+      `Agent request: ${lastAgentRequestId || 'No agent request yet'}`,
+      `Agent engine: ${lastAgentEngine || 'No engine activity yet'}`,
+      `Backend health: ${desktopHealth ? desktopHealth.status : 'Not checked'}`,
+      `CLI runtime: ${
+        desktopHealth
+          ? desktopHealth.geminiCliReady
+            ? 'Ready'
+            : 'Unavailable'
+          : 'Unknown'
+      }`,
+      `Backend key: ${
+        desktopHealth
+          ? desktopHealth.geminiKeyReady
+            ? 'Configured'
+            : 'Missing'
+          : 'Unknown'
+      }`,
+      `Backend model: ${desktopHealth?.geminiModel || 'Unknown'}`,
+      `CLI command source: ${desktopHealth?.cliCommandSource || 'Unknown'}`,
+      `Backend runtime: ${
+        desktopHealth
+          ? `${desktopHealth.runtimePlatform} / ${desktopHealth.runtimeNodeVersion}`
+          : 'Unknown'
+      }`,
+    ]
+
+    if (desktopHealth && desktopHealth.guidance.length > 0) {
+      lines.push('Guidance:')
+      for (const entry of desktopHealth.guidance) {
+        lines.push(`- ${entry}`)
+      }
+    }
+
+    void copyTextToClipboard(lines.join('\n'), 'Diagnostics copied to clipboard.')
+  }, [
+    copyTextToClipboard,
+    desktopHealth,
+    deviceId,
+    lastAgentEngine,
+    lastAgentRequestId,
+    lastHealthRequestId,
+    lastKeySyncRequestId,
+    sessionToken,
+  ])
 
   const resetSessionToken = useCallback(async () => {
     await clearSessionToken()
@@ -823,36 +1127,77 @@ export default function App() {
   }, [activeSession, chooseWorkspaceFolder, updateSession])
 
   const runAgentTurn = useCallback(
-    async (overridePrompt?: string) => {
+    async (options?: { overridePrompt?: string; mode?: AgentTurnMode } | string) => {
       if (!activeSession || runningSessionId) {
         return
       }
 
-      const prompt = (overridePrompt ?? activeSession.draft).trim()
+      const mode: AgentTurnMode =
+        typeof options === 'string' ? 'normal' : options?.mode || 'normal'
+      const overridePrompt = typeof options === 'string' ? options : options?.overridePrompt
+
+      const fallbackPrompt =
+        mode === 'regenerate' ? getLastUserPrompt(activeSession.messages) : activeSession.draft
+
+      const prompt = (overridePrompt ?? fallbackPrompt).trim()
       if (!prompt) {
+        if (mode === 'regenerate') {
+          setStatusText('No earlier user prompt found to regenerate.')
+        }
         return
       }
 
       const sessionId = activeSession.id
       const workspacePath = activeSession.workspacePath.trim()
+      const baseMessages = cloneMessages(activeSession.messages)
+      const historySeedMessages =
+        mode === 'regenerate' && baseMessages.at(-1)?.role === 'assistant'
+          ? baseMessages.slice(0, -1)
+          : baseMessages
 
-      const userMessage: ChatMessage = {
-        id: makeId('msg'),
-        role: 'user',
-        content: prompt,
-        createdAt: Date.now(),
+      pushSessionRevision(
+        sessionId,
+        mode === 'regenerate' ? 'Regenerate agent response' : 'Run prompt',
+        activeSession.messages,
+        activeSession.indexedFiles,
+      )
+
+      let userMessage: ChatMessage | null = null
+
+      if (mode === 'normal') {
+        const nextUserMessage: ChatMessage = {
+          id: makeId('msg'),
+          role: 'user',
+          content: prompt,
+          createdAt: Date.now(),
+        }
+
+        userMessage = nextUserMessage
+
+        updateSession(sessionId, (session) => ({
+          ...session,
+          messages: [...session.messages, nextUserMessage],
+          draft: '',
+          updatedAt: Date.now(),
+          title:
+            session.title === DEFAULT_SESSION_TITLE
+              ? toSessionTitleFromPrompt(prompt)
+              : session.title,
+        }))
+      } else {
+        updateSession(sessionId, (session) => {
+          const trimmedMessages =
+            session.messages.at(-1)?.role === 'assistant'
+              ? session.messages.slice(0, -1)
+              : session.messages
+
+          return {
+            ...session,
+            messages: trimmedMessages,
+            updatedAt: Date.now(),
+          }
+        })
       }
-
-      updateSession(sessionId, (session) => ({
-        ...session,
-        messages: [...session.messages, userMessage],
-        draft: '',
-        updatedAt: Date.now(),
-        title:
-          session.title === DEFAULT_SESSION_TITLE
-            ? toSessionTitleFromPrompt(prompt)
-            : session.title,
-      }))
 
       setRunningSessionId(sessionId)
       setStatusText('Agent is working...')
@@ -1083,7 +1428,11 @@ export default function App() {
 
         thinking.push('Preparing final response.')
 
-        const history: DesktopAgentMessage[] = [...activeSession.messages, userMessage]
+        const historySource = userMessage
+          ? [...historySeedMessages, userMessage]
+          : historySeedMessages
+
+        const history: DesktopAgentMessage[] = historySource
           .filter((message) => message.role === 'user' || message.role === 'assistant')
           .slice(-12)
           .map((message) => ({
@@ -1197,12 +1546,30 @@ export default function App() {
     [
       activeSession,
       forgeWebBase,
+      pushSessionRevision,
       runningSessionId,
       selectedModel,
       sessionToken,
       updateSession,
     ],
   )
+
+  const regenerateLastResponse = useCallback(() => {
+    if (!activeSession || isActiveSessionRunning) {
+      return
+    }
+
+    const prompt = getLastUserPrompt(activeSession.messages)
+    if (!prompt) {
+      setStatusText('No user prompt found to regenerate from.')
+      return
+    }
+
+    void runAgentTurn({
+      mode: 'regenerate',
+      overridePrompt: prompt,
+    })
+  }, [activeSession, isActiveSessionRunning, runAgentTurn])
 
   useEffect(() => {
     const savedTheme = localStorage.getItem(THEME_STORAGE_KEY)
@@ -1347,6 +1714,58 @@ export default function App() {
     startupStep,
   ])
 
+  useEffect(() => {
+    if (!composerTextareaRef.current || !activeSession || startupStep !== 'chat') {
+      return
+    }
+
+    const textarea = composerTextareaRef.current
+    textarea.style.height = '0px'
+    const nextHeight = Math.min(Math.max(textarea.scrollHeight, 54), 190)
+    textarea.style.height = `${nextHeight}px`
+  }, [activeSession?.draft, activeSession?.id, startupStep])
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const isMeta = event.ctrlKey || event.metaKey
+      if (!isMeta) {
+        return
+      }
+
+      const target = event.target as HTMLElement | null
+      const isEditable = Boolean(
+        target &&
+          (target.tagName === 'TEXTAREA' ||
+            target.tagName === 'INPUT' ||
+            target.isContentEditable),
+      )
+
+      if (isEditable) {
+        return
+      }
+
+      const key = event.key.toLowerCase()
+      const wantsUndo = key === 'z' && !event.shiftKey
+      const wantsRedo = key === 'y' || (key === 'z' && event.shiftKey)
+
+      if (wantsUndo) {
+        event.preventDefault()
+        undoLastSessionChange()
+        return
+      }
+
+      if (wantsRedo) {
+        event.preventDefault()
+        redoLastSessionChange()
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+    }
+  }, [redoLastSessionChange, undoLastSessionChange])
+
   const shellClass = startupStep === 'chat' && sidebarOpen ? 'sidebar-open' : 'sidebar-closed'
 
   return (
@@ -1418,8 +1837,19 @@ export default function App() {
               </button>
             )}
 
-            <button type="button" className="secondary-btn" onClick={() => setShowAuthDialog(true)}>
-              {sessionToken ? 'Account' : 'Sign In'}
+            <button
+              type="button"
+              className="secondary-btn"
+              onClick={() => {
+                if (sessionToken) {
+                  setShowAuthDialog(true)
+                } else {
+                  void startSignIn()
+                }
+              }}
+              disabled={isPollingAuth}
+            >
+              {sessionToken ? 'Account' : isPollingAuth ? 'Opening...' : 'Sign In'}
             </button>
 
             <button type="button" className="secondary-btn" onClick={() => setTheme((previous) => nextTheme(previous))}>
@@ -1443,40 +1873,102 @@ export default function App() {
                 </div>
               )}
 
-              {activeSession.messages.map((message) => (
-                <article key={message.id} className={`chat-message ${message.role}`}>
-                  <div className="message-role">{message.role === 'assistant' ? 'Forge Agent' : 'You'}</div>
-                  <div className="message-body markdown-body">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
-                  </div>
+              {activeSession.messages.map((message) => {
+                const messageDirection = resolveDirectionForText(message.content)
+                const isLatestAssistant =
+                  message.role === 'assistant' && message.id === latestAssistantMessageId
 
-                  {message.thinking && message.thinking.length > 0 && (
-                    <details className="message-meta">
-                      <summary>Thinking ({message.thinking.length})</summary>
-                      <ul>
-                        {message.thinking.map((item, index) => (
-                          <li key={`${item}-${index}`}>{item}</li>
-                        ))}
-                      </ul>
-                    </details>
-                  )}
+                return (
+                  <article
+                    key={message.id}
+                    className={`chat-message ${message.role} ${
+                      messageDirection === 'rtl' ? 'rtl-message' : ''
+                    }`}
+                  >
+                    <div className="message-role">{message.role === 'assistant' ? 'Forge Agent' : 'You'}</div>
+                    <div className="message-body markdown-body">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          a: ({ href, children, ...props }) => (
+                            <a
+                              {...props}
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(event) => {
+                                if (!href) {
+                                  return
+                                }
 
-                  {message.tools && message.tools.length > 0 && (
-                    <details className="message-meta">
-                      <summary>Tool Calls ({message.tools.length})</summary>
-                      <ul className="tool-meta-list">
-                        {message.tools.map((tool, index) => (
-                          <li key={`${tool.name}-${index}`}>
-                            <span className={`tool-badge ${tool.status}`}>{tool.status}</span>
-                            <strong>{tool.name}</strong>
-                            <p>{tool.detail}</p>
-                          </li>
-                        ))}
-                      </ul>
-                    </details>
-                  )}
-                </article>
-              ))}
+                                event.preventDefault()
+                                void openExternalUrl(href)
+                              }}
+                            >
+                              {children}
+                            </a>
+                          ),
+                        }}
+                      >
+                        {message.content}
+                      </ReactMarkdown>
+                    </div>
+
+                    {message.role === 'assistant' && (
+                      <div className="message-actions-row">
+                        <button
+                          type="button"
+                          className="secondary-btn"
+                          onClick={() =>
+                            void copyTextToClipboard(
+                              message.content,
+                              'Agent response copied to clipboard.',
+                            )
+                          }
+                        >
+                          Copy
+                        </button>
+                        {isLatestAssistant && (
+                          <button
+                            type="button"
+                            className="secondary-btn"
+                            onClick={regenerateLastResponse}
+                            disabled={isActiveSessionRunning}
+                          >
+                            Regenerate
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    {message.thinking && message.thinking.length > 0 && (
+                      <details className="message-meta">
+                        <summary>Thinking ({message.thinking.length})</summary>
+                        <ul>
+                          {message.thinking.map((item, index) => (
+                            <li key={`${item}-${index}`}>{item}</li>
+                          ))}
+                        </ul>
+                      </details>
+                    )}
+
+                    {message.tools && message.tools.length > 0 && (
+                      <details className="message-meta">
+                        <summary>Tool Calls ({message.tools.length})</summary>
+                        <ul className="tool-meta-list">
+                          {message.tools.map((tool, index) => (
+                            <li key={`${tool.name}-${index}`}>
+                              <span className={`tool-badge ${tool.status}`}>{tool.status}</span>
+                              <strong>{tool.name}</strong>
+                              <p>{tool.detail}</p>
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+                    )}
+                  </article>
+                )
+              })}
 
               {isActiveSessionRunning && (
                 <article className="chat-message assistant running-message">
@@ -1496,8 +1988,11 @@ export default function App() {
               }}
             >
               <textarea
+                ref={composerTextareaRef}
                 value={activeSession.draft}
                 placeholder="Message Forge Agent... (Shift+Enter for newline, Enter to send)"
+                dir={draftDirection}
+                lang={draftDirection === 'rtl' ? 'ar' : 'en'}
                 onChange={(event) => {
                   updateSession(activeSession.id, (session) => ({
                     ...session,
@@ -1517,19 +2012,51 @@ export default function App() {
               />
 
               <div className="composer-actions">
-                <button type="button" className="secondary-btn" onClick={() => void runAgentTurn('/index')}>
-                  /index
-                </button>
-                <button type="button" className="secondary-btn" onClick={() => void runAgentTurn('/dirs')}>
-                  /dirs
-                </button>
-                <button
-                  type="submit"
-                  className="primary-btn"
-                  disabled={isActiveSessionRunning || !activeSession.draft.trim()}
-                >
-                  {isActiveSessionRunning ? 'Running...' : 'Send'}
-                </button>
+                <div className="composer-actions-left">
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={undoLastSessionChange}
+                    disabled={!canUndo || isActiveSessionRunning}
+                  >
+                    Undo
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={redoLastSessionChange}
+                    disabled={!canRedo || isActiveSessionRunning}
+                  >
+                    Redo
+                  </button>
+                  <button type="button" className="secondary-btn" onClick={cycleDirectionMode}>
+                    {directionModeLabel}
+                  </button>
+                </div>
+
+                <div className="composer-actions-right">
+                  <button type="button" className="secondary-btn" onClick={() => void runAgentTurn('/index')}>
+                    /index
+                  </button>
+                  <button type="button" className="secondary-btn" onClick={() => void runAgentTurn('/dirs')}>
+                    /dirs
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={regenerateLastResponse}
+                    disabled={!latestAssistantMessageId || isActiveSessionRunning}
+                  >
+                    Regenerate
+                  </button>
+                  <button
+                    type="submit"
+                    className="primary-btn"
+                    disabled={isActiveSessionRunning || !activeSession.draft.trim()}
+                  >
+                    {isActiveSessionRunning ? 'Running...' : 'Send'}
+                  </button>
+                </div>
               </div>
             </form>
           </>
@@ -1583,157 +2110,34 @@ export default function App() {
               </button>
             </div>
 
-            <p className="muted">
-              Sign in enables protected APIs, key sync, and authenticated web search.
-            </p>
-            <p className="muted">
-              No local Node or npm is required on this machine. Gemini CLI runs on Forge backend after sign-in.
-            </p>
             <p className="muted">API endpoint: {forgeWebBase}</p>
-            {remoteKeySummary && (
-              <p className="muted">
-                Key sync status: Gemini {remoteKeySummary.geminiReady ? 'ready' : 'missing'}; GitHub {remoteKeySummary.githubReady ? 'ready' : 'missing'}.
-              </p>
-            )}
-            <p className="muted">Active provider: gemini-cli (server-side)</p>
-            {!!remoteKeySummary && availableModels.length > 0 && (
-              <label className="auth-model-row">
-                <span className="muted">Active model</span>
-                <select
-                  value={selectedModel || remoteKeySummary.geminiModel}
-                  onChange={(event) => setSelectedModel(event.target.value)}
-                >
-                  {availableModels.map((model) => (
-                    <option key={model} value={model}>
-                      {model}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
-            {sessionToken && !remoteKeySummary && (
-              <p className="muted">
-                Session token is stored, but key sync has not succeeded yet.
-              </p>
-            )}
+            <p className="muted">
+              Session: {sessionToken ? 'Signed in' : 'Guest'}
+              {remoteKeySummary
+                ? ` | Gemini key ${remoteKeySummary.geminiReady ? 'ready' : 'missing'}`
+                : ''}
+            </p>
 
-            <div className="auth-diagnostics">
-              <h3>Diagnostics</h3>
-              <dl>
-                <div>
-                  <dt>Device</dt>
-                  <dd>{deviceId}</dd>
-                </div>
-                <div>
-                  <dt>Session</dt>
-                  <dd>{sessionToken ? 'Authenticated' : 'Guest'}</dd>
-                </div>
-                <div>
-                  <dt>Key sync request</dt>
-                  <dd>{lastKeySyncRequestId || 'No key sync request yet'}</dd>
-                </div>
-                <div>
-                  <dt>Health request</dt>
-                  <dd>{lastHealthRequestId || 'No health request yet'}</dd>
-                </div>
-                <div>
-                  <dt>Agent request</dt>
-                  <dd>{lastAgentRequestId || 'No agent request yet'}</dd>
-                </div>
-                <div>
-                  <dt>Agent engine</dt>
-                  <dd>{lastAgentEngine || 'No engine activity yet'}</dd>
-                </div>
-                <div>
-                  <dt>Backend health</dt>
-                  <dd>{desktopHealth ? desktopHealth.status : 'Not checked'}</dd>
-                </div>
-                <div>
-                  <dt>CLI runtime</dt>
-                  <dd>
-                    {desktopHealth
-                      ? desktopHealth.geminiCliReady
-                        ? 'Ready'
-                        : 'Unavailable'
-                      : 'Unknown'}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Backend key</dt>
-                  <dd>
-                    {desktopHealth
-                      ? desktopHealth.geminiKeyReady
-                        ? 'Configured'
-                        : 'Missing'
-                      : 'Unknown'}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Backend model</dt>
-                  <dd>{desktopHealth?.geminiModel || 'Unknown'}</dd>
-                </div>
-                <div>
-                  <dt>CLI command source</dt>
-                  <dd>{desktopHealth?.cliCommandSource || 'Unknown'}</dd>
-                </div>
-                <div>
-                  <dt>Backend runtime</dt>
-                  <dd>
-                    {desktopHealth
-                      ? `${desktopHealth.runtimePlatform} / ${desktopHealth.runtimeNodeVersion}`
-                      : 'Unknown'}
-                  </dd>
-                </div>
-              </dl>
-
-              {desktopHealth && desktopHealth.guidance.length > 0 && (
-                <ul className="auth-guidance-list">
-                  {desktopHealth.guidance.map((entry, index) => (
-                    <li key={`${entry}-${index}`}>{entry}</li>
-                  ))}
-                </ul>
-              )}
-
-              <div className="auth-diagnostics-actions">
-                <button
-                  type="button"
-                  className="secondary-btn"
-                  onClick={() => void refreshDesktopHealth()}
-                  disabled={!sessionToken || isCheckingHealth}
-                >
-                  {isCheckingHealth ? 'Checking...' : 'Refresh Health'}
-                </button>
-              </div>
-            </div>
-
-            <div className="auth-link-row">
-              <input
-                readOnly
-                value={authUrl || ''}
-                placeholder="Generate login link to copy manually"
-              />
-              <button type="button" className="secondary-btn" onClick={() => void copyLoginLink()} disabled={!authUrl}>
-                Copy
+            <div className="auth-actions compact">
+              <button
+                type="button"
+                className="primary-btn"
+                disabled={isPollingAuth}
+                onClick={() => void startSignIn({ openDialog: true })}
+              >
+                {isPollingAuth ? 'Waiting Callback...' : sessionToken ? 'Sign In Again' : 'Sign In'}
               </button>
               <button
                 type="button"
                 className="secondary-btn"
-                onClick={() => {
-                  if (authUrl) {
-                    void openExternalUrl(authUrl)
-                  }
-                }}
-                disabled={!authUrl}
+                onClick={() => void refreshDesktopHealth()}
+                disabled={!sessionToken || isCheckingHealth}
               >
-                Open
+                {isCheckingHealth ? 'Checking...' : 'Refresh Health'}
               </button>
-            </div>
-
-            <div className="auth-actions">
-              <button type="button" className="primary-btn" disabled={isPollingAuth} onClick={() => void startSignIn()}>
-                {isPollingAuth ? 'Waiting Callback...' : sessionToken ? 'Re-authenticate' : 'Start Sign In'}
+              <button type="button" className="secondary-btn" onClick={copyDiagnosticsSnapshot}>
+                Copy Diagnostics
               </button>
-
               {hasSavedSession && (
                 <button type="button" className="secondary-btn danger" onClick={() => void resetSessionToken()}>
                   Clear Local Token
@@ -1741,9 +2145,140 @@ export default function App() {
               )}
             </div>
 
-            <p className="muted">
-              If browser opening fails, copy the login URL above and open it manually.
-            </p>
+            <details className="auth-section" open>
+              <summary>Diagnostics</summary>
+              <div className="auth-diagnostics">
+                <dl>
+                  <div>
+                    <dt>Device</dt>
+                    <dd>{deviceId}</dd>
+                  </div>
+                  <div>
+                    <dt>Session</dt>
+                    <dd>{sessionToken ? 'Authenticated' : 'Guest'}</dd>
+                  </div>
+                  <div>
+                    <dt>Key sync request</dt>
+                    <dd>{lastKeySyncRequestId || 'No key sync request yet'}</dd>
+                  </div>
+                  <div>
+                    <dt>Health request</dt>
+                    <dd>{lastHealthRequestId || 'No health request yet'}</dd>
+                  </div>
+                  <div>
+                    <dt>Agent request</dt>
+                    <dd>{lastAgentRequestId || 'No agent request yet'}</dd>
+                  </div>
+                  <div>
+                    <dt>Agent engine</dt>
+                    <dd>{lastAgentEngine || 'No engine activity yet'}</dd>
+                  </div>
+                  <div>
+                    <dt>Backend health</dt>
+                    <dd>{desktopHealth ? desktopHealth.status : 'Not checked'}</dd>
+                  </div>
+                  <div>
+                    <dt>CLI runtime</dt>
+                    <dd>
+                      {desktopHealth
+                        ? desktopHealth.geminiCliReady
+                          ? 'Ready'
+                          : 'Unavailable'
+                        : 'Unknown'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Backend key</dt>
+                    <dd>
+                      {desktopHealth
+                        ? desktopHealth.geminiKeyReady
+                          ? 'Configured'
+                          : 'Missing'
+                        : 'Unknown'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Backend model</dt>
+                    <dd>{desktopHealth?.geminiModel || 'Unknown'}</dd>
+                  </div>
+                  <div>
+                    <dt>CLI command source</dt>
+                    <dd>{desktopHealth?.cliCommandSource || 'Unknown'}</dd>
+                  </div>
+                  <div>
+                    <dt>Backend runtime</dt>
+                    <dd>
+                      {desktopHealth
+                        ? `${desktopHealth.runtimePlatform} / ${desktopHealth.runtimeNodeVersion}`
+                        : 'Unknown'}
+                    </dd>
+                  </div>
+                </dl>
+
+                {desktopHealth && desktopHealth.guidance.length > 0 && (
+                  <ul className="auth-guidance-list">
+                    {desktopHealth.guidance.map((entry, index) => (
+                      <li key={`${entry}-${index}`}>{entry}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </details>
+
+            <details className="auth-section">
+              <summary>Model And Advanced Settings</summary>
+              <p className="muted">Active provider: gemini-cli (server-side)</p>
+              {!!remoteKeySummary && availableModels.length > 0 && (
+                <label className="auth-model-row">
+                  <span className="muted">Active model</span>
+                  <select
+                    value={selectedModel || remoteKeySummary.geminiModel}
+                    onChange={(event) => setSelectedModel(event.target.value)}
+                  >
+                    {availableModels.map((model) => (
+                      <option key={model} value={model}>
+                        {model}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {sessionToken && !remoteKeySummary && (
+                <p className="muted">
+                  Session token exists, but key sync has not completed yet.
+                </p>
+              )}
+            </details>
+
+            <details className="auth-section">
+              <summary>Login Troubleshooting</summary>
+              <div className="auth-link-row">
+                <input
+                  readOnly
+                  value={authUrl || ''}
+                  placeholder="Generate login link to copy manually"
+                />
+                <button type="button" className="secondary-btn" onClick={() => void copyLoginLink()} disabled={!authUrl}>
+                  Copy
+                </button>
+                <button
+                  type="button"
+                  className="secondary-btn"
+                  onClick={() => {
+                    if (authUrl) {
+                      void openExternalUrl(authUrl)
+                    }
+                  }}
+                  disabled={!authUrl}
+                >
+                  Open
+                </button>
+              </div>
+              <p className="muted">
+                If browser opening fails, copy the login URL above and open it manually.
+              </p>
+            </details>
+
             {copyStatus && <p className="copy-status">{copyStatus}</p>}
           </div>
         </div>
