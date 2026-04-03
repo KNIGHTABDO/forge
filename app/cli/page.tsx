@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, Suspense } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { signInWithEmailAndPassword, signInWithPopup, createUserWithEmailAndPassword, signOut, onAuthStateChanged, User } from 'firebase/auth';
 import { doc, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, googleProvider, db } from '@/lib/firebase';
@@ -234,8 +234,26 @@ function CliDashboard() {
   const [manualCallbackUrl, setManualCallbackUrl] = useState<string | null>(null);
   const callbackAttemptedRef = useRef(false);
   const searchParams = useSearchParams();
+  const pathname = usePathname();
 
   useEffect(() => {
+    if (pathname !== '/cli') {
+      return;
+    }
+
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const target = `/desktop${window.location.search}${window.location.hash}`;
+    window.location.replace(target);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (pathname === '/cli') {
+      return;
+    }
+
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u);
       setLoading(false);
@@ -337,9 +355,13 @@ function CliDashboard() {
       }
     });
     return () => unsub();
-  }, [searchParams]);
+  }, [pathname, searchParams]);
 
   useEffect(() => {
+    if (pathname === '/cli') {
+      return;
+    }
+
     if (!user) return;
 
     let cancelled = false;
@@ -452,7 +474,7 @@ function CliDashboard() {
       cancelled = true;
       window.clearInterval(intervalId);
     };
-  }, [user]);
+  }, [pathname, user]);
 
   const handleRevoke = async (deviceId: string) => {
     if (!user) return;

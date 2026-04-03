@@ -1279,6 +1279,9 @@ html[data-theme="dark"] .cta-button:hover {
 }
 
 .desktop-download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 14px 26px;
   border: 2px solid var(--text);
   border-radius: 6px;
@@ -1289,8 +1292,15 @@ html[data-theme="dark"] .cta-button:hover {
   letter-spacing: 0.08em;
   color: var(--bg);
   background: var(--text);
-  opacity: 0.58;
-  cursor: not-allowed;
+  text-decoration: none;
+  opacity: 1;
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.desktop-download:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(17, 13, 8, 0.18);
 }
 
 .desktop-download-note {

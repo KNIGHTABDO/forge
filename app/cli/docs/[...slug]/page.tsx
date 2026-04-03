@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { useParams } from 'next/navigation';
+import { useParams, usePathname } from 'next/navigation';
 import '../../../home.css';
 import '../../../legal.css';
 
@@ -37,7 +37,7 @@ const docsContent: Record<string, { title: string; subtitle: string; sections: {
         content: (
           <>
             <p><strong>Note:</strong> Forge can make mistakes. You should always review Forge\'s responses, especially when running code.</p>
-            <p>Because Forge automates terminal commands, reading untrusted text files or repositories can lead to "Prompt Injection", where instructions hidden in the files trick the AI into running malicious commands.</p>
+            <p>Because Forge can automate filesystem and command operations, reading untrusted text files or repositories can lead to "Prompt Injection", where hidden instructions try to trigger unsafe actions.</p>
             <p><strong>Never grant filesystem access to untrusted repositories without review.</strong></p>
           </>
         )
@@ -60,9 +60,11 @@ export default function DocsPage() {
   const [mounted, setMounted] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const params = useParams();
+  const pathname = usePathname();
 
   // Extract the specific slug or fallback to general
   const slugs = params?.slug as string[] || [];
+  const slugPath = slugs.join('/');
   const requestedDoc = slugs[slugs.length - 1]?.toLowerCase() || 'general';
   
   // Try to find the document, fallback to general if not found
@@ -80,6 +82,14 @@ export default function DocsPage() {
   };
 
   useEffect(() => {
+    if (pathname?.startsWith('/cli/docs/')) {
+      if (typeof window !== 'undefined') {
+        const target = `/desktop/docs/${slugPath}${window.location.search}${window.location.hash}`;
+        window.location.replace(target);
+      }
+      return;
+    }
+
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
     const documentTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | null;
     const initialTheme: 'light' | 'dark' = (savedTheme === 'light' || savedTheme === 'dark') ? savedTheme : (documentTheme === 'light' || documentTheme === 'dark') ? documentTheme : 'light';
@@ -97,7 +107,7 @@ export default function DocsPage() {
     
     setMounted(true);
     return () => observer.disconnect();
-  }, []);
+  }, [pathname, slugPath]);
 
   if (!mounted) return null;
 
