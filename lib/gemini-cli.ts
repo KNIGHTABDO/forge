@@ -8,10 +8,13 @@ export type GeminiCliToolEvent = {
   detail: string;
 };
 
+export type GeminiCliApprovalMode = 'default' | 'auto_edit' | 'yolo' | 'plan';
+
 export type GeminiCliRunOptions = {
   prompt: string;
   apiKey: string;
   model?: string;
+  approvalMode?: GeminiCliApprovalMode;
   workingDirectory?: string;
   timeoutMs?: number;
 };
@@ -63,6 +66,21 @@ function truncate(value: string, maxChars = 320): string {
 function splitCommandString(value: string): string[] {
   const matches = value.match(/(?:[^\s"]+|"[^"]*")+/g) || [];
   return matches.map((entry) => entry.replace(/^"(.*)"$/, '$1'));
+}
+
+function normalizeApprovalMode(value: string | undefined): GeminiCliApprovalMode {
+  const normalized = (value || '').trim().toLowerCase();
+
+  if (
+    normalized === 'default' ||
+    normalized === 'auto_edit' ||
+    normalized === 'yolo' ||
+    normalized === 'plan'
+  ) {
+    return normalized;
+  }
+
+  return 'default';
 }
 
 function looksLikePath(value: string): boolean {
@@ -415,6 +433,7 @@ export async function runGeminiCliHeadless(options: GeminiCliRunOptions): Promis
   }
 
   const { command, baseArgs, source } = commandSpec;
+  const approvalMode = normalizeApprovalMode(options.approvalMode);
 
   const cwd = options.workingDirectory?.trim() || process.cwd();
   const noToolsPolicyPath = ensureNoToolsPolicyFile(cwd);
@@ -427,7 +446,7 @@ export async function runGeminiCliHeadless(options: GeminiCliRunOptions): Promis
     'stream-json',
     '--no-sandbox',
     '--approval-mode',
-    'plan',
+    approvalMode,
     '--policy',
     noToolsPolicyPath,
   ];

@@ -241,6 +241,7 @@ export default function Home() {
   const filteredTools = tools.filter(t => 
     (t.title || t.slug).toLowerCase().includes(search.toLowerCase())
   );
+  const desktopReleaseUrl = 'https://github.com/KNIGHTABDO/forge/releases/latest';
 
   return (
     <div className="page">
@@ -254,7 +255,7 @@ export default function Home() {
           <Link href="/changelog" className="nav-link">Changelog</Link>
           <Link href="/pricing" className="nav-link">Pricing</Link>
           <a href="#desktop" className="nav-link">Desktop</a>
-          <a href="#cli" className="nav-link">CLI</a>
+          <a href="#desktop-account" className="nav-link">Account</a>
         </div>
         <div className="nav-right">
           <button className="nav-search" onClick={() => { setShowSearch(!showSearch); document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth' }); }}>Search</button>
@@ -444,7 +445,7 @@ export default function Home() {
         <div className="desktop-content">
           <span className="section-eyebrow">Native / Windows First</span>
           <h2 className="section-title">Forge Desktop App</h2>
-          <p className="section-desc">Bring Forge to your desktop with the same visual language as the web app, plus dedicated panels for thinking streams, tool calling, extension controls, and authenticated web search.</p>
+          <p className="section-desc">Forge is now desktop-first. Build with a polished native interface, rich model controls, authenticated sync, and transparent tool execution built for serious workflows.</p>
 
           <div className="desktop-visual-grid">
             <article className="desktop-card">
@@ -466,67 +467,70 @@ export default function Home() {
           </div>
 
           <div className="desktop-download-row">
-            <button className="desktop-download" type="button" disabled>
-              Download for Windows (Coming Soon)
-            </button>
-            <p className="desktop-download-note">Placeholder only. The release link will be connected after GitHub packaging is published.</p>
+            <a
+              className="desktop-download"
+              href={desktopReleaseUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Download Latest Desktop Release
+            </a>
+            <p className="desktop-download-note">Releases are generated automatically from GitHub and always point to the latest installer assets.</p>
           </div>
         </div>
       </section>
       
-      {/* CLI Section */}
-      <section className="cli-section" id="cli">
-        <div className="cli-content">
-          <span className="section-eyebrow">Local / Terminal</span>
-          <h2 className="section-title">Forge Code CLI</h2>
-          <p className="section-desc">The high-performance agentic CLI protocol. Edit files, run commands, and coordinate agents directly from your terminal. <strong style={{color: 'var(--forge-accent)', display: 'block', marginTop: '0.5rem'}}>⚠️ Important: You must use the -g flag to install it globally!</strong></p>
+      {/* Desktop Account Section */}
+      <section className="desktop-account-section" id="desktop-account">
+        <div className="desktop-account-content">
+          <span className="section-eyebrow">Cloud / Device Sync</span>
+          <h2 className="section-title">Desktop Account & Session Control</h2>
+          <p className="section-desc">Sign in once, sync cloud keys securely, monitor device telemetry, and manage active sessions from a single desktop-focused control surface.</p>
           
-          <div className="cli-installation">
-            <div className="cli-terminal">
-              <div className="cli-terminal-header">
-                <span className="cli-dot" />
-                <span className="cli-dot" />
-                <span className="cli-dot" />
-                <span className="cli-terminal-title">Install Forge Code</span>
+          <div className="desktop-account-console-wrap">
+            <div className="desktop-account-console">
+              <div className="desktop-account-console-header">
+                <span className="desktop-account-dot" />
+                <span className="desktop-account-dot" />
+                <span className="desktop-account-dot" />
+                <span className="desktop-account-console-title">Desktop Account Status</span>
               </div>
-              <div className="cli-terminal-body">
-                <div className="cli-line">
-                  <span className="cli-prompt">$</span>
-                  <code className="cli-code">npm install -g forge-ai-coder</code>
-                  <button className="cli-copy" onClick={() => navigator.clipboard.writeText('npm install -g forge-ai-coder')}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                    </svg>
-                  </button>
+              <div className="desktop-account-console-body">
+                <div className="desktop-account-line">
+                  <span className="desktop-account-key">Provider:</span>
+                  <code className="desktop-account-value">Gemini backend runtime</code>
                 </div>
-                <div className="cli-line">
-                  <span className="cli-prompt">$</span>
-                  <code className="cli-code">npm update -g forge-ai-coder</code>
+                <div className="desktop-account-line">
+                  <span className="desktop-account-key">Routing:</span>
+                  <code className="desktop-account-value">/desktop callback + device sync</code>
+                </div>
+                <div className="desktop-account-line">
+                  <span className="desktop-account-key">Release:</span>
+                  <code className="desktop-account-value">auto-published from GitHub push</code>
                 </div>
               </div>
             </div>
           </div>
           
-          <div className="cli-features-grid">
-            <div className="cli-feature-card">
-              <h3>Local First</h3>
-              <p>Forge Code operates directly on your local filesystem with full speed and zero latency.</p>
+          <div className="desktop-account-features-grid">
+            <div className="desktop-account-feature-card">
+              <h3>Secure Desktop Login</h3>
+              <p>Browser-based authentication with callback validation and one-click session restoration.</p>
             </div>
-            <div className="cli-feature-card">
-              <h3>Secure & Gated</h3>
-              <p>Every file edit and shell command requires your explicit approval before execution.</p>
+            <div className="desktop-account-feature-card">
+              <h3>Cloud Key Sync</h3>
+              <p>Server-managed model keys and runtime health checks without local environment setup.</p>
             </div>
-            <div className="cli-feature-card">
-              <h3>Advanced Agentics</h3>
-              <p>Coordinate multi-agent swarms and complex engineering workflows from the terminal.</p>
+            <div className="desktop-account-feature-card">
+              <h3>Device Governance</h3>
+              <p>Track active devices, usage metrics, and revoke access directly from your dashboard route.</p>
             </div>
           </div>
           
-          <div className="cli-footer-links">
-             <Link href="https://github.com/KNIGHTABDO/forge" className="btn-ghost">CLI Repo (Live)</Link>
-             <Link href="/changelog" className="btn-ghost">Read CLI Changelog</Link>
-             <Link href="/cli" className="btn-ghost" style={{ border: '1px solid var(--sidebar-border)' }}>Manage CLI Settings</Link>
+          <div className="desktop-account-footer-links">
+             <Link href={desktopReleaseUrl} className="btn-ghost">Latest Desktop Release</Link>
+             <Link href="/changelog" className="btn-ghost">Read Desktop Changelog</Link>
+             <Link href="/desktop" className="btn-ghost" style={{ border: '1px solid var(--sidebar-border)' }}>Manage Desktop Settings</Link>
           </div>
         </div>
       </section>

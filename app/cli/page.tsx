@@ -84,7 +84,8 @@ function normalizeCallbackDeviceType(value: string | null): 'cli' | 'desktop_app
   const normalized = (value || '').trim().toLowerCase();
   if (normalized === 'desktop_app') return 'desktop_app';
   if (normalized === 'web') return 'web';
-  return 'cli';
+  if (normalized === 'cli') return 'cli';
+  return 'desktop_app';
 }
 
 function normalizeOptionalCallbackField(value: string | null, maxLength = 40): string | null {
@@ -96,7 +97,7 @@ function normalizeOptionalCallbackField(value: string | null, maxLength = 40): s
 function formatDeviceType(value: string | undefined): string {
   if (value === 'desktop_app') return 'Forge Desktop';
   if (value === 'web') return 'Web Session';
-  return 'Forge CLI';
+  return 'Legacy Forge CLI';
 }
 
 type CliCallbackParams = {
@@ -158,12 +159,15 @@ function readCliCallbackParams(searchParams: URLSearchParams): CliCallbackParams
   let deviceId = searchParams.get('deviceId') || searchParams.get('did');
   let authState = searchParams.get('authState') || searchParams.get('state');
   let deviceName =
-    searchParams.get('deviceName') || searchParams.get('dn') || 'Forge CLI Device';
+    searchParams.get('deviceName') || searchParams.get('dn') || 'Forge Desktop Device';
   let deviceOs = searchParams.get('os') || 'Unknown OS';
   let deviceType = normalizeCallbackDeviceType(searchParams.get('deviceType'));
   let appVersion = searchParams.get('appVersion');
   let platform = searchParams.get('platform');
-  let hasCliIntent = searchParams.get('cliLogin') === '1' || Boolean(callbackUrl);
+  let hasCliIntent =
+    searchParams.get('desktopLogin') === '1' ||
+    searchParams.get('cliLogin') === '1' ||
+    Boolean(callbackUrl);
 
   if (typeof window !== 'undefined' && window.location.hash) {
     const hash = window.location.hash.startsWith('#')
@@ -175,7 +179,7 @@ function readCliCallbackParams(searchParams: URLSearchParams): CliCallbackParams
     deviceId = deviceId || hashParams.get('deviceId') || hashParams.get('did');
     authState = authState || hashParams.get('authState') || hashParams.get('state');
 
-    if (deviceName === 'Forge CLI Device') {
+    if (deviceName === 'Forge Desktop Device') {
       deviceName = hashParams.get('deviceName') || hashParams.get('dn') || deviceName;
     }
     if (deviceOs === 'Unknown OS') {
@@ -188,6 +192,7 @@ function readCliCallbackParams(searchParams: URLSearchParams): CliCallbackParams
 
     hasCliIntent =
       hasCliIntent ||
+      hashParams.get('desktopLogin') === '1' ||
       hashParams.get('cliLogin') === '1' ||
       Boolean(hashParams.get('callback') || hashParams.get('cb'));
   }
@@ -319,14 +324,14 @@ function CliDashboard() {
               setCliCallbackState('error');
               setCliCallbackMessage(
                 err?.message ||
-                  'Failed to complete CLI callback flow. Please re-run /login in the CLI.',
+                  'Failed to complete desktop callback flow. Please restart sign-in from Forge Desktop.',
               );
             }
           })();
         } else if (hasCliIntent) {
           setCliCallbackState('error');
           setCliCallbackMessage(
-            'CLI callback details are missing. Please run /login again from Forge Code.',
+            'Desktop callback details are missing. Please start sign-in again from Forge Desktop.',
           );
         }
       }
@@ -342,7 +347,7 @@ function CliDashboard() {
     const loadDashboard = async () => {
       try {
         const token = await user.getIdToken();
-        const response = await fetch('/api/cli/dashboard', {
+        const response = await fetch('/api/desktop/dashboard', {
           method: 'GET',
           headers: {
             Authorization: `Bearer ${token}`,
@@ -519,12 +524,12 @@ function CliDashboard() {
   if (!user) {
     return (
       <div className="legal-page">
-        <Head><title>Device Authentication | Forge</title></Head>
+        <Head><title>Desktop Authentication | Forge</title></Head>
         {navBar}
         <main className="legal-hero">
           <div className="legal-hero-inner" style={{ maxWidth: '400px', margin: '0 auto', textAlign: 'center' }}>
             <h1 className="legal-title">Sign In to Forge</h1>
-            <p className="legal-subtitle" style={{marginBottom: '2rem'}}>Authenticate Forge CLI and Forge Desktop to securely access workspace capabilities.</p>
+            <p className="legal-subtitle" style={{marginBottom: '2rem'}}>Authenticate Forge Desktop to securely access workspace capabilities and synced cloud keys.</p>
             
             {error && <div style={{ color: 'red', marginBottom: '1rem' }}>{error}</div>}
 
@@ -584,7 +589,7 @@ function CliDashboard() {
           <span className="legal-date">Welcome back</span>
           <h1 className="legal-title">Device Dashboard</h1>
           <p className="legal-subtitle">
-            Manage your connected Forge CLI and Forge Desktop sessions, view usage metrics, and revoke access securely.
+            Manage your connected Forge Desktop sessions, view usage metrics, and revoke access securely.
             <br/>Logged in as: <strong>{user.email}</strong>
           </p>
           {(cliCallbackState !== 'idle' || error) && (

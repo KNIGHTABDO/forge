@@ -1496,24 +1496,28 @@ html[data-theme="dark"] .cta-button:hover {
     text-align: center;
   }
 }
-/* ── CLI Section ── */
+/* ── Desktop Account Section ── */
+.desktop-account-section,
 .cli-section {
   padding: 120px 48px;
   background: var(--bg);
   border-top: 1px solid var(--border);
 }
 
+.desktop-account-content,
 .cli-content {
   max-width: 960px;
   margin: 0 auto;
 }
 
+.desktop-account-console-wrap,
 .cli-installation {
   margin: 48px 0;
   display: flex;
   justify-content: center;
 }
 
+.desktop-account-console,
 .cli-terminal {
   width: 100%;
   max-width: 600px;
@@ -1522,8 +1526,7 @@ html[data-theme="dark"] .cta-button:hover {
   overflow: hidden;
   box-shadow: 0 40px 80px -20px rgba(0,0,0,0.5);
   border: 1px solid #2C251D;
-}
-
+.desktop-account-console-header,
 .cli-terminal-header {
   display: flex;
   align-items: center;
@@ -1531,8 +1534,7 @@ html[data-theme="dark"] .cta-button:hover {
   padding: 12px 16px;
   background: #181410;
   border-bottom: 1px solid #2C251D;
-}
-
+.desktop-account-dot,
 .cli-dot {
   width: 10px;
   height: 10px;
@@ -1540,6 +1542,7 @@ html[data-theme="dark"] .cta-button:hover {
   background: #2C251D;
 }
 
+.desktop-account-console-title,
 .cli-terminal-title {
   flex: 1;
   text-align: center;
@@ -1549,12 +1552,12 @@ html[data-theme="dark"] .cta-button:hover {
   letter-spacing: 0.1em;
   color: #A89278;
   margin-right: 34px;
-}
-
+.desktop-account-console-body,
 .cli-terminal-body {
   padding: 24px;
 }
 
+.desktop-account-line,
 .cli-line {
   display: flex;
   align-items: center;
@@ -1563,6 +1566,7 @@ html[data-theme="dark"] .cta-button:hover {
   font-size: 14px;
 }
 
+.desktop-account-value,
 .cli-code {
   color: #F0E6D3;
   flex: 1;
@@ -1571,6 +1575,7 @@ html[data-theme="dark"] .cta-button:hover {
   padding: 0;
 }
 
+.desktop-account-key,
 .cli-prompt {
   color: #6B5D50;
   user-select: none;
@@ -1579,6 +1584,7 @@ html[data-theme="dark"] .cta-button:hover {
   padding: 0;
 }
 
+.desktop-account-copy,
 .cli-copy {
   background: none;
   border: none;
@@ -1587,13 +1593,13 @@ html[data-theme="dark"] .cta-button:hover {
   padding: 4px;
   border-radius: 4px;
   transition: all 0.2s ease;
-}
-
+.desktop-account-copy:hover,
 .cli-copy:hover {
   color: #F0E6D3;
   background: rgba(255,255,255,0.05);
 }
 
+.desktop-account-features-grid,
 .cli-features-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1602,26 +1608,28 @@ html[data-theme="dark"] .cta-button:hover {
 }
 
 @media (max-width: 900px) {
+  .desktop-account-features-grid,
   .cli-features-grid {
     grid-template-columns: 1fr;
     gap: 24px;
   }
 }
 
+.desktop-account-feature-card h3,
 .cli-feature-card h3 {
   font-family: var(--font-label);
   font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   margin-bottom: 12px;
-}
-
+.desktop-account-feature-card p,
 .cli-feature-card p {
   font-size: 14px;
   line-height: 1.7;
   color: var(--text-muted);
 }
 
+.desktop-account-footer-links,
 .cli-footer-links {
   margin-top: 64px;
   display: flex;
@@ -1680,6 +1688,7 @@ html[data-theme="dark"] .hero-video {
 .step,
 .research-preview-card,
 .desktop-card,
+.desktop-account-feature-card,
 .cli-feature-card,
 .exhibit-card,
 .pricing-card,
@@ -1690,6 +1699,7 @@ html[data-theme="dark"] .hero-video {
 .step:hover,
 .research-preview-card:hover,
 .desktop-card:hover,
+.desktop-account-feature-card:hover,
 .cli-feature-card:hover,
 .contact-card:hover {
   box-shadow: 0 18px 32px rgba(15, 12, 9, 0.08);
@@ -1698,6 +1708,7 @@ html[data-theme="dark"] .hero-video {
 html[data-theme="dark"] .step:hover,
 html[data-theme="dark"] .research-preview-card:hover,
 html[data-theme="dark"] .desktop-card:hover,
+html[data-theme="dark"] .desktop-account-feature-card:hover,
 html[data-theme="dark"] .cli-feature-card:hover,
 html[data-theme="dark"] .contact-card:hover {
   box-shadow: 0 18px 32px rgba(0, 0, 0, 0.24);

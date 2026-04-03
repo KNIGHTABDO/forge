@@ -10,8 +10,8 @@ import '../../../legal.css';
 // Documentation content map
 const docsContent: Record<string, { title: string; subtitle: string; sections: { id: string; num: string; title: string; content: React.ReactNode }[] }> = {
   general: {
-    title: 'Forge CLI Docs',
-    subtitle: 'The ultimate terminal-native AI development agent.',
+    title: 'Forge Desktop Docs',
+    subtitle: 'The native AI development app for local-first engineering.',
     sections: [
       {
         id: 'getting-started',
@@ -19,8 +19,8 @@ const docsContent: Record<string, { title: string; subtitle: string; sections: {
         title: 'Getting Started',
         content: (
           <>
-            <p>Welcome to Forge Code CLI. You can use this powerful agent directly in your terminal to build, debug, and understand full codebases.</p>
-            <p>Run <code>forge</code> in your terminal to start an interactive prompt.</p>
+            <p>Welcome to Forge Desktop. Use this native app to build, debug, and understand full codebases with a modern desktop UI.</p>
+            <p>Open the app, authenticate once, then select your workspace folder to start building.</p>
           </>
         )
       }
@@ -28,7 +28,7 @@ const docsContent: Record<string, { title: string; subtitle: string; sections: {
   },
   security: {
     title: 'Security',
-    subtitle: 'Understanding the security model and sandbox for Forge Code.',
+    subtitle: 'Understanding the security model for Forge Desktop sessions.',
     sections: [
       {
         id: 'prompt-injection',
@@ -38,7 +38,7 @@ const docsContent: Record<string, { title: string; subtitle: string; sections: {
           <>
             <p><strong>Note:</strong> Forge can make mistakes. You should always review Forge\'s responses, especially when running code.</p>
             <p>Because Forge automates terminal commands, reading untrusted text files or repositories can lead to "Prompt Injection", where instructions hidden in the files trick the AI into running malicious commands.</p>
-            <p><strong>Never run Forge Code inside untrusted repositories.</strong></p>
+            <p><strong>Never grant filesystem access to untrusted repositories without review.</strong></p>
           </>
         )
       },
@@ -48,7 +48,7 @@ const docsContent: Record<string, { title: string; subtitle: string; sections: {
         title: 'Sandboxing',
         content: (
           <p>
-            For maximum safety, consider running Forge CLI inside a Docker container, virtual machine, or other sandboxed environment, especially when working with third-party open source projects.
+            For maximum safety, run experimental workspaces in isolated folders, virtual machines, or containers when working with untrusted third-party code.
           </p>
         )
       }
@@ -68,7 +68,7 @@ export default function DocsPage() {
   // Try to find the document, fallback to general if not found
   const docData = docsContent[requestedDoc] || {
     title: requestedDoc.charAt(0).toUpperCase() + requestedDoc.slice(1).replace(/-/g, ' '),
-    subtitle: 'Documentation for Forge Code CLI.',
+    subtitle: 'Documentation for Forge Desktop.',
     sections: [
       {
         id: 'info',
@@ -120,7 +120,7 @@ export default function DocsPage() {
 
       {/* Hero */}
       <section className="legal-hero">
-        <span className="legal-eyebrow">Documentation / CLI</span>
+        <span className="legal-eyebrow">Documentation / Desktop</span>
         <h1 className="legal-title">{docData.title}</h1>
         <p className="legal-subtitle">
           {docData.subtitle}

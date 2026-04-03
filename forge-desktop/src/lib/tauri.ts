@@ -100,6 +100,8 @@ type TelemetryCounters = {
   lastWorkspacePath?: string
 }
 
+const DESKTOP_AGENT_REQUEST_TIMEOUT_MS = 150_000
+
 type ViteImportMeta = ImportMeta & {
   env?: Record<string, string | undefined>
 }
@@ -145,6 +147,8 @@ export type DesktopAgentToolResult = {
   output: string
 }
 
+export type DesktopExecutionMode = 'default' | 'auto_edit' | 'yolo' | 'plan'
+
 export type DesktopModelToolEvent = {
   name: string
   status: 'running' | 'done' | 'error'
@@ -159,6 +163,7 @@ export type DesktopAgentChatResult =
       toolEvents: DesktopModelToolEvent[]
       engine?: string
       warning?: string
+      executionMode?: DesktopExecutionMode
       requestId?: string
     }
   | {
@@ -168,6 +173,7 @@ export type DesktopAgentChatResult =
       errorCode?: string
       toolEvents?: DesktopModelToolEvent[]
       engine?: string
+      executionMode?: DesktopExecutionMode
       requestId?: string
     }
 
@@ -181,6 +187,7 @@ type DesktopAgentChatPayload = {
   workspaceFiles?: string[]
   modelPreference?: string
   providerPreference?: string
+  executionMode?: DesktopExecutionMode
   sessionId?: string
 }
 
@@ -209,6 +216,24 @@ function asNullableString(value: unknown): string | null {
   if (typeof value !== 'string') return null
   const trimmed = value.trim()
   return trimmed || null
+}
+
+function asExecutionMode(value: unknown): DesktopExecutionMode | undefined {
+  if (typeof value !== 'string') {
+    return undefined
+  }
+
+  const normalized = value.trim().toLowerCase()
+  if (
+    normalized === 'default' ||
+    normalized === 'auto_edit' ||
+    normalized === 'yolo' ||
+    normalized === 'plan'
+  ) {
+    return normalized
+  }
+
+  return undefined
 }
 
 function createCorrelationId(): string {
@@ -246,6 +271,24 @@ function normalizeHeaders(headers?: HeadersInit): DesktopHttpHeader[] {
     name,
     value: String(value),
   }))
+}
+
+function isRetryableTransportError(error: unknown): boolean {
+  const message = String(error).toLowerCase()
+  return (
+    message.includes('timed out') ||
+    message.includes('timeout') ||
+    message.includes('error sending request for url') ||
+    message.includes('connection reset') ||
+    message.includes('connection refused') ||
+    message.includes('dns')
+  )
+}
+
+function waitMs(durationMs: number): Promise<void> {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, durationMs)
+  })
 }
 
 async function performJsonRequest(
@@ -402,7 +445,7 @@ export async function beginAuthFlow(
   }
 
   return {
-    loginUrl: `${normalizedBaseUrl}/cli`,
+    loginUrl: `${normalizedBaseUrl}/desktop`,
     callbackUrl: '',
     deviceId: 'browser-preview',
     authState: '',
@@ -477,7 +520,7 @@ export async function fetchDesktopKeys(
   let result: JsonTransportResult
   try {
     result = await performJsonRequest(
-      `${normalizeBaseUrl(baseUrl)}/api/cli/keys?${params.toString()}`,
+      `${normalizeBaseUrl(baseUrl)}/api/desktop/keys?${params.toString()}`,
       {
         method: 'GET',
         headers: {
@@ -530,7 +573,7 @@ export async function fetchDesktopKeys(
   const keys: CliKeys = {
     GEMINI_API_KEY: asNullableString(rawKeys.GEMINI_API_KEY),
     GITHUB_TOKEN: asNullableString(rawKeys.GITHUB_TOKEN),
-    GEMINI_MODEL: asString(rawKeys.GEMINI_MODEL) || 'gemini-3.1-flash-lite-preview',
+    GEMINI_MODEL: asString(rawKeys.GEMINI_MODEL) || 'gemma-4-31b-it',
     GITHUB_MODEL: asString(rawKeys.GITHUB_MODEL) || 'gemini-3.1-pro-preview',
   }
 
@@ -559,7 +602,7 @@ export async function postDesktopTelemetry(
   let result: JsonTransportResult
   try {
     result = await performJsonRequest(
-      `${normalizeBaseUrl(baseUrl)}/api/cli/telemetry`,
+      `${normalizeBaseUrl(baseUrl)}/api/desktop/telemetry`,
       {
         method: 'POST',
         headers: {
@@ -791,18 +834,39 @@ export async function runDesktopAgentChat(
     headers.Authorization = `Bearer ${token.trim()}`
   }
 
-  let result: JsonTransportResult
-  try {
-    result = await performJsonRequest(`${normalizeBaseUrl(baseUrl)}/api/desktop/agent`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(payload),
-    })
-  } catch (error) {
+  let result: JsonTransportResult | null = null
+  let lastTransportError: unknown = null
+
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    try {
+      result = await performJsonRequest(
+        `${normalizeBaseUrl(baseUrl)}/api/desktop/agent`,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(payload),
+        },
+        DESKTOP_AGENT_REQUEST_TIMEOUT_MS,
+      )
+      lastTransportError = null
+      break
+    } catch (error) {
+      lastTransportError = error
+
+      if (attempt < 2 && isRetryableTransportError(error)) {
+        await waitMs(350)
+        continue
+      }
+
+      break
+    }
+  }
+
+  if (!result) {
     return {
       ok: false,
       status: 0,
-      error: `Network error while contacting agent API: ${String(error)}`,
+      error: `Network error while contacting agent API: ${String(lastTransportError)}`,
       requestId: correlationId,
     }
   }
@@ -846,6 +910,7 @@ export async function runDesktopAgentChat(
   if (!result.ok) {
     const toolEvents = parseModelToolEvents((body as { toolEvents?: unknown } | null)?.toolEvents)
     const engine = asString((body as { engine?: unknown } | null)?.engine) || undefined
+    const executionMode = asExecutionMode((body as { executionMode?: unknown } | null)?.executionMode)
 
     return {
       ok: false,
@@ -854,6 +919,7 @@ export async function runDesktopAgentChat(
       errorCode: asString((body as { errorCode?: unknown } | null)?.errorCode) || undefined,
       ...(toolEvents.length > 0 ? { toolEvents } : {}),
       ...(engine ? { engine } : {}),
+      ...(executionMode ? { executionMode } : {}),
       requestId:
         asString((body as { requestId?: unknown } | null)?.requestId) || correlationId,
     }
@@ -878,6 +944,7 @@ export async function runDesktopAgentChat(
 
   const engine = asString((body as { engine?: unknown }).engine) || undefined
   const warning = asString((body as { warning?: unknown }).warning) || undefined
+  const executionMode = asExecutionMode((body as { executionMode?: unknown }).executionMode)
 
   return {
     ok: true,
@@ -888,6 +955,7 @@ export async function runDesktopAgentChat(
     toolEvents,
     ...(engine ? { engine } : {}),
     ...(warning ? { warning } : {}),
+    ...(executionMode ? { executionMode } : {}),
     requestId: asString((body as { requestId?: unknown }).requestId) || correlationId,
   }
 }

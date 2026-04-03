@@ -268,6 +268,24 @@
   opacity: 0.74;
 }
 
+.chat-message.plan-message {
+  border-color: color-mix(in srgb, #2f5ec7 40%, var(--border));
+  background: color-mix(in srgb, #2f5ec7 6%, var(--panel));
+}
+
+.plan-mode-banner {
+  margin: 2px 0 10px;
+  border: 1px solid color-mix(in srgb, #2f5ec7 46%, var(--border));
+  border-radius: 10px;
+  padding: 7px 9px;
+  font-family: var(--font-label);
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, #2f5ec7 68%, var(--text));
+  background: color-mix(in srgb, #2f5ec7 10%, transparent);
+}
+
 .message-role {
   margin-bottom: 8px;
   font-family: var(--font-label);

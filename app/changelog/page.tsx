@@ -40,29 +40,28 @@ export default function ChangelogPage() {
     {
       version: 'v3.3',
       date: 'April 2026',
-      title: 'Unified CLI Auth & Web Dashboard',
-      description: 'We have introduced a secure, Firebase-backed authentication layer for the Forge CLI. Connect your CLI instances to your web account to automatically stream securely stored API keys from the cloud to the terminal.',
+      title: 'Forge Desktop Auth + Release Automation',
+      description: 'Forge has moved to a desktop-first workflow. Authentication, key sync, health diagnostics, and release packaging are now aligned around Forge Desktop with automated GitHub release publishing.',
       items: [
         'Secure Firebase Auth integration with Email and Google OAuth',
-        'Headless CLI login flow via Web App callback (https://forge-app-peach.vercel.app/cli)',
-        'Device Management: View and revoke active CLI sessions directly from your Web Dashboard',
-        'Usage Analytics: Track command executions and file edits across all devices',
-        'Zero Setup: No more fiddling with local .env files; keys are seamlessly injected from Vercel'
+        'Desktop login callback flow moved to https://forge-app-peach.vercel.app/desktop',
+        'Device Management: View and revoke active Forge Desktop sessions directly from your web dashboard',
+        'Usage Analytics: Track desktop requests, model usage, and tool activity across devices',
+        'Automated desktop releases published from GitHub push to main',
+        'Desktop download on landing page now points to latest GitHub release artifacts'
       ]
     },
     {
       version: 'v3.2',
       date: 'March 2026',
-      title: 'Forge Code: The Agentic CLI Protocol',
-      description: 'The Forge protocol expands to the terminal. Forge Code is a high-performance agentic CLI for local-first engineering, providing full-speed file manipulation, permission-gated shell access, and multi-agent coordination.',
+      title: 'Forge Desktop Runtime Foundation',
+      description: 'The Forge protocol moved from terminal-first controls into a native desktop application with modern UI, account-aware workflows, and backend-orchestrated model execution.',
       items: [
-        'Local-first: Direct operation on the local filesystem with zero latency',
-        'Permission-gated: Explicit user approval for every file edit and shell command',
-        'Tool-rich: Built-in support for Bash, Glob, Grep, and File-Edit operations',
-        'Agentic: Support for multi-agent swarm coordination via AgentTool',
-        'Unified: Integrated with the same Gemini 3 Orchestration engine as the web app',
-        'Portable: Pure TypeScript native-module ports for seamless Windows/macOS support',
-        'Headless: Designed for background agent service and remote-control loops'
+        'Desktop-native session sidebar, account diagnostics, and tool-call visibility',
+        'Workspace indexing + file-read tools integrated directly in desktop chat loops',
+        'Server-side Gemini runtime with strict key handling and request tracing',
+        'Model selection controls and execution-mode controls exposed in desktop UI',
+        'Deep integration with web dashboard telemetry and device lifecycle controls'
       ]
     },
     {
@@ -154,7 +153,7 @@ export default function ChangelogPage() {
         <p className="legal-subtitle">
           Tracing the history of the FORGE protocol as it reaches its ultimate conversational form in V3. 
         </p>
-        <p className="legal-meta">Current Protocol Status: Operational v3.1 (Deep Research Agent Beta)</p>
+        <p className="legal-meta">Current Protocol Status: Operational v3.3 (Desktop-First Runtime)</p>
       </section>
 
       <div className="legal-body">

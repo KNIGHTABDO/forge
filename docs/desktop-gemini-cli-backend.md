@@ -2,6 +2,12 @@
 
 This document explains how Forge Desktop server routes run Gemini CLI using server-side environment variables from Vercel.
 
+## Product routing updates
+
+- Desktop authentication callback flow now uses `/desktop` as the primary web route.
+- Legacy `/cli` callback links should be treated as compatibility paths only.
+- Public desktop download should point to GitHub latest release artifacts.
+
 ## Goal
 
 - Keep `GEMINI_API_KEY` on backend only.

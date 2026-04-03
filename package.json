@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "build:all": "npm run build && npm --prefix forge-desktop run build",
+    "release:desktop": "npm --prefix forge-desktop run tauri:build:release"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.53",

@@ -67,7 +67,7 @@ export default function PrivacyPage() {
             <li><a href="#information-we-collect">01 — Information We Collect</a></li>
             <li><a href="#how-we-use">02 — How We Use Information</a></li>
             <li><a href="#data-sharing">03 — Data Sharing</a></li>
-            <li><a href="#user-accounts">04 — User Accounts & Keys</a></li>
+            <li><a href="#user-accounts">04 — Desktop Accounts & Keys</a></li>
             <li><a href="#cookies">05 — Cookies</a></li>
             <li><a href="#data-retention">06 — Data Retention</a></li>
             <li><a href="#your-rights">07 — Your Rights</a></li>
@@ -110,7 +110,7 @@ export default function PrivacyPage() {
               <li>Multi-page React state-based routing</li>
               <li>Atomic Multi-file Deployments for zero corruption</li>
               <li>Forge BaaS for cloud-synced application data persistence</li>
-              <li>Forge Code: Local-first agentic CLI for terminal-based engineering</li>
+              <li>Forge Desktop: Native desktop workspace assistant with account-based key sync</li>
             </ul>
             <p>
               We do not use your data for advertising purposes, and we do not sell your personal information to third parties under any circumstances.
@@ -132,13 +132,13 @@ export default function PrivacyPage() {
 
           <div className="legal-section" id="user-accounts">
             <span className="legal-section-num">04</span>
-            <h2 className="legal-section-title">User Accounts & Keys</h2>
+            <h2 className="legal-section-title">Desktop Accounts & Keys</h2>
             <p>
-              FORGE provides an optional authenticated layer for users leveraging the Forge CLI. This layer allows you to securely synchronize and use remote environment variables (such as <code>GEMINI_API_KEY</code> and <code>GITHUB_TOKEN</code>) locally on your connected devices.
+              FORGE provides an authenticated desktop layer so users can securely synchronize and use remote environment variables (such as <code>GEMINI_API_KEY</code> and <code>GITHUB_TOKEN</code>) on connected desktop devices.
             </p>
             <ul>
-              <li><strong>Device Tracking:</strong> To actively secure remote CLI usage, we collect generic machine profiles (OS type, device name, and timestamps) when you run <code>forge login</code>. This powers your Device Management dashboard.</li>
-              <li><strong>Key Management:</strong> The Dashboard gives you authority to instantly revoke individual device tokens connected to CLI instances.</li>
+              <li><strong>Device Tracking:</strong> To actively secure desktop usage, we collect generic machine profiles (OS type, device name, and timestamps) when you sign in through the desktop callback flow. This powers your Device Management dashboard.</li>
+              <li><strong>Key Management:</strong> The dashboard gives you authority to instantly revoke individual device tokens connected to desktop sessions.</li>
               <li><strong>Usage Telemetry:</strong> Anonymized metrics, such as count of commands executed and files edited, may be aggregated to enhance stability and report session analytics back to the Dashboard.</li>
             </ul>
           </div>

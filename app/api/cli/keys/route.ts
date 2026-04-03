@@ -56,7 +56,7 @@ function getKeysFromEnv(): CliKeys {
   return {
     GEMINI_API_KEY: process.env.GEMINI_API_KEY || null,
     GITHUB_TOKEN: process.env.GITHUB_TOKEN || null,
-    GEMINI_MODEL: process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite-preview',
+    GEMINI_MODEL: process.env.GEMINI_MODEL || 'gemma-4-31b-it',
     GITHUB_MODEL: process.env.GITHUB_MODEL || 'gemini-3.1-pro-preview',
   };
 }

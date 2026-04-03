@@ -4,6 +4,7 @@ import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import {
   checkGeminiCliAvailability,
   runGeminiCliHeadless,
+  type GeminiCliApprovalMode,
   type GeminiCliToolEvent,
 } from '@/lib/gemini-cli';
 import { mergeRuntimeAnalytics } from '@/lib/runtime-telemetry';
@@ -273,6 +274,24 @@ function deriveCliExecutionErrorCode(details: string): string {
   return 'GEMINI_CLI_EXECUTION_FAILED';
 }
 
+function normalizeExecutionMode(value: unknown): GeminiCliApprovalMode {
+  if (typeof value !== 'string') {
+    return 'default';
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (
+    normalized === 'default' ||
+    normalized === 'auto_edit' ||
+    normalized === 'yolo' ||
+    normalized === 'plan'
+  ) {
+    return normalized;
+  }
+
+  return 'default';
+}
+
 export async function POST(request: Request) {
   const requestId = getRequestId(request);
   const token = getBearerToken(request);
@@ -356,8 +375,13 @@ export async function POST(request: Request) {
     const workspaceFiles = normalizeWorkspaceFiles(body.workspaceFiles);
     const providerPreference = asTrimmedString(body.providerPreference, 40) || 'gemini';
     const modelPreference = asTrimmedString(body.modelPreference, 80);
+    const executionMode = normalizeExecutionMode(
+      asTrimmedString(body.executionMode, 40) ||
+        process.env.GEMINI_APPROVAL_MODE ||
+        'default',
+    );
 
-    const modelName = modelPreference || process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite-preview';
+    const modelName = modelPreference || process.env.GEMINI_MODEL || 'gemma-4-31b-it';
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -420,12 +444,18 @@ export async function POST(request: Request) {
       'A workspace is already selected. Do not ask user to provide a path again if workspace context is available.',
       'Treat desktop tool outputs as authoritative workspace data and prefer them over assumptions.',
       'Keep responses concise but useful, with action-oriented steps.',
+      executionMode === 'plan'
+        ? 'Mode behavior: Return a structured plan first and explicitly request confirmation before any file-changing actions.'
+        : 'Mode behavior: Respond directly and execute requested tasks when enough context is available.',
       '',
       'Selected provider:',
       providerPreference,
       '',
       'Selected model:',
       modelName,
+      '',
+      'Selected execution mode:',
+      executionMode,
       '',
       'Workspace path:',
       workspacePath,
@@ -452,6 +482,7 @@ export async function POST(request: Request) {
       prompt,
       apiKey,
       model: modelName,
+      approvalMode: executionMode,
       timeoutMs: 120000,
     });
 
@@ -480,6 +511,7 @@ export async function POST(request: Request) {
           details,
           toolEvents: modelToolEvents,
           engine: 'gemini-cli',
+          executionMode,
           ...(cliResult.commandSource ? { commandSource: cliResult.commandSource } : {}),
           ...(cliResult.command ? { command: cliResult.command } : {}),
           requestId,
@@ -506,12 +538,13 @@ export async function POST(request: Request) {
       thinking: mergedThinking,
       toolEvents: modelToolEvents,
       engine: 'gemini-cli',
+      executionMode,
       ...(cliResult.commandSource ? { commandSource: cliResult.commandSource } : {}),
       requestId,
     });
   } catch (error) {
     void recordDesktopAgentUsage(verifiedUid, {
-      modelName: process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite-preview',
+      modelName: process.env.GEMINI_MODEL || 'gemma-4-31b-it',
       providerName: 'gemini-cli',
       workspacePath: 'Unknown workspace',
       toolCalls: 0,

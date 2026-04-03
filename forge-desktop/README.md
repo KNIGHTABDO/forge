@@ -8,10 +8,11 @@ Windows-first native Forge app scaffold built with Tauri + React.
 - React + Vite renderer
 - Forge-aligned design tokens and animated welcome/login shell
 - Typed command bridge (`bootstrap`) for native runtime data
-- Native auth callback listener (`begin_auth_flow`) for desktop login handoff
+- Native auth callback listener (`begin_auth_flow`) for desktop login handoff via `/desktop` web route
 - Local desktop token persistence commands (`save_session_token`, `load_session_token`)
 - Correlation-id tracing for key sync and desktop agent calls
 - Diagnostics panel in auth modal (device/session/request ids/engine)
+- Desktop icon pipeline (`npm run tauri:icon`) from `../public/logo.png`
 
 ## Local development
 
@@ -64,6 +65,24 @@ availability and key/model readiness.
 ```bash
 npm run tauri:build
 ```
+
+Release-grade local build (regenerates icon set first):
+
+```bash
+npm run tauri:build:release
+```
+
+## GitHub release automation
+
+Desktop releases are automatically packaged and published by:
+
+- `.github/workflows/desktop-release.yml`
+
+On push to `main`, the workflow:
+
+1. Builds the web app for baseline verification.
+2. Builds Forge Desktop installers via Tauri action.
+3. Publishes a GitHub release artifact for download.
 
 ## Next implementation targets
 

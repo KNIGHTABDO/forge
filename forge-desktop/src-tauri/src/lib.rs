@@ -271,11 +271,12 @@ fn begin_auth_flow(
     let platform = std::env::consts::OS.to_string();
 
     let base = normalize_base_url(base_url);
-    let mut login_url = Url::parse(&format!("{base}/cli"))
+    let mut login_url = Url::parse(&format!("{base}/desktop"))
         .map_err(|e| format!("Invalid Forge web base URL: {e}"))?;
 
     {
         let mut query = login_url.query_pairs_mut();
+        query.append_pair("desktopLogin", "1");
         query.append_pair("cliLogin", "1");
         query.append_pair("callback", &callback_url);
         query.append_pair("cb", &callback_url);

@@ -70,7 +70,7 @@ export default function TermsPage() {
             <li><a href="#use-of-service">03 — Use of the Service</a></li>
             <li><a href="#content">04 — User Content</a></li>
             <li><a href="#intellectual-property">05 — Intellectual Property</a></li>
-            <li><a href="#cli-access">06 — CLI Access & Keys</a></li>
+            <li><a href="#desktop-access">06 — Desktop Access & Keys</a></li>
             <li><a href="#disclaimers">07 — Disclaimers</a></li>
             <li><a href="#limitation">08 — Limitation of Liability</a></li>
             <li><a href="#termination">09 — Termination</a></li>
@@ -106,7 +106,7 @@ export default function TermsPage() {
               <li>Delta-Sync: Incremental multi-file updates to your project</li>
               <li>Automated branding with "Smart Title" analysis</li>
               <li>Forge BaaS for cloud-synced micro-SaaS data persistence</li>
-              <li>Forge Code: The agentic CLI protocol for local-first engineering</li>
+              <li>Forge Desktop: Native desktop workflow with account-authenticated cloud key sync</li>
               <li>Public gallery and remix capabilities for community projects</li>
             </ul>
             <p>
@@ -163,14 +163,14 @@ export default function TermsPage() {
             </p>
           </div>
 
-          <div className="legal-section" id="cli-access">
+          <div className="legal-section" id="desktop-access">
             <span className="legal-section-num">06</span>
-            <h2 className="legal-section-title">CLI Access & Keys</h2>
+            <h2 className="legal-section-title">Desktop Access & Keys</h2>
             <p>
-              Users of the Forge CLI have the option to authenticate their local devices with our Service via the Web Dashboard. This synchronization securely transfers environment variables required for operations (e.g., LLM and Code APIs).
+              Users of Forge Desktop can authenticate local devices with our Service via the web dashboard callback flow. This synchronization securely transfers environment variables required for model and code operations.
             </p>
             <p>
-              You are responsible for safely maintaining the devices connected to your account. FORGE can revoke the authorization of any CLI instance at its discretion, or at your command via the Web Dashboard, if a token compromise is detected.
+              You are responsible for safely maintaining devices connected to your account. FORGE can revoke authorization of any desktop session at its discretion, or at your command via the web dashboard, if a token compromise is detected.
             </p>
           </div>
 

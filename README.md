@@ -6,12 +6,12 @@
 
 ---
 
-**FORGE** is a high-performance AI deployment engine that transforms single-sentence ideas into modular, persistent, and professional-grade React applications. Moving beyond simple code blocks, Forge bridges a powerful **Web Orchestrator** with an elite **Terminal CLI**, giving you the ultimate toolset for rapid prototyping and local-first engineering.
+**FORGE** is a high-performance AI deployment engine that transforms single-sentence ideas into modular, persistent, and professional-grade React applications. Moving beyond simple code blocks, Forge now bridges a powerful **Web Orchestrator** with a polished **Forge Desktop App**, giving you an end-to-end local-first engineering workflow.
 
 ## 🌟 The Forge Ecosystem
 
 1. **[Forge Web App](#-the-forge-v3-orchestration-web)**: A browser-based AI orchestrator powered by Next.js and Sandpack, featuring a unified conversation/implementation engine and dynamic Delta-Sync multi-file architecture to generate functional React apps instantly.
-2. **[Forge Code CLI](./forge-code/README.md)**: A terminal-native AI pair programmer that lives in your local workspace. Completely rebranded and deeply integrated with modern models like Gemini 3.1 Flash Lite and GitHub Copilot.
+2. **[Forge Desktop](./forge-desktop/README.md)**: A native Tauri desktop app with authenticated sync, model controls, request diagnostics, and workspace-native agent workflows.
 
 ---
 
@@ -54,15 +54,15 @@ Deep Research is a **fully standalone capability** available at `/research/[id]`
 
 ---
 
-## 💻 Forge Code CLI
+## 🖥️ Forge Desktop App
 
-**Forge Code** is the local-first extension of the Forge protocol. Designed as a beautiful, React Ink-powered terminal interface, it brings the Forge intelligence directly to your codebase.
+**Forge Desktop** is the local-first extension of the Forge protocol. Built with Tauri + React, it brings Forge intelligence to a native desktop workspace with account-aware sync and release-grade UX.
 
-- **Universal Providers**: Natively supports **Gemini 3.1 Flash Lite** and **GitHub Copilot**.
-- **Agentic File Manipulation**: Full-speed file reading, writing, and partial editing right in your local environment.
-- **Background Automation**: Run Forge as a background agent for scheduled tasks or heavy refactoring.
+- **Desktop-native workflow**: Session timelines, model execution controls, and tool-call transparency.
+- **Secure auth + key sync**: Browser login callback to `/desktop`, cloud key hydration, and device governance.
+- **Release pipeline ready**: Push to `main` can publish packaged desktop installers through GitHub Actions.
 
-👉 **[Read the full Forge Code CLI setup and documentation here.](./forge-code/README.md)**
+👉 **[Read the full Forge Desktop setup and documentation here.](./forge-desktop/README.md)**
 
 ---
 
@@ -75,7 +75,7 @@ Deep Research is a **fully standalone capability** available at `/research/[id]`
 | **AI Intelligence** | Gemini 3.1 Flash Lite / GitHub Copilot |
 | **Styling Engine** | Vanilla CSS + Dynamic Tailwind CDN |
 | **Persistence** | GitHub JSON Database & Session API |
-| **Terminal CLI** | React Ink + Bun + Universal API Shim |
+| **Desktop Runtime** | Tauri v2 + React + Rust command bridge |
 
 ---
 
@@ -109,7 +109,7 @@ Visit `localhost:3000` to start building. Every project you generate is automati
 - `app/build/` — The unified conversational builder interface.
 - `app/research/[id]/` — Standalone Deep Research Agent (Beta).
 - `app/api/` — Background auto-save, state recovery APIs, and generation routes.
-- `forge-code/` — The high-performance agentic Terminal CLI source code.
+- `forge-desktop/` — Native Forge Desktop application source code and packaging config.
 - `lib/system-prompt.ts` — The "Brain" containing the V3 Orchestration rules.
 - `components/` — Web app React components handling streaming ASTs and styling.
 

@@ -22,6 +22,7 @@ import {
   type BootstrapPayload,
   type CliKeys,
   type DesktopAgentMessage,
+  type DesktopExecutionMode,
   type DesktopAgentToolResult,
   type DesktopDeviceContext,
   type DesktopHealthSnapshot,
@@ -44,6 +45,7 @@ type ChatMessage = {
   role: ChatRole
   content: string
   createdAt: number
+  executionMode?: DesktopExecutionMode
   thinking?: string[]
   tools?: ToolEvent[]
 }
@@ -82,6 +84,8 @@ type RemoteKeySummary = {
 
 const DEVICE_ID_STORAGE_KEY = 'forge-desktop-device-id'
 const THEME_STORAGE_KEY = 'forge-desktop-theme'
+const DIRECTION_MODE_STORAGE_KEY = 'forge-desktop-direction-mode'
+const EXECUTION_MODE_STORAGE_KEY = 'forge-desktop-execution-mode'
 const SESSION_STORAGE_KEY = 'forge-desktop-chat-sessions-v3'
 const ACTIVE_SESSION_STORAGE_KEY = 'forge-desktop-active-session-v3'
 const DEFAULT_SESSION_TITLE = 'New Session'
@@ -91,6 +95,14 @@ const MAX_INDEXED_FILES_PER_SESSION = 2000
 const MAX_DRAFT_CHARS = 8000
 const MAX_SESSION_REVISIONS = 90
 const ARABIC_TEXT_REGEX = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/
+const DESKTOP_DEFAULT_MODEL = 'gemma-4-31b-it'
+const DESKTOP_MODEL_PRESETS = [DESKTOP_DEFAULT_MODEL, 'gemini-3.1-flash-lite-preview']
+const EXECUTION_MODE_OPTIONS: Array<{ value: DesktopExecutionMode; label: string }> = [
+  { value: 'default', label: 'Default' },
+  { value: 'plan', label: 'Plan' },
+  { value: 'auto_edit', label: 'Auto Edit' },
+  { value: 'yolo', label: 'YOLO' },
+]
 
 function makeId(prefix: string): string {
   if (
@@ -268,6 +280,35 @@ function trimToolOutput(value: string, maxChars = 5000): string {
   return `${normalized.slice(0, maxChars)}\n\n[...truncated...]`
 }
 
+function normalizeExecutionMode(value: unknown): DesktopExecutionMode | undefined {
+  if (typeof value !== 'string') {
+    return undefined
+  }
+
+  const normalized = value.trim().toLowerCase()
+  if (
+    normalized === 'default' ||
+    normalized === 'plan' ||
+    normalized === 'auto_edit' ||
+    normalized === 'yolo'
+  ) {
+    return normalized
+  }
+
+  return undefined
+}
+
+function looksLikePlanResponse(content: string): boolean {
+  const normalized = content.toLowerCase()
+  return (
+    normalized.includes('### plan') ||
+    normalized.includes('implementation steps') ||
+    normalized.includes('objective:') ||
+    normalized.includes('request your approval to proceed') ||
+    normalized.includes('currently in plan mode')
+  )
+}
+
 function cloneToolEvents(tools: ToolEvent[] | undefined): ToolEvent[] | undefined {
   if (!tools || tools.length === 0) {
     return undefined
@@ -372,6 +413,7 @@ function loadStoredSessions(): ChatSession[] {
               content,
               createdAt:
                 typeof record.createdAt === 'number' ? record.createdAt : Date.now(),
+              executionMode: normalizeExecutionMode(record.executionMode),
             }
 
             if (thinking.length > 0) {
@@ -441,7 +483,8 @@ export default function App() {
   const [lastAgentEngine, setLastAgentEngine] = useState<string>('')
   const [desktopHealth, setDesktopHealth] = useState<DesktopHealthSnapshot | null>(null)
   const [isCheckingHealth, setIsCheckingHealth] = useState(false)
-  const [selectedModel, setSelectedModel] = useState('')
+  const [selectedModel, setSelectedModel] = useState(DESKTOP_DEFAULT_MODEL)
+  const [selectedExecutionMode, setSelectedExecutionMode] = useState<DesktopExecutionMode>('default')
 
   const [bootstrap, setBootstrap] = useState<BootstrapPayload>({
     appName: 'Forge Desktop',
@@ -472,9 +515,20 @@ export default function App() {
 
   const availableModels = useMemo(() => {
     if (!remoteKeySummary) return []
-    return remoteKeySummary.geminiModel.trim()
-      ? [remoteKeySummary.geminiModel]
-      : []
+
+    const unique = new Set<string>()
+    unique.add(DESKTOP_DEFAULT_MODEL)
+
+    const remoteModel = remoteKeySummary.geminiModel.trim()
+    if (remoteModel) {
+      unique.add(remoteModel)
+    }
+
+    for (const preset of DESKTOP_MODEL_PRESETS) {
+      unique.add(preset)
+    }
+
+    return [...unique]
   }, [remoteKeySummary])
 
   const activeSession = useMemo(() => {
@@ -508,6 +562,10 @@ export default function App() {
       : textDirectionMode === 'rtl'
         ? 'Dir: RTL'
         : 'Dir: LTR'
+
+  const executionModeLabel =
+    EXECUTION_MODE_OPTIONS.find((option) => option.value === selectedExecutionMode)?.label ||
+    'Default'
 
   const resolveDirectionForText = useCallback(
     (text: string): ChatDirection => {
@@ -551,6 +609,15 @@ export default function App() {
       if (previous === 'auto') return 'rtl'
       if (previous === 'rtl') return 'ltr'
       return 'auto'
+    })
+  }, [])
+
+  const cycleExecutionMode = useCallback(() => {
+    setSelectedExecutionMode((previous) => {
+      const order: DesktopExecutionMode[] = ['default', 'plan', 'auto_edit', 'yolo']
+      const currentIndex = order.indexOf(previous)
+      const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % order.length
+      return order[nextIndex]!
     })
   }, [])
 
@@ -885,7 +952,7 @@ export default function App() {
         const keySummary = summarizeRemoteKeys(keyResult.keys)
         setRemoteKeySummary(keySummary)
         setRemoteKeys(keyResult.keys)
-        setSelectedModel((previous) => previous.trim() || keySummary.geminiModel)
+        setSelectedModel((previous) => previous.trim() || DESKTOP_DEFAULT_MODEL)
 
         const keyReadinessMessage =
           keySummary.geminiReady
@@ -1460,6 +1527,7 @@ export default function App() {
           workspaceFiles: activeSession.indexedFiles.slice(0, 120),
           modelPreference: selectedModel || undefined,
           providerPreference: 'gemini-cli',
+          executionMode: selectedExecutionMode,
           sessionId,
         })
         setLastAgentRequestId(chatResult.requestId || '')
@@ -1499,11 +1567,16 @@ export default function App() {
               chatResult.requestId ? ` (request ${chatResult.requestId})` : ''
             }`
 
+        const resolvedExecutionMode: DesktopExecutionMode =
+          chatResult.executionMode ||
+          (looksLikePlanResponse(assistantContent) ? 'plan' : selectedExecutionMode)
+
         const assistantMessage: ChatMessage = {
           id: makeId('msg'),
           role: 'assistant',
           content: assistantContent,
           createdAt: Date.now(),
+          executionMode: resolvedExecutionMode,
           thinking:
             chatResult.ok && chatResult.thinking.length > 0
               ? chatResult.thinking
@@ -1522,7 +1595,7 @@ export default function App() {
           const engineSuffix = chatResult.engine ? ` via ${chatResult.engine}` : ''
           const warningSuffix = chatResult.warning ? ` Warning: ${chatResult.warning}` : ''
           setStatusText(
-            `Agent response complete${engineSuffix}.${chatResult.requestId ? ` (request ${chatResult.requestId})` : ''}${warningSuffix}`,
+            `Agent response complete${engineSuffix} [mode ${resolvedExecutionMode}].${chatResult.requestId ? ` (request ${chatResult.requestId})` : ''}${warningSuffix}`,
           )
         } else {
           const compactError = chatResult.error.replace(/\s+/g, ' ').trim()
@@ -1558,6 +1631,7 @@ export default function App() {
       forgeWebBase,
       pushSessionRevision,
       runningSessionId,
+      selectedExecutionMode,
       selectedModel,
       sessionToken,
       updateSession,
@@ -1586,6 +1660,17 @@ export default function App() {
     const initialTheme = savedTheme === 'dark' ? 'dark' : 'light'
     setTheme(initialTheme)
 
+    const savedDirection = localStorage.getItem(DIRECTION_MODE_STORAGE_KEY)
+    if (savedDirection === 'auto' || savedDirection === 'ltr' || savedDirection === 'rtl') {
+      setTextDirectionMode(savedDirection)
+    }
+
+    const savedExecutionMode = localStorage.getItem(EXECUTION_MODE_STORAGE_KEY)
+    const normalizedExecutionMode = normalizeExecutionMode(savedExecutionMode)
+    if (normalizedExecutionMode) {
+      setSelectedExecutionMode(normalizedExecutionMode)
+    }
+
     const storedSessions = loadStoredSessions()
     setSessions(storedSessions)
 
@@ -1607,6 +1692,14 @@ export default function App() {
     document.documentElement.setAttribute('data-theme', theme)
     localStorage.setItem(THEME_STORAGE_KEY, theme)
   }, [theme])
+
+  useEffect(() => {
+    localStorage.setItem(DIRECTION_MODE_STORAGE_KEY, textDirectionMode)
+  }, [textDirectionMode])
+
+  useEffect(() => {
+    localStorage.setItem(EXECUTION_MODE_STORAGE_KEY, selectedExecutionMode)
+  }, [selectedExecutionMode])
 
   useEffect(() => {
     if (sessions.length === 0) {
@@ -1655,7 +1748,7 @@ export default function App() {
         await syncSessionWithForge(token, payload, resolvedDeviceId)
       } else {
         setSessionToken(null)
-        setStatusText(`Runtime online on ${payload.platform}. Select folder and start chatting.`)
+        setStatusText(`Runtime online on ${payload.platform}. Sign in to continue.`)
       }
     })()
 
@@ -1836,10 +1929,11 @@ export default function App() {
             <span className="top-pill">
               {isSyncingSession ? 'Syncing' : sessionToken ? 'Signed In' : 'Guest'}
             </span>
-            {remoteKeySummary && <span className="top-pill">provider: gemini</span>}
+            {remoteKeySummary && <span className="top-pill">provider: gemini-cli</span>}
             {remoteKeySummary && (
               <span className="top-pill">{selectedModel || remoteKeySummary.geminiModel}</span>
             )}
+            <span className="top-pill">mode: {executionModeLabel}</span>
 
             {startupStep === 'chat' && (
               <button type="button" className="secondary-btn" onClick={() => void changeWorkspaceFolder()}>
@@ -1887,15 +1981,23 @@ export default function App() {
                 const messageDirection = resolveDirectionForText(message.content)
                 const isLatestAssistant =
                   message.role === 'assistant' && message.id === latestAssistantMessageId
+                const isPlanModeMessage =
+                  message.role === 'assistant' &&
+                  (message.executionMode === 'plan' || looksLikePlanResponse(message.content))
 
                 return (
                   <article
                     key={message.id}
                     className={`chat-message ${message.role} ${
                       messageDirection === 'rtl' ? 'rtl-message' : ''
-                    }`}
+                    } ${isPlanModeMessage ? 'plan-message' : ''}`}
                   >
                     <div className="message-role">{message.role === 'assistant' ? 'Forge Agent' : 'You'}</div>
+                    {isPlanModeMessage && (
+                      <div className="plan-mode-banner">
+                        Plan Mode: Proposed steps only. Confirm before execution.
+                      </div>
+                    )}
                     <div className="message-body markdown-body">
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
@@ -2048,6 +2150,9 @@ export default function App() {
                   <button type="button" className="secondary-btn" onClick={cycleDirectionMode}>
                     {directionModeLabel}
                   </button>
+                  <button type="button" className="secondary-btn" onClick={cycleExecutionMode}>
+                    Mode: {executionModeLabel}
+                  </button>
                 </div>
 
                 <div className="composer-actions-right">
@@ -2085,32 +2190,61 @@ export default function App() {
         <div className="overlay-shell">
           <div className="onboarding-card">
             <p className="eyebrow">Forge Desktop</p>
-            <h1>Select a workspace to begin</h1>
-            <p>
-              Start clean by choosing a project folder, or continue one of your previous sessions.
-            </p>
+            {!sessionToken ? (
+              <>
+                <h1>Sign in first</h1>
+                <p>
+                  Authentication comes first. After sign-in, you will choose the folder or directory to work on.
+                </p>
 
-            <div className="onboarding-actions">
-              <button type="button" className="primary-btn" onClick={() => void beginNewWorkspaceSession()} disabled={isPickingFolder}>
-                {isPickingFolder ? 'Selecting...' : 'Select Folder'}
-              </button>
-              {sortedSessions.length > 0 && (
-                <button type="button" className="secondary-btn" onClick={continueLatestSession}>
-                  Continue Last Session
-                </button>
-              )}
-            </div>
-
-            {sortedSessions.length > 0 && (
-              <div className="recent-list">
-                <h2>Recent Sessions</h2>
-                {sortedSessions.slice(0, 8).map((session) => (
-                  <button key={session.id} type="button" className="recent-item" onClick={() => continueWithSession(session.id)}>
-                    <span>{session.title}</span>
-                    <small>{getWorkspaceLabel(session.workspacePath)}</small>
+                <div className="onboarding-actions">
+                  <button
+                    type="button"
+                    className="primary-btn"
+                    onClick={() => void startSignIn()}
+                    disabled={isPollingAuth}
+                  >
+                    {isPollingAuth ? 'Opening Browser...' : 'Sign In'}
                   </button>
-                ))}
-              </div>
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={() => setShowAuthDialog(true)}
+                  >
+                    Account Details
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h1>Select a workspace to begin</h1>
+                <p>
+                  Choose a project folder, or continue one of your recent authenticated sessions.
+                </p>
+
+                <div className="onboarding-actions">
+                  <button type="button" className="primary-btn" onClick={() => void beginNewWorkspaceSession()} disabled={isPickingFolder}>
+                    {isPickingFolder ? 'Selecting...' : 'Select Folder'}
+                  </button>
+                  {sortedSessions.length > 0 && (
+                    <button type="button" className="secondary-btn" onClick={continueLatestSession}>
+                      Continue Last Session
+                    </button>
+                  )}
+                </div>
+
+                {sortedSessions.length > 0 && (
+                  <div className="recent-list">
+                    <h2>Recent Sessions</h2>
+                    {sortedSessions.slice(0, 8).map((session) => (
+                      <button key={session.id} type="button" className="recent-item" onClick={() => continueWithSession(session.id)}>
+                        <span>{session.title}</span>
+                        <small>{getWorkspaceLabel(session.workspacePath)}</small>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -2264,6 +2398,27 @@ export default function App() {
                   Session token exists, but key sync has not completed yet.
                 </p>
               )}
+              <label className="auth-model-row">
+                <span className="muted">Execution mode</span>
+                <select
+                  value={selectedExecutionMode}
+                  onChange={(event) => {
+                    const mode = normalizeExecutionMode(event.target.value)
+                    if (mode) {
+                      setSelectedExecutionMode(mode)
+                    }
+                  }}
+                >
+                  {EXECUTION_MODE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <p className="muted">
+                Plan mode returns a plan first. Default mode answers directly. Auto Edit and YOLO are available but backend tool execution is still restricted by policy.
+              </p>
             </details>
 
             <details className="auth-section">

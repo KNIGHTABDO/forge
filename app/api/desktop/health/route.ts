@@ -125,7 +125,7 @@ export async function GET(request: Request) {
     }
 
     const cliAvailability = await checkGeminiCliAvailability(5000);
-    const geminiModel = process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite-preview';
+    const geminiModel = process.env.GEMINI_MODEL || 'gemma-4-31b-it';
     const geminiKeyReady = Boolean((process.env.GEMINI_API_KEY || '').trim());
 
     const guidance: string[] = [];

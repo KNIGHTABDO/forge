@@ -8,7 +8,9 @@
     "build": "tsc -p tsconfig.json && vite build",
     "preview": "vite preview --port 1421",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build"
+    "tauri:icon": "tauri icon ../public/logo.png --output src-tauri/icons",
+    "tauri:build": "tauri build",
+    "tauri:build:release": "npm run tauri:icon && tauri build"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",
