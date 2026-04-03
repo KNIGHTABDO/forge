@@ -486,51 +486,74 @@ export default function Home() {
           <span className="section-eyebrow">Cloud / Device Sync</span>
           <h2 className="section-title">Desktop Account & Session Control</h2>
           <p className="section-desc">Sign in once, sync cloud keys securely, monitor device telemetry, and manage active sessions from a single desktop-focused control surface.</p>
-          
-          <div className="desktop-account-console-wrap">
-            <div className="desktop-account-console">
-              <div className="desktop-account-console-header">
-                <span className="desktop-account-dot" />
-                <span className="desktop-account-dot" />
-                <span className="desktop-account-dot" />
-                <span className="desktop-account-console-title">Desktop Account Status</span>
+
+          <div className="desktop-account-showcase">
+            <article className="desktop-account-surface">
+              <p className="desktop-account-kicker">Forge Desktop Control Surface</p>
+              <h3>One login. One workspace. Full control.</h3>
+              <div className="desktop-account-pill-row">
+                <span className="desktop-status-pill online">Backend Connected</span>
+                <span className="desktop-status-pill">Gemini Runtime</span>
+                <span className="desktop-status-pill">Auto Release Feed</span>
               </div>
-              <div className="desktop-account-console-body">
-                <div className="desktop-account-line">
-                  <span className="desktop-account-key">Provider:</span>
-                  <code className="desktop-account-value">Gemini backend runtime</code>
+
+              <div className="desktop-account-steps">
+                <div className="desktop-account-step">
+                  <span className="desktop-account-step-num">01</span>
+                  <div>
+                    <h4>Browser Sign-In</h4>
+                    <p>Secure callback flow at /desktop with instant session restoration inside the app.</p>
+                  </div>
                 </div>
-                <div className="desktop-account-line">
-                  <span className="desktop-account-key">Routing:</span>
-                  <code className="desktop-account-value">/desktop callback + device sync</code>
+                <div className="desktop-account-step">
+                  <span className="desktop-account-step-num">02</span>
+                  <div>
+                    <h4>Cloud Key Hydration</h4>
+                    <p>Model keys and runtime health sync from backend without local environment setup.</p>
+                  </div>
                 </div>
-                <div className="desktop-account-line">
-                  <span className="desktop-account-key">Release:</span>
-                  <code className="desktop-account-value">auto-published from GitHub push</code>
+                <div className="desktop-account-step">
+                  <span className="desktop-account-step-num">03</span>
+                  <div>
+                    <h4>Device Governance</h4>
+                    <p>Track active devices, telemetry, and revoke stale sessions from a single dashboard.</p>
+                  </div>
                 </div>
               </div>
-            </div>
+            </article>
+
+            <aside className="desktop-account-rail">
+              <h3>Release Delivery Rail</h3>
+              <p>Each push runs web + desktop validation. Pushes to main/master automatically publish a new Forge Desktop release.</p>
+              <a href={desktopReleaseUrl} target="_blank" rel="noopener noreferrer" className="desktop-release-link">
+                Open Latest Desktop Release
+              </a>
+              <ul className="desktop-release-list">
+                <li>GitHub Actions status is the source of truth for desktop builds.</li>
+                <li>Release artifacts are attached to each published desktop release.</li>
+              </ul>
+            </aside>
           </div>
-          
+
           <div className="desktop-account-features-grid">
             <div className="desktop-account-feature-card">
-              <h3>Secure Desktop Login</h3>
-              <p>Browser-based authentication with callback validation and one-click session restoration.</p>
+              <h3>Session Health</h3>
+              <p>Diagnose runtime state, key readiness, and agent request IDs directly from the desktop account panel.</p>
             </div>
             <div className="desktop-account-feature-card">
-              <h3>Cloud Key Sync</h3>
-              <p>Server-managed model keys and runtime health checks without local environment setup.</p>
+              <h3>Model Governance</h3>
+              <p>Control provider and model behavior from desktop while backend keeps execution safe and observable.</p>
             </div>
             <div className="desktop-account-feature-card">
-              <h3>Device Governance</h3>
-              <p>Track active devices, usage metrics, and revoke access directly from your dashboard route.</p>
+              <h3>Release Confidence</h3>
+              <p>Desktop packaging runs with every push and publishes installable artifacts from main/master automatically.</p>
             </div>
           </div>
-          
+
           <div className="desktop-account-footer-links">
-             <Link href={desktopReleaseUrl} className="btn-ghost">Latest Desktop Release</Link>
-             <Link href="/changelog" className="btn-ghost">Read Desktop Changelog</Link>
-             <Link href="/desktop" className="btn-ghost" style={{ border: '1px solid var(--sidebar-border)' }}>Manage Desktop Settings</Link>
+            <a href={desktopReleaseUrl} target="_blank" rel="noopener noreferrer" className="btn-ghost">Latest Desktop Release</a>
+            <Link href="/changelog" className="btn-ghost">Read Desktop Changelog</Link>
+            <Link href="/desktop" className="btn-ghost">Manage Desktop Settings</Link>
           </div>
         </div>
       </section>

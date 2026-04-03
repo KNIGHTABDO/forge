@@ -1,0 +1,98 @@
+name: Desktop Build And Release
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-web:
+    name: Build Web App
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Root Dependencies
+        run: npm ci
+
+      - name: Build Next.js Web App
+        run: npm run build
+
+  build-desktop:
+    name: Build Desktop App
+    runs-on: windows-latest
+    needs: build-web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: forge-desktop/package-lock.json
+
+      - name: Install Desktop Dependencies
+        working-directory: forge-desktop
+        run: npm ci
+
+      - name: Build Desktop Frontend
+        working-directory: forge-desktop
+        run: npm run build
+
+      - name: Check Desktop Rust Core
+        working-directory: forge-desktop/src-tauri
+        run: cargo check
+
+  release-desktop:
+    name: Release Forge Desktop
+    runs-on: windows-latest
+    needs:
+      - build-web
+      - build-desktop
+    if: github.event_name == 'push'
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: forge-desktop/package-lock.json
+
+      - name: Install Desktop Dependencies
+        working-directory: forge-desktop
+        run: npm ci
+
+      - name: Generate Desktop Icon Set
+        working-directory: forge-desktop
+        run: npm run tauri:icon
+
+      - name: Build and Publish Desktop Release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: forge-desktop
+          tagName: desktop-v__VERSION__-${{ github.run_number }}
+          releaseName: Forge Desktop v__VERSION__ (build ${{ github.run_number }})
+          releaseBody: |
+            Automated Forge Desktop release.
+            Commit: ${{ github.sha }}
+            Includes validated web build + bundled desktop installers.
+          releaseDraft: false
+          prerelease: false

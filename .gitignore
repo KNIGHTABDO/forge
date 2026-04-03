@@ -8,4 +8,6 @@ next-env.d.ts
 *.lock
 forge-claude/
 .vercelignore
-.github
+.github/*
+!.github/workflows/
+!.github/workflows/**
