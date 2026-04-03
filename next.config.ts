@@ -6,6 +6,15 @@ const nextConfig: NextConfig = {
   experimental: {
     viewTransition: true,
   },
+  serverExternalPackages: ['@google/gemini-cli'],
+  outputFileTracingIncludes: {
+    '/api/desktop/agent': [
+      './node_modules/@google/gemini-cli/**/*',
+    ],
+    '/api/desktop/health': [
+      './node_modules/@google/gemini-cli/**/*',
+    ],
+  },
   async headers() {
     return [
       {
