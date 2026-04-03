@@ -1227,8 +1227,10 @@ export default function App() {
       const sessionId = activeSession.id
       const workspacePath = activeSession.workspacePath.trim()
       const baseMessages = cloneMessages(activeSession.messages)
+      const lastBaseMessage =
+        baseMessages.length > 0 ? baseMessages[baseMessages.length - 1] : undefined
       const historySeedMessages =
-        mode === 'regenerate' && baseMessages.at(-1)?.role === 'assistant'
+        mode === 'regenerate' && lastBaseMessage?.role === 'assistant'
           ? baseMessages.slice(0, -1)
           : baseMessages
 
@@ -1263,8 +1265,12 @@ export default function App() {
         }))
       } else {
         updateSession(sessionId, (session) => {
+          const lastSessionMessage =
+            session.messages.length > 0
+              ? session.messages[session.messages.length - 1]
+              : undefined
           const trimmedMessages =
-            session.messages.at(-1)?.role === 'assistant'
+            lastSessionMessage?.role === 'assistant'
               ? session.messages.slice(0, -1)
               : session.messages
 
